@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>大会管理 | ASOPokeTool</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
+    <link th:href="@{/css/common.css}" rel="stylesheet">
+</head>
+<body>
+
+    <nav class="navbar navbar-expand-lg navbar-dark navbar-custom sticky-top">
+        <div class="container">
+            <a class="navbar-brand navbar-brand-custom text-warning" th:href="@{/admin}">
+                <i class="fa-solid fa-screwdriver-wrench"></i> ASOPokeTool 管理画面
+            </a>
+            <div class="collapse navbar-collapse" id="adminNavbar">
+                <ul class="navbar-nav ms-auto align-items-center gap-3">
+                    <li class="nav-item">
+                        <a class="nav-link text-light opacity-75" th:href="@{/admin/users}"><i class="fa-solid fa-users-gear"></i> 管理者管理</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link text-light opacity-75" th:href="@{/admin/players}"><i class="fa-solid fa-users"></i> 全ユーザー一覧</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="btn btn-outline-danger btn-sm px-3" th:href="@{/admin/logout}"><i class="fa-solid fa-right-from-bracket"></i> ログアウト</a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container my-4">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <a th:href="@{/admin}" class="btn btn-outline-light btn-sm"><i class="fa-solid fa-arrow-left"></i> 管理ダッシュボードに戻る</a>
+            <a th:href="@{/admin/tournament/{id}/delete(id=${tournament.id})}" class="btn btn-danger btn-sm" onsubmit="" onclick="return confirm('本当にこの大会を完全に削除しますか？エントリーや対戦履歴を含む全データが消失し、元に戻せません。');">
+                <i class="fa-solid fa-trash"></i> この大会を削除する
+            </a>
+        </div>
+
+        <div class="row">
+            <div class="col-lg-8">
+                <!-- Status Box -->
+                <div class="card card-glass text-white p-4 mb-4">
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <h2 class="fw-bold mb-0 text-white" th:text="${tournament.name}">大会名</h2>
+                        <span class="badge-status" 
+                              th:classappend="${tournament.status == 'ENTRY' ? 'badge-entry' : (tournament.status == 'IN_PROGRESS' ? 'badge-in-progress' : (tournament.status == 'BRACKET' ? 'badge-bracket' : 'badge-finished'))}"
+                              th:text="${tournament.status == 'ENTRY' ? 'エントリー受付中' : (tournament.status == 'IN_PROGRESS' ? 'スイスドロー進行中' : (tournament.status == 'BRACKET' ? '決勝T進行中' : '大会終了'))}">
+                            ステータス
+                        </span>
+                    </div>
+                    <p class="text-muted" th:text="${tournament.description}"></p>
+
+                    <hr class="border-secondary my-4">
+
+                    <!-- Dashboard stats metrics -->
+                    <div class="row g-3 text-center">
+                        <div class="col-4 col-md-3">
+                            <div class="p-3 bg-dark border border-secondary rounded-4">
+                                <div class="small text-muted mb-1">エントリー</div>
+                                <h3 class="fw-bold mb-0" th:text="${entryCount}">0</h3>
+                            </div>
+                        </div>
+                        <div class="col-4 col-md-3">
+                            <div class="p-3 bg-dark border border-secondary rounded-4">
+                                <div class="small text-muted mb-1">チェックイン</div>
+                                <h3 class="fw-bold mb-0 text-success" th:text="${checkedInCount}">0</h3>
+                            </div>
+                        </div>
+                        <div class="col-4 col-md-3">
+                            <div class="p-3 bg-dark border border-secondary rounded-4">
+                                <div class="small text-muted mb-1">途中棄権</div>
+                                <h3 class="fw-bold mb-0 text-danger" th:text="${dropoutCount}">0</h3>
+                            </div>
+                        </div>
+                        <div class="col-md-3 d-none d-md-block">
+                            <div class="p-3 bg-dark border border-secondary rounded-4">
+                                <div class="small text-muted mb-1">現在ラウンド</div>
+                                <h3 class="fw-bold mb-0 text-warning" th:text="${tournament.currentRound} + ' / ' + ${tournament.totalRounds}">0 / 5</h3>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Admin Action Panels -->
+                <div class="card card-glass text-white p-4">
+                    <h4 class="fw-bold mb-4 text-white"><i class="fa-solid fa-gears"></i> 各種管理操作</h4>
+
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <a th:href="@{/admin/tournament/{id}/checkin(id=${tournament.id})}" class="btn btn-outline-light w-100 py-3 text-start px-4" th:disabled="${tournament.status != 'ENTRY'}">
+                                <i class="fa-solid fa-user-check fa-lg text-success me-2"></i> <strong>チェックイン管理</strong>
+                                <div class="small text-muted mt-1">QRスキャン・手動チェックイン</div>
+                            </a>
+                        </div>
+                        <div class="col-md-6">
+                            <a th:href="@{/admin/tournament/{id}/matching(id=${tournament.id})}" class="btn btn-outline-light w-100 py-3 text-start px-4" th:disabled="${tournament.status == 'ENTRY'}">
+                                <i class="fa-solid fa-gamepad fa-lg text-primary me-2"></i> <strong>対戦表の管理</strong>
+                                <div class="small text-muted mt-1">結果の登録・手動対戦修正</div>
+                            </a>
+                        </div>
+                        <div class="col-md-6">
+                            <a th:href="@{/admin/tournament/{id}/dropout(id=${tournament.id})}" class="btn btn-outline-light w-100 py-3 text-start px-4" th:disabled="${tournament.status == 'ENTRY'}">
+                                <i class="fa-solid fa-user-slash fa-lg text-danger me-2"></i> <strong>棄権（ドロップ）管理</strong>
+                                <div class="small text-muted mt-1">途中の選手棄権処理</div>
+                            </a>
+                        </div>
+                        <div class="col-md-6">
+                            <a th:href="@{/admin/tournament/{id}/timer(id=${tournament.id})}" class="btn btn-outline-light w-100 py-3 text-start px-4">
+                                <i class="fa-solid fa-clock fa-lg text-warning me-2"></i> <strong>タイマー・BGM管理</strong>
+                                <div class="small text-muted mt-1">制限時間の変更・音源の設定</div>
+                            </a>
+                        </div>
+                        <div class="col-md-6">
+                            <a th:href="@{/admin/tournament/{id}/bracket(id=${tournament.id})}" class="btn btn-outline-light w-100 py-3 text-start px-4" th:disabled="${tournament.status != 'BRACKET' &amp;&amp; tournament.status != 'FINISHED'}">
+                                <i class="fa-solid fa-sitemap fa-lg text-info me-2"></i> <strong>決勝トーナメント管理</strong>
+                                <div class="small text-muted mt-1">トーナメント表生成・勝者選択</div>
+                            </a>
+                        </div>
+                        <div class="col-md-6">
+                            <a th:href="@{/admin/tournament/{id}/manual-entry(id=${tournament.id})}" class="btn btn-outline-light w-100 py-3 text-start px-4" th:disabled="${tournament.status != 'ENTRY'}">
+                                <i class="fa-solid fa-user-plus fa-lg text-secondary me-2"></i> <strong>手動選手登録</strong>
+                                <div class="small text-muted mt-1">飛び込み参加者の手動登録</div>
+                            </a>
+                        </div>
+                        <div class="col-md-6">
+                            <a th:href="@{/admin/tournament/{id}/ranking(id=${tournament.id})}" class="btn btn-outline-light w-100 py-3 text-start px-4">
+                                <i class="fa-solid fa-ranking-star fa-lg text-warning me-2"></i> <strong>中間/最終ランキング</strong>
+                                <div class="small text-muted mt-1">大会の現在の成績・順位表</div>
+                            </a>
+                        </div>
+                        <div class="col-md-6">
+                            <a th:href="@{/tournament/{id}/matching/project(id=${tournament.id})}" target="_blank" class="btn btn-outline-light w-100 py-3 text-start px-4" th:disabled="${tournament.status == 'ENTRY'}">
+                                <i class="fa-solid fa-desktop fa-lg text-info me-2"></i> <strong>プロジェクター投影用対戦表</strong>
+                                <div class="small text-muted mt-1">別タブでシンプルな大画面対戦表を開く</div>
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-lg-4 mt-4 mt-lg-0">
+                <!-- Control Panel -->
+                <div class="card card-glass text-white p-4">
+                    <h4 class="fw-bold mb-4 text-white"><i class="fa-solid fa-terminal"></i> 進行コントロール</h4>
+
+                    <div th:if="${error}" class="alert alert-danger" role="alert" th:text="${error}">エラー</div>
+
+                    <!-- 1. ENTRY PHASE -->
+                    <div th:if="${tournament.status == 'ENTRY'}">
+                        <p class="small text-muted">参加チェックイン完了を確認し、スイスドロー（第1ラウンド）を開始します。</p>
+                        <form th:action="@{/admin/tournament/{id}/start(id=${tournament.id})}" method="POST" onsubmit="return confirm('チェックインを締め切り、大会を開始しますか？');">
+                            <button type="submit" class="btn btn-primary-custom w-100 py-3">
+                                <i class="fa-solid fa-play"></i> <strong>大会を開始する</strong>
+                            </button>
+                        </form>
+                    </div>
+
+                    <!-- 2. IN_PROGRESS PHASE -->
+                    <div th:if="${tournament.status == 'IN_PROGRESS'}">
+                        <div class="alert alert-warning py-3 text-center" role="alert">
+                            <i class="fa-solid fa-circle-play fa-2x mb-2 text-warning"></i>
+                            <h5 class="fw-bold" th:text="'スイスドロー ' + ${tournament.currentRound} + ' 回戦'"></h5>
+                        </div>
+                        
+                        <p class="small text-muted">全試合の結果登録が終了した後、次のラウンドまたは決勝トーナメントへ進みます。</p>
+                        
+                        <form th:action="@{/admin/tournament/{id}/next-round(id=${tournament.id})}" method="POST" onsubmit="return confirm('次のラウンドに進みますか？');">
+                            <button type="submit" class="btn btn-primary-custom w-100 py-2 mb-2">
+                                <i class="fa-solid fa-forward-step"></i> <span th:text="${tournament.currentRound == tournament.totalRounds ? '決勝トーナメントへ進む' : '次のラウンドへ'}">次のラウンドへ</span>
+                            </button>
+                        </form>
+                    </div>
+
+                    <!-- 3. BRACKET PHASE -->
+                    <div th:if="${tournament.status == 'BRACKET'}">
+                        <div class="alert alert-info py-3 text-center" role="alert">
+                            <i class="fa-solid fa-sitemap fa-2x mb-2 text-info"></i>
+                            <h5 class="fw-bold">決勝トーナメント中</h5>
+                        </div>
+
+                        <p class="small text-muted">全グループの決勝戦が終了したら大会を終了し、ポイントを計算します。</p>
+
+                        <form th:action="@{/admin/tournament/{id}/finish(id=${tournament.id})}" method="POST" onsubmit="return confirm('大会を終了し、ポイントを集計します。よろしいですか？');">
+                            <button type="submit" class="btn btn-danger-custom w-100 py-3">
+                                <i class="fa-solid fa-circle-check"></i> <strong>大会を終了する</strong>
+                            </button>
+                        </form>
+                    </div>
+
+                    <!-- 4. FINISHED -->
+                    <div th:if="${tournament.status == 'FINISHED'}">
+                        <div class="alert alert-success py-3 text-center" role="alert">
+                            <i class="fa-solid fa-circle-check fa-2x mb-2 text-success"></i>
+                            <h5 class="fw-bold">大会終了（集計完了）</h5>
+                        </div>
+                        <p class="small text-muted">この大会は全工程を完了し、順位および保有ポイントの付与が完了しています。</p>
+                    </div>
+
+                </div>
+            </div>
+        </div>
+    </div>
+
+</body>
+</html>

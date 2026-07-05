@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" th:replace="~{layout/base :: layout(~{::div}, ~{::title})}">
+<head>
+    <title>アカウント登録 | ASOPokeTool</title>
+</head>
+<body>
+    <div>
+        <div class="row justify-content-center my-5">
+            <div class="col-md-8 col-lg-6">
+                <div class="card card-glass text-white p-4">
+                    <h2 class="fw-bold text-center mb-3"><i class="fa-solid fa-user-plus text-primary"></i> アカウント登録</h2>
+                    <p class="text-center text-muted small mb-4">アカウントを作ると、大会エントリーがもっと快適になります！</p>
+
+                    <!-- User Benefit Icons -->
+                    <div class="row text-center mb-4 g-2">
+                        <div class="col-4">
+                            <div class="p-2 rounded bg-dark border-secondary">
+                                <i class="fa-solid fa-bolt text-warning fa-lg mb-1"></i>
+                                <div class="small" style="font-size: 0.75rem;">即エントリー</div>
+                            </div>
+                        </div>
+                        <div class="col-4">
+                            <div class="p-2 rounded bg-dark border-secondary">
+                                <i class="fa-solid fa-clock-rotate-left text-primary fa-lg mb-1"></i>
+                                <div class="small" style="font-size: 0.75rem;">戦績履歴</div>
+                            </div>
+                        </div>
+                        <div class="col-4">
+                            <div class="p-2 rounded bg-dark border-secondary">
+                                <i class="fa-solid fa-ranking-star text-success fa-lg mb-1"></i>
+                                <div class="small" style="font-size: 0.75rem;">累計ポイント</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div th:if="${error}" class="alert alert-danger" role="alert" th:text="${error}">エラー</div>
+
+                    <form th:action="@{/account/register}" method="POST">
+                        <div class="mb-3">
+                            <label for="displayName" class="form-label text-muted small">表示名（ニックネーム）</label>
+                            <input type="text" class="form-control bg-dark text-white border-secondary" id="displayName" name="displayName" required maxlength="20">
+                            <div class="form-text text-muted small mt-1">※ 他の人に公開されます。即エントリー時の名前になります。</div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="password" class="form-label text-muted small">パスワード</label>
+                            <input type="password" class="form-control bg-dark text-white border-secondary" id="password" name="password" required minlength="8" maxlength="50">
+                        </div>
+
+                        <div class="mb-4">
+                            <label for="passwordConfirm" class="form-label text-muted small">パスワード（確認用）</label>
+                            <input type="password" class="form-control bg-dark text-white border-secondary" id="passwordConfirm" name="passwordConfirm" required minlength="8" maxlength="50">
+                        </div>
+
+                        <div class="d-grid gap-2">
+                            <button type="submit" class="btn btn-primary-custom py-2"><i class="fa-solid fa-user-check"></i> 登録してはじめる</button>
+                            <a th:href="@{/account/login}" class="btn btn-outline-light btn-sm mt-2">すでにアカウントをお持ちの方（ログイン）</a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

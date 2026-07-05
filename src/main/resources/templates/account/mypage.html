@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" th:replace="~{layout/base :: layout(~{::div}, ~{::title})}">
+<head>
+    <title>マイページ | ASOPokeTool</title>
+</head>
+<body>
+    <div>
+        <div class="row">
+            <!-- Left Side: Profile info & Password change -->
+            <div class="col-lg-4 mb-4">
+                <div class="card card-glass text-white p-4">
+                    <h4 class="fw-bold mb-3"><i class="fa-solid fa-id-card text-primary"></i> 会員情報</h4>
+                    
+                    <div th:if="${param.success != null}" class="alert alert-success py-2 text-center small" role="alert">
+                        <span th:if="${param.success[0] == 'name'}">表示名を変更しました。</span>
+                        <span th:if="${param.success[0] == 'password'}">パスワードを変更しました。</span>
+                    </div>
+
+                    <div th:if="${error}" class="alert alert-danger py-2 text-center small" role="alert" th:text="${error}">エラー</div>
+
+                    <!-- Update Name Form -->
+                    <form th:action="@{/account/update-name}" method="POST" class="mb-4">
+                        <div class="mb-3">
+                            <label for="displayName" class="form-label text-muted small">現在の表示名</label>
+                            <div class="input-group">
+                                <input type="text" class="form-control bg-dark text-white border-secondary" id="displayName" name="displayName" th:value="${account.displayName}" required maxlength="20">
+                                <button class="btn btn-primary-custom btn-sm" type="submit"><i class="fa-solid fa-pen"></i> 変更</button>
+                            </div>
+                        </div>
+                    </form>
+
+                    <!-- Points Box -->
+                    <div class="p-3 bg-dark border border-secondary rounded-4 text-center my-4">
+                        <div class="small text-muted mb-1"><i class="fa-solid fa-ranking-star text-warning"></i> 保有累計ポイント</div>
+                        <h2 class="fw-bold text-warning mb-0 font-monospace" th:text="${points != null ? points.totalPoint : 0} + ' pt'">350 pt</h2>
+                    </div>
+
+                    <hr class="border-secondary my-4">
+
+                    <!-- Update Password Form -->
+                    <h5 class="fw-bold text-warning mb-3"><i class="fa-solid fa-key"></i> パスワード変更</h5>
+                    <form th:action="@{/account/update-password}" method="POST">
+                        <div class="mb-3">
+                            <label for="currentPassword" class="form-label text-muted small">現在のパスワード</label>
+                            <input type="password" class="form-control bg-dark text-white border-secondary" id="currentPassword" name="currentPassword" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="newPassword" class="form-label text-muted small">新しいパスワード</label>
+                            <input type="password" class="form-control bg-dark text-white border-secondary" id="newPassword" name="newPassword" required minlength="8" maxlength="50">
+                        </div>
+                        <div class="mb-3">
+                            <label for="newPasswordConfirm" class="form-label text-muted small">新しいパスワード（確認用）</label>
+                            <input type="password" class="form-control bg-dark text-white border-secondary" id="newPasswordConfirm" name="newPasswordConfirm" required minlength="8" maxlength="50">
+                        </div>
+                        <button type="submit" class="btn btn-secondary-custom btn-sm w-100"><i class="fa-solid fa-lock-open"></i> パスワードを更新</button>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Right Side: Past tournament histories -->
+            <div class="col-lg-8">
+                <div class="card card-glass text-white p-4">
+                    <h4 class="fw-bold mb-4 text-white"><i class="fa-solid fa-clock-rotate-left text-primary"></i> 大会参加履歴</h4>
+
+                    <div th:if="${#lists.isEmpty(histories)}" class="p-5 text-center text-muted">
+                        <i class="fa-solid fa-box-open fa-3x mb-3"></i>
+                        <p class="mb-0">過去に参加した大会はありません。</p>
+                    </div>
+
+                    <div th:unless="${#lists.isEmpty(histories)}" class="table-responsive">
+                        <table class="table table-custom text-white w-100">
+                            <thead>
+                                <tr>
+                                    <th>大会名</th>
+                                    <th>開催日</th>
+                                    <th>エントリー名</th>
+                                    <th class="text-center">最終順位</th>
+                                    <th class="text-center">獲得ポイント</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr th:each="h : ${histories}">
+                                    <td class="align-middle">
+                                        <a th:href="@{/tournament/{id}(id=${h.tournamentId})}" class="text-white fw-bold text-decoration-none hover-text-primary" th:text="${h.tournamentName}">第5回ポケカ仙台</a>
+                                    </td>
+                                    <td class="align-middle text-muted small" th:text="${h.heldDate}">2026-07-10</td>
+                                    <td class="align-middle" th:text="${h.playerName}">たろう</td>
+                                    <td class="text-center align-middle font-monospace fw-bold text-warning" th:text="${h.finalRank != null ? h.finalRank + '位' : '（不明）'}">2位</td>
+                                    <td class="text-center align-middle font-monospace text-success fw-bold" th:text="'+' + ${h.totalPoint} + ' pt'">+60 pt</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

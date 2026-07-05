@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" th:replace="~{layout/base :: layout(~{::div}, ~{::title})}">
+<head>
+    <title>チェックインQRコード | ASOPokeTool</title>
+</head>
+<body>
+    <div>
+        <a th:href="@{/tournament/{id}(id=${tournament.id})}" class="btn btn-outline-light btn-sm mb-4"><i class="fa-solid fa-arrow-left"></i> 大会詳細に戻る</a>
+
+        <div class="row justify-content-center">
+            <div class="col-md-6">
+                <div class="card card-glass text-white p-4 text-center">
+                    <h3 class="fw-bold mb-2 text-white"><i class="fa-solid fa-qrcode text-primary"></i> チェックイン用QR</h3>
+                    <p class="text-muted small mb-4" th:text="${tournament.name}"></p>
+
+                    <!-- QR Code Image -->
+                    <div class="my-4 p-3 bg-white d-inline-block rounded-4" style="box-shadow: 0 0 20px rgba(255,255,255,0.1);">
+                        <img th:src="@{/checkin/qr/{id}/image(id=${entry.id})}" alt="Checkin QR Code" class="img-fluid" style="width: 240px; height: 240px; display: block;">
+                    </div>
+
+                    <h4 class="fw-bold text-warning mb-1" th:text="${entry.playerName}">たろう</h4>
+                    <p class="small text-muted mb-4">選手登録名</p>
+
+                    <!-- Verification Status banner -->
+                    <div class="p-3 rounded-3" th:classappend="${entry.checkinFlg ? 'bg-success-subtle border border-success text-success' : 'bg-warning-subtle border border-warning text-warning'}">
+                        <div th:if="${entry.checkinFlg}">
+                            <i class="fa-solid fa-circle-check fa-lg me-2"></i> <strong>チェックイン完了済み！</strong>
+                            <div class="small mt-1 text-muted" th:text="'チェックイン時刻: ' + ${#temporals.format(entry.checkinAt, 'yyyy/MM/dd HH:mm')}">時刻</div>
+                        </div>
+                        <div th:unless="${entry.checkinFlg}">
+                            <i class="fa-solid fa-circle-exclamation fa-lg me-2"></i> <strong>未チェックイン</strong>
+                            <div class="small mt-1 text-muted">受付のQRコードリーダーに提示してください。</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

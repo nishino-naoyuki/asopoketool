@@ -1,0 +1,113 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.asopoketool.mapper.EntryMapper">
+
+    <resultMap id="EntryResultMap" type="com.asopoketool.model.Entry">
+        <id property="id" column="id"/>
+        <result property="tournamentId" column="tournament_id"/>
+        <result property="playerName" column="player_name"/>
+        <result property="accountId" column="account_id"/>
+        <result property="sessionToken" column="session_token"/>
+        <result property="qrToken" column="qr_token"/>
+        <result property="checkinFlg" column="checkin_flg"/>
+        <result property="checkinAt" column="checkin_at"/>
+        <result property="dropoutFlg" column="dropout_flg"/>
+        <result property="dropoutAt" column="dropout_at"/>
+        <result property="manualEntryFlg" column="manual_entry_flg"/>
+        <result property="createdAt" column="created_at"/>
+        <result property="updatedAt" column="updated_at"/>
+        <association property="account" javaType="com.asopoketool.model.PlayerAccount">
+            <id property="id" column="account_id"/>
+            <result property="displayName" column="display_name"/>
+        </association>
+    </resultMap>
+
+    <select id="findByTournamentId" resultMap="EntryResultMap">
+        SELECT e.*, a.display_name
+        FROM entry e
+        LEFT JOIN player_account a ON e.account_id = a.id
+        WHERE e.tournament_id = #{tournamentId}
+        ORDER BY e.created_at ASC
+    </select>
+
+    <select id="findActiveByTournamentId" resultMap="EntryResultMap">
+        SELECT e.*, a.display_name
+        FROM entry e
+        LEFT JOIN player_account a ON e.account_id = a.id
+        WHERE e.tournament_id = #{tournamentId} AND e.checkin_flg = 1 AND e.dropout_flg = 0
+    </select>
+
+    <select id="findById" resultMap="EntryResultMap">
+        SELECT e.*, a.display_name
+        FROM entry e
+        LEFT JOIN player_account a ON e.account_id = a.id
+        WHERE e.id = #{id}
+    </select>
+
+    <select id="findByTournamentAndSession" resultMap="EntryResultMap">
+        SELECT e.*, a.display_name
+        FROM entry e
+        LEFT JOIN player_account a ON e.account_id = a.id
+        WHERE e.tournament_id = #{tournamentId} AND e.session_token = #{sessionToken}
+        LIMIT 1
+    </select>
+
+    <select id="findByTournamentAndAccount" resultMap="EntryResultMap">
+        SELECT e.*, a.display_name
+        FROM entry e
+        LEFT JOIN player_account a ON e.account_id = a.id
+        WHERE e.tournament_id = #{tournamentId} AND e.account_id = #{accountId}
+        LIMIT 1
+    </select>
+
+    <select id="findByQrToken" resultMap="EntryResultMap">
+        SELECT e.*, a.display_name
+        FROM entry e
+        LEFT JOIN player_account a ON e.account_id = a.id
+        WHERE e.qr_token = #{qrToken}
+        LIMIT 1
+    </select>
+
+    <insert id="insert" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO entry (tournament_id, player_name, account_id, session_token, qr_token, checkin_flg, checkin_at, dropout_flg, dropout_at, manual_entry_flg, created_at, updated_at)
+        VALUES (#{tournamentId}, #{playerName}, #{accountId}, #{sessionToken}, #{qrToken}, #{checkinFlg}, #{checkinAt}, #{dropoutFlg}, #{dropoutAt}, #{manualEntryFlg}, NOW(), NOW())
+    </insert>
+
+    <update id="update">
+        UPDATE entry
+        SET player_name = #{playerName}, account_id = #{accountId}, session_token = #{sessionToken},
+            qr_token = #{qrToken}, checkin_flg = #{checkinFlg}, checkin_at = #{checkinAt},
+            dropout_flg = #{dropoutFlg}, dropout_at = #{dropoutAt}, manual_entry_flg = #{manualEntryFlg},
+            updated_at = NOW()
+        WHERE id = #{id}
+    </update>
+
+    <update id="checkin">
+        UPDATE entry SET checkin_flg = 1, checkin_at = #{checkinAt}, updated_at = NOW() WHERE id = #{id}
+    </update>
+
+    <update id="dropout">
+        UPDATE entry SET dropout_flg = 1, dropout_at = #{dropoutAt}, updated_at = NOW() WHERE id = #{id}
+    </update>
+
+    <update id="cancelDropout">
+        UPDATE entry SET dropout_flg = 0, dropout_at = NULL, updated_at = NOW() WHERE id = #{id}
+    </update>
+
+    <delete id="cancelEntry">
+        DELETE FROM entry WHERE id = #{id}
+    </delete>
+
+    <select id="findByAccountId" resultMap="EntryResultMap">
+        SELECT e.*, a.display_name
+        FROM entry e
+        LEFT JOIN player_account a ON e.account_id = a.id
+        WHERE e.account_id = #{accountId}
+        ORDER BY e.created_at DESC
+    </select>
+
+    <delete id="deleteByTournamentId">
+        DELETE FROM entry WHERE tournament_id = #{tournamentId}
+    </delete>
+
+</mapper>

@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.asopoketool.mapper.PointMapper">
+
+    <select id="findAllOrderByPoint" resultType="com.asopoketool.model.PlayerCumulativePoint">
+        SELECT p.*, a.display_name AS display_name
+        FROM player_cumulative_point p
+        JOIN player_account a ON p.account_id = a.id
+        ORDER BY p.total_point DESC
+    </select>
+
+    <select id="findByAccountId" resultType="com.asopoketool.model.PlayerCumulativePoint">
+        SELECT * FROM player_cumulative_point WHERE account_id = #{accountId}
+    </select>
+
+    <insert id="upsertCumulativePoint">
+        INSERT INTO player_cumulative_point (account_id, total_point, updated_at)
+        VALUES (#{accountId}, #{addPoint}, NOW())
+        ON DUPLICATE KEY UPDATE 
+            total_point = total_point + #{addPoint},
+            updated_at = NOW()
+    </insert>
+
+    <insert id="insertHistory" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO point_history (tournament_id, account_id, entry_id, player_name, final_rank, prize_point, participation_point, total_point, awarded_at)
+        VALUES (#{tournamentId}, #{accountId}, #{entryId}, #{playerName}, #{finalRank}, #{prizePoint}, #{participationPoint}, #{totalPoint}, NOW())
+    </insert>
+
+    <select id="findHistoryByAccountId" resultType="com.asopoketool.model.PointHistory">
+        SELECT h.*, t.name AS tournament_name, t.held_date AS held_date
+        FROM point_history h
+        JOIN tournament t ON h.tournament_id = t.id
+        WHERE h.account_id = #{accountId}
+        ORDER BY t.held_date DESC
+    </select>
+
+    <select id="findHistoryByTournamentId" resultType="com.asopoketool.model.PointHistory">
+        SELECT * FROM point_history WHERE tournament_id = #{tournamentId} ORDER BY total_point DESC
+    </select>
+
+    <delete id="deleteHistoryByTournamentId">
+        DELETE FROM point_history WHERE tournament_id = #{tournamentId}
+    </delete>
+
+</mapper>

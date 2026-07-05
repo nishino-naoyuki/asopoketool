@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" th:replace="~{layout/base :: layout(~{::div}, ~{::title})}">
+<head>
+    <title>エントリー名の入力 | ASOPokeTool</title>
+</head>
+<body>
+    <div>
+        <a th:href="@{/tournament/{id}(id=${tournament.id})}" class="btn btn-outline-light btn-sm mb-4"><i class="fa-solid fa-arrow-left"></i> 戻る</a>
+
+        <div class="row justify-content-center">
+            <div class="col-md-6">
+                <div class="card card-glass text-white p-4">
+                    <h3 class="fw-bold text-center mb-2"><i class="fa-solid fa-user-tag text-primary"></i> エントリー名の入力</h3>
+                    <p class="text-center text-muted small mb-4" th:text="${tournament.name} + ' にエントリーします。'"></p>
+
+                    <div th:if="${error}" class="alert alert-danger" role="alert" th:text="${error}">エラー</div>
+
+                    <form th:action="@{/tournament/{id}/enter-named(id=${tournament.id})}" method="POST">
+                        <div class="mb-4">
+                            <label for="playerName" class="form-label text-muted small">この大会での登録名</label>
+                            <input type="text" class="form-control bg-dark text-white border-secondary py-2" id="playerName" name="playerName" th:value="${defaultName}" required maxlength="20">
+                            <div class="form-text text-muted small mt-2">
+                                <i class="fa-solid fa-circle-info"></i> アカウント名とは異なる名前で大会にエントリーすることができます。
+                            </div>
+                        </div>
+
+                        <div class="d-grid gap-2">
+                            <button type="submit" class="btn btn-primary-custom py-2">
+                                <i class="fa-solid fa-circle-check"></i> この名前でエントリーする
+                            </button>
+                            <a th:href="@{/tournament/{id}(id=${tournament.id})}" class="btn btn-outline-light">キャンセル</a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

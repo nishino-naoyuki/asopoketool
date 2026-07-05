@@ -1,0 +1,71 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.asopoketool.mapper.BracketMapper">
+
+    <select id="findByTournamentId" resultType="com.asopoketool.model.BracketTournament">
+        SELECT * FROM bracket_tournament WHERE tournament_id = #{tournamentId} ORDER BY group_number ASC
+    </select>
+
+    <select id="findById" resultType="com.asopoketool.model.BracketTournament">
+        SELECT * FROM bracket_tournament WHERE id = #{id}
+    </select>
+
+    <insert id="insertBracketTournament" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO bracket_tournament (tournament_id, group_number, group_name, rank_from, rank_to)
+        VALUES (#{tournamentId}, #{groupNumber}, #{groupName}, #{rankFrom}, #{rankTo})
+    </insert>
+
+    <insert id="insertBracketMatch" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO bracket_match (bracket_tournament_id, round_number, match_number, player1_entry_id, player2_entry_id, winner_entry_id, is_bye)
+        VALUES (#{bracketTournamentId}, #{roundNumber}, #{matchNumber}, #{player1EntryId}, #{player2EntryId}, #{winnerEntryId}, #{isBye})
+    </insert>
+
+    <update id="updateBracketMatchWinner">
+        UPDATE bracket_match 
+        SET winner_entry_id = #{winnerEntryId}
+        WHERE id = #{id}
+    </update>
+
+    <update id="updateBracketMatch">
+        UPDATE bracket_match
+        SET player1_entry_id = #{player1EntryId},
+            player2_entry_id = #{player2EntryId},
+            winner_entry_id = #{winnerEntryId},
+            is_bye = #{isBye}
+        WHERE id = #{id}
+    </update>
+
+    <select id="findMatchesByBracketId" resultType="com.asopoketool.model.BracketMatch">
+        SELECT m.*,
+               e1.player_name AS player1_name,
+               e2.player_name AS player2_name,
+               ew.player_name AS winner_name
+        FROM bracket_match m
+        LEFT JOIN entry e1 ON m.player1_entry_id = e1.id
+        LEFT JOIN entry e2 ON m.player2_entry_id = e2.id
+        LEFT JOIN entry ew ON m.winner_entry_id = ew.id
+        WHERE m.bracket_tournament_id = #{bracketTournamentId}
+        ORDER BY m.round_number ASC, m.match_number ASC
+    </select>
+
+    <delete id="deleteByTournamentId">
+        DELETE FROM bracket_tournament WHERE tournament_id = #{tournamentId}
+    </delete>
+
+    <select id="findMatchById" resultType="com.asopoketool.model.BracketMatch">
+        SELECT m.*,
+               e1.player_name AS player1_name,
+               e2.player_name AS player2_name,
+               ew.player_name AS winner_name
+        FROM bracket_match m
+        LEFT JOIN entry e1 ON m.player1_entry_id = e1.id
+        LEFT JOIN entry e2 ON m.player2_entry_id = e2.id
+        LEFT JOIN entry ew ON m.winner_entry_id = ew.id
+        WHERE m.id = #{id}
+    </select>
+
+    <delete id="deleteMatchesByTournamentId">
+        DELETE FROM bracket_match WHERE bracket_tournament_id IN (SELECT id FROM bracket_tournament WHERE tournament_id = #{tournamentId})
+    </delete>
+
+</mapper>

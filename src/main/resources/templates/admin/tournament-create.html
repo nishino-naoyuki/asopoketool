@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>大会作成 | ASOPokeTool</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
+    <link th:href="@{/css/common.css}" rel="stylesheet">
+</head>
+<body>
+
+    <nav class="navbar navbar-expand-lg navbar-dark navbar-custom sticky-top">
+        <div class="container">
+            <a class="navbar-brand navbar-brand-custom text-warning" th:href="@{/admin}">
+                <i class="fa-solid fa-screwdriver-wrench"></i> ASOPokeTool 管理画面
+            </a>
+            <div class="collapse navbar-collapse" id="adminNavbar">
+                <ul class="navbar-nav ms-auto">
+                    <li class="nav-item">
+                        <a class="btn btn-outline-danger btn-sm px-3" th:href="@{/admin/logout}"><i class="fa-solid fa-right-from-bracket"></i> ログアウト</a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container my-4">
+        <a th:href="@{/admin}" class="btn btn-outline-light btn-sm mb-4"><i class="fa-solid fa-arrow-left"></i> ダッシュボードに戻る</a>
+
+        <div class="row justify-content-center">
+            <div class="col-lg-8">
+                <div class="card card-glass text-white p-4">
+                    <h2 class="fw-bold mb-4 text-white"><i class="fa-solid fa-circle-plus text-primary"></i> 大会の新規作成</h2>
+
+                    <form th:action="@{/admin/tournament/create}" method="POST">
+                        
+                        <!-- Basic Info -->
+                        <h4 class="text-warning mb-3 border-bottom border-secondary pb-2"><i class="fa-solid fa-circle-info"></i> 基本情報</h4>
+                        <div class="row g-3 mb-4">
+                            <div class="col-12">
+                                <label for="name" class="form-label text-light fw-bold">大会名 <span class="badge bg-danger ms-2 small">必須</span></label>
+                                <input type="text" class="form-control bg-dark text-white border-secondary" id="name" name="name" placeholder="例: 第5回 ポケカ仙台オープン" required>
+                            </div>
+                            <div class="col-md-6">
+                                <label for="heldDate" class="form-label text-light fw-bold">開催日 <span class="badge bg-danger ms-2 small">必須</span></label>
+                                <input type="date" class="form-control bg-dark text-white border-secondary" id="heldDate" name="heldDate" required>
+                            </div>
+                            <div class="col-md-6">
+                                <label for="capacity" class="form-label text-light fw-bold">定員（名） <span class="badge bg-danger ms-2 small">必須</span></label>
+                                <input type="number" class="form-control bg-dark text-white border-secondary" id="capacity" name="capacity" value="32" min="2" required>
+                            </div>
+                            <div class="col-md-6">
+                                <label for="venue" class="form-label text-light fw-bold">会場 <span class="badge bg-secondary ms-2 small">任意</span></label>
+                                <input type="text" class="form-control bg-dark text-white border-secondary" id="venue" name="venue" placeholder="例: 〇〇コミュニティセンター">
+                            </div>
+                            <div class="col-md-6">
+                                <label for="totalRounds" class="form-label text-light fw-bold">スイスドロー最大ラウンド数 <span class="badge bg-danger ms-2 small">必須</span></label>
+                                <input type="number" class="form-control bg-dark text-white border-secondary" id="totalRounds" name="totalRounds" value="5" min="1" required>
+                            </div>
+                            <div class="col-12">
+                                <label for="description" class="form-label text-light fw-bold">大会概要 <span class="badge bg-secondary ms-2 small">任意</span></label>
+                                <textarea class="form-control bg-dark text-white border-secondary" id="description" name="description" rows="3" placeholder="ルール、持ち物などの詳細"></textarea>
+                            </div>
+                        </div>
+
+                        <!-- Win/Lose settings -->
+                        <h4 class="text-warning mb-3 border-bottom border-secondary pb-2"><i class="fa-solid fa-star-half-stroke"></i> 勝ち点・ポイント設定</h4>
+                        <div class="row g-3 mb-4">
+                            <div class="col-md-4">
+                                <label for="winPoint" class="form-label text-light fw-bold">勝利時の勝ち点 <span class="badge bg-danger ms-2 small">必須</span></label>
+                                <input type="number" class="form-control bg-dark text-white border-secondary" id="winPoint" name="winPoint" value="3" min="0" required>
+                            </div>
+                            <div class="col-md-4">
+                                <label for="losePoint" class="form-label text-light fw-bold">敗北時の勝ち点 <span class="badge bg-danger ms-2 small">必須</span></label>
+                                <input type="number" class="form-control bg-dark text-white border-secondary" id="losePoint" name="losePoint" value="0" min="0" required>
+                            </div>
+                            <div class="col-md-4">
+                                <label for="participationPoint" class="form-label text-light fw-bold">全員に付与する参加ポイント <span class="badge bg-danger ms-2 small">必須</span></label>
+                                <input type="number" class="form-control bg-dark text-white border-secondary" id="participationPoint" name="participationPoint" value="1" min="0" required>
+                            </div>
+                            <div class="col-md-6">
+                                <label for="bracketGroupSize" class="form-label text-light fw-bold">決勝トーナメント1グループの人数 <span class="badge bg-danger ms-2 small">必須</span></label>
+                                <input type="number" class="form-control bg-dark text-white border-secondary" id="bracketGroupSize" name="bracketGroupSize" value="8" min="2" required>
+                            </div>
+                        </div>
+
+                        <!-- Prize Points table inputs -->
+                        <h4 class="text-warning mb-3 border-bottom border-secondary pb-2"><i class="fa-solid fa-award"></i> 順位賞品ポイント設定 (1位〜16位)</h4>
+                        <p class="text-muted small mb-3">各順位で付与する追加ポイントを入力してください。</p>
+                        
+                        <div class="row row-cols-2 row-cols-md-4 g-2 mb-4">
+                            <div class="col" th:each="i : ${#numbers.sequence(1, 16)}">
+                                <div class="input-group input-group-sm">
+                                    <span class="input-group-text bg-secondary text-white border-secondary" th:text="${i} + '位'" style="width: 55px;">1位</span>
+                                    <!-- Dynamic setting values -->
+                                    <input type="number" class="form-control bg-dark text-white border-secondary" 
+                                           th:name="'prize_point_' + ${i}" 
+                                           th:value="${i == 1 ? 100 : (i == 2 ? 60 : (i == 3 ? 40 : (i == 4 ? 30 : (i &lt;= 8 ? 10 : (i &lt;= 16 ? 1 : 0)))))}" min="0" required>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Submit Buttons -->
+                        <div class="d-grid gap-2 mt-5">
+                            <button type="submit" class="btn btn-primary-custom py-2"><i class="fa-solid fa-save"></i> 大会を作成する</button>
+                            <a th:href="@{/admin}" class="btn btn-outline-light">キャンセル</a>
+                        </div>
+
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const dateInput = document.getElementById('heldDate');
+            if (dateInput) {
+                dateInput.addEventListener('click', function() {
+                    if (typeof this.showPicker === 'function') {
+                        this.showPicker();
+                    }
+                });
+            }
+        });
+    </script>
+</body>
+</html>

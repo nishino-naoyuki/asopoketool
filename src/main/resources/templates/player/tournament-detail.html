@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" th:replace="~{layout/base :: layout(~{::div}, ~{::title})}">
+<head>
+    <title th:text="${tournament.name} + ' | ASOPokeTool'">大会詳細 | ASOPokeTool</title>
+</head>
+<body>
+    <div>
+        <a th:href="@{/}" class="btn btn-outline-light btn-sm mb-4"><i class="fa-solid fa-arrow-left"></i> 大会一覧に戻る</a>
+
+        <div class="row">
+            <div class="col-lg-8">
+                <!-- Tournament Detail Card -->
+                <div class="card card-glass text-white p-4 mb-4">
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <h2 class="fw-bold text-white mb-0" th:text="${tournament.name}">大会名</h2>
+                        <span class="badge-status" 
+                              th:classappend="${tournament.status == 'ENTRY' ? 'badge-entry' : (tournament.status == 'IN_PROGRESS' ? 'badge-in-progress' : (tournament.status == 'BRACKET' ? 'badge-bracket' : 'badge-finished'))}"
+                              th:text="${tournament.status == 'ENTRY' ? 'エントリー受付中' : (tournament.status == 'IN_PROGRESS' ? 'スイスドロー進行中' : (tournament.status == 'BRACKET' ? '決勝T進行中' : '大会終了'))}">
+                            ステータス
+                        </span>
+                    </div>
+
+                    <p class="text-muted" th:text="${tournament.description}">大会説明文がここに入ります。</p>
+
+                    <hr class="border-secondary my-4">
+
+                    <h4 class="mb-3 text-warning"><i class="fa-solid fa-circle-info"></i> 開催情報</h4>
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <p class="mb-1 text-muted"><i class="fa-solid fa-location-dot text-primary"></i> 開催場所</p>
+                            <p class="fw-bold" th:text="${tournament.venue != null ? tournament.venue : '未定'}">会場</p>
+                        </div>
+                        <div class="col-md-6">
+                            <p class="mb-1 text-muted"><i class="fa-solid fa-calendar text-primary"></i> 開催日</p>
+                            <p class="fw-bold" th:text="${tournament.heldDate}">2026-07-10</p>
+                        </div>
+                        <div class="col-md-6">
+                            <p class="mb-1 text-muted"><i class="fa-solid fa-user-group text-primary"></i> 定員</p>
+                            <p class="fw-bold"><span th:text="${entryCount}">0</span> / <span th:text="${tournament.capacity}">32</span> 名</p>
+                        </div>
+                        <div class="col-md-6" th:if="${tournament.status != 'ENTRY'}">
+                            <p class="mb-1 text-muted"><i class="fa-solid fa-user-check text-primary"></i> チェックイン済み</p>
+                            <p class="fw-bold"><span th:text="${checkedInCount}">0</span> 名</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Navigation menu after Swiss draw starts -->
+                <div class="card card-glass text-white p-4 mb-4" th:if="${tournament.status != 'ENTRY'}">
+                    <h4 class="mb-3 text-warning"><i class="fa-solid fa-compass"></i> 大会メニュー</h4>
+                    <div class="d-flex flex-wrap gap-3">
+                        <a th:href="@{/tournament/{id}/matching(id=${tournament.id})}" class="btn btn-secondary-custom"><i class="fa-solid fa-gamepad"></i> 対戦表を見る</a>
+                        <a th:href="@{/tournament/{id}/ranking(id=${tournament.id})}" class="btn btn-outline-light"><i class="fa-solid fa-ranking-star"></i> ランキング</a>
+                        <a th:href="@{/tournament/{id}/bracket(id=${tournament.id})}" class="btn btn-outline-light" th:if="${tournament.status == 'BRACKET' || tournament.status == 'FINISHED'}"><i class="fa-solid fa-sitemap"></i> 決勝トーナメント</a>
+                        <a th:href="@{/tournament/{id}/timer(id=${tournament.id})}" target="_blank" class="btn btn-outline-light"><i class="fa-solid fa-clock"></i> 対戦タイマー投影</a>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-lg-4">
+                <!-- Registration Flow -->
+                <div class="card card-glass text-white p-4">
+                    <h3 class="fw-bold mb-4 text-white"><i class="fa-solid fa-pen-to-square text-primary"></i> エントリー状況</h3>
+
+                    <div th:if="${error}" class="alert alert-danger" role="alert" th:text="${error}">エラー</div>
+
+                    <!-- 1. Already Registered -->
+                    <div th:if="${myEntry != null}">
+                        <div class="alert alert-success text-center py-4 rounded-3" role="alert">
+                            <i class="fa-solid fa-circle-check fa-3x mb-2 text-success"></i>
+                            <h5 class="fw-bold">エントリー完了済み</h5>
+                            <p class="mb-0 small">登録名: <span class="fw-bold" th:text="${myEntry.playerName}">たろう</span></p>
+                        </div>
+
+                        <div class="d-grid gap-2 mt-3">
+                            <a th:href="@{/checkin/qr/{id}(id=${myEntry.id})}" class="btn btn-primary-custom py-2"><i class="fa-solid fa-qrcode"></i> チェックインQRを表示</a>
+                            
+                            <form th:action="@{/tournament/{id}/cancel-entry(id=${tournament.id})}" method="POST" onsubmit="return confirm('本当にエントリーを辞退しますか？');" th:if="${tournament.status == 'ENTRY'}">
+                                <input type="hidden" name="entryId" th:value="${myEntry.id}">
+                                <button type="submit" class="btn btn-outline-danger w-100 btn-sm"><i class="fa-solid fa-trash-can"></i> エントリーを辞退する</button>
+                            </form>
+                        </div>
+                    </div>
+
+                    <!-- 2. Not Registered & Status is ENTRY -->
+                    <div th:if="${myEntry == null && tournament.status == 'ENTRY'}">
+                        <!-- 2.1 Logged In User Options -->
+                        <div th:if="${isLoggedIn}">
+                            <div class="d-grid gap-3">
+                                <form th:action="@{/tournament/{id}/enter-quick(id=${tournament.id})}" method="POST">
+                                    <button type="submit" class="btn btn-primary-custom w-100 py-3">
+                                        <i class="fa-solid fa-bolt"></i> <strong>即エントリー</strong>
+                                        <div class="small fw-normal mt-1" th:text="'「' + ${currentAccount.displayName} + '」でエントリー'">「ユーザー名」でエントリー</div>
+                                    </button>
+                                </form>
+                                <a th:href="@{/tournament/{id}/entry-name(id=${tournament.id})}" class="btn btn-outline-light w-100 py-2">
+                                    <i class="fa-solid fa-user-tag"></i> エントリー名を変えてエントリー
+                                </a>
+                            </div>
+                        </div>
+
+                        <!-- 2.2 Guest Options -->
+                        <div th:unless="${isLoggedIn}">
+                            <form th:action="@{/tournament/{id}/enter(id=${tournament.id})}" method="POST">
+                                <div class="mb-3">
+                                    <label for="playerName" class="form-label text-muted small">登録名（ニックネーム）</label>
+                                    <input type="text" class="form-control bg-dark text-white border-secondary" id="playerName" name="playerName" placeholder="例: たろう" required maxlength="20">
+                                </div>
+                                <button type="submit" class="btn btn-primary-custom w-100 py-2"><i class="fa-solid fa-right-to-bracket"></i> エントリーする</button>
+                            </form>
+
+                            <hr class="border-secondary my-4">
+
+                            <div class="text-center">
+                                <p class="small text-muted mb-2">アカウントを作って簡単エントリー！</p>
+                                <a th:href="@{/account/register}" class="btn btn-outline-light btn-sm w-100"><i class="fa-solid fa-user-plus"></i> 会員アカウントを作成</a>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 3. Not Registered & Closed -->
+                    <div th:if="${myEntry == null && tournament.status != 'ENTRY'}">
+                        <div class="alert alert-secondary text-center py-4" role="alert">
+                            <i class="fa-solid fa-lock fa-2x mb-2 text-muted"></i>
+                            <p class="mb-0">この大会のエントリー受付は終了しました。</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

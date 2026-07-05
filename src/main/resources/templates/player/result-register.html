@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" th:replace="~{layout/base :: layout(~{::div}, ~{::title})}">
+<head>
+    <title>対戦結果の報告 | ASOPokeTool</title>
+</head>
+<body>
+    <div>
+        <a th:href="@{/tournament/{id}/matching(id=${tournament.id})}" class="btn btn-outline-light btn-sm mb-4"><i class="fa-solid fa-arrow-left"></i> 戻る</a>
+
+        <div class="row justify-content-center">
+            <div class="col-md-8 col-lg-6">
+                <div class="card card-glass text-white p-4">
+                    <h3 class="fw-bold text-center mb-2 text-white"><i class="fa-solid fa-trophy text-warning"></i> 対戦結果の報告</h3>
+                    <p class="text-center text-muted small mb-4">卓 <span th:text="${match.tableNumber}"></span> の勝者を選択してください。</p>
+
+                    <div th:if="${error}" class="alert alert-danger" role="alert" th:text="${error}">エラー</div>
+
+                    <form th:action="@{/tournament/{id}/result/{matchId}(id=${tournament.id}, matchId=${match.id})}" method="POST" id="resultForm">
+                        <input type="hidden" name="winnerEntryId" id="winnerEntryId" value="">
+
+                        <div class="row g-3 mb-4">
+                            <!-- Player 1 Card -->
+                            <div class="col-6">
+                                <div class="card bg-dark border-secondary p-3 text-center cursor-pointer h-100 hover-border-primary" 
+                                     th:onclick="'selectWinner(' + ${match.player1EntryId} + ', this)'" style="cursor: pointer; border-radius: 12px;">
+                                    <i class="fa-solid fa-user fa-2x mb-2 text-muted icon-winner"></i>
+                                    <h5 class="fw-bold mb-0 text-white" th:text="${match.player1Name}">先手選手</h5>
+                                    <span class="badge bg-secondary mt-2">先手</span>
+                                </div>
+                            </div>
+                            <!-- Player 2 Card -->
+                            <div class="col-6">
+                                <div class="card bg-dark border-secondary p-3 text-center cursor-pointer h-100 hover-border-primary" 
+                                     th:onclick="'selectWinner(' + ${match.player2EntryId} + ', this)'" style="cursor: pointer; border-radius: 12px;">
+                                    <i class="fa-solid fa-user fa-2x mb-2 text-muted icon-winner"></i>
+                                    <h5 class="fw-bold mb-0 text-white" th:text="${match.player2Name}">後手選手</h5>
+                                    <span class="badge bg-secondary mt-2">後手</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="d-grid gap-2">
+                            <button type="submit" class="btn btn-primary-custom py-2" id="submitBtn" disabled>
+                                <i class="fa-solid fa-circle-check"></i> 結果を送信する
+                            </button>
+                            <a th:href="@{/tournament/{id}/matching(id=${tournament.id})}" class="btn btn-outline-light">キャンセル</a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Script to handle custom visual card selection -->
+    <script>
+        function selectWinner(entryId, element) {
+            // Remove selection borders and active badges from all cards
+            document.querySelectorAll('.hover-border-primary').forEach(card => {
+                card.style.borderColor = 'rgba(255, 255, 255, 0.12)';
+                card.style.background = 'rgba(0, 0, 0, 0.2)';
+                card.querySelector('.icon-winner').className = "fa-solid fa-user fa-2x mb-2 text-muted icon-winner";
+            });
+
+            // Highlight selected card
+            element.style.borderColor = '#FF6B35';
+            element.style.background = 'rgba(255, 107, 53, 0.08)';
+            element.querySelector('.icon-winner').className = "fa-solid fa-trophy fa-2x mb-2 text-warning icon-winner";
+
+            // Set hidden field and enable submit button
+            document.getElementById('winnerEntryId').value = entryId;
+            document.getElementById('submitBtn').removeAttribute('disabled');
+        }
+    </script>
+</body>
+</html>

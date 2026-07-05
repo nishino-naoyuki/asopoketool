@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>棄権管理 | ASOPokeTool</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
+    <link th:href="@{/css/common.css}" rel="stylesheet">
+</head>
+<body>
+
+    <nav class="navbar navbar-expand-lg navbar-dark navbar-custom sticky-top">
+        <div class="container">
+            <a class="navbar-brand navbar-brand-custom text-warning" th:href="@{/admin}">
+                <i class="fa-solid fa-screwdriver-wrench"></i> ASOPokeTool 管理画面
+            </a>
+            <div class="collapse navbar-collapse" id="adminNavbar">
+                <ul class="navbar-nav ms-auto">
+                    <li class="nav-item">
+                        <a class="btn btn-outline-danger btn-sm px-3" th:href="@{/admin/logout}"><i class="fa-solid fa-right-from-bracket"></i> ログアウト</a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container my-4">
+        <a th:href="@{/admin/tournament/{id}(id=${tournament.id})}" class="btn btn-outline-light btn-sm mb-4"><i class="fa-solid fa-arrow-left"></i> 大会管理に戻る</a>
+
+        <div class="mb-4 text-white">
+            <h2 class="fw-bold mb-1" th:text="${tournament.name} + ' - 棄権（ドロップ）管理'">棄権管理</h2>
+            <p class="text-muted mb-0">棄権した選手は、次回ラウンド以降のマッチング（スイスドローおよび決勝T）から自動で除外されます。</p>
+        </div>
+
+        <div class="card card-glass text-white p-4">
+            <div class="table-responsive">
+                <table class="table table-custom text-white w-100">
+                    <thead>
+                        <tr>
+                            <th>選手登録名</th>
+                            <th>アカウント名</th>
+                            <th class="text-center">チェックイン状況</th>
+                            <th class="text-center">現在のステータス</th>
+                            <th class="text-center">操作</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr th:each="e : ${entries}">
+                            <td class="align-middle fw-bold" th:text="${e.playerName}">登録名</td>
+                            <td class="align-middle text-muted" th:text="${e.account != null ? e.account.displayName : '（ゲスト）'}">アカウント</td>
+                            <td class="text-center align-middle">
+                                <span class="badge" th:classappend="${e.checkinFlg ? 'bg-success' : 'bg-secondary'}" th:text="${e.checkinFlg ? '完了' : '未チェック'}">未</span>
+                            </td>
+                            <td class="text-center align-middle">
+                                <span class="badge" th:classappend="${e.dropoutFlg ? 'bg-danger' : 'bg-success'}" th:text="${e.dropoutFlg ? '🏳 棄権済み' : '✅ 参加中'}">参加中</span>
+                            </td>
+                            <td class="text-center align-middle">
+                                <!-- Process Dropout -->
+                                <form th:action="@{/admin/tournament/{id}/dropout/{entryId}(id=${tournament.id}, entryId=${e.id})}" method="POST" th:if="${!e.dropoutFlg}" onsubmit="return confirm('この選手を棄権（ドロップ）させますか？\n次回以降マッチングされなくなります。');">
+                                    <button type="submit" class="btn btn-danger-custom btn-sm"><i class="fa-solid fa-user-slash"></i> 棄権させる</button>
+                                </form>
+                                <!-- Cancel Dropout -->
+                                <form th:action="@{/admin/tournament/{id}/dropout/{entryId}/cancel(id=${tournament.id}, entryId=${e.id})}" method="POST" th:if="${e.dropoutFlg}">
+                                    <button type="submit" class="btn btn-outline-light btn-sm"><i class="fa-solid fa-rotate-left"></i> 棄権を取り消す</button>
+                                </form>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+</body>
+</html>

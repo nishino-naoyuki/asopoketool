@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.asopoketool.mapper.TournamentRoundMapper">
+
+    <select id="findById" resultType="com.asopoketool.model.TournamentRound">
+        SELECT * FROM tournament_round WHERE id = #{id}
+    </select>
+
+    <select id="findByTournamentAndRound" resultType="com.asopoketool.model.TournamentRound">
+        SELECT * FROM tournament_round WHERE tournament_id = #{tournamentId} AND round_number = #{roundNumber}
+        LIMIT 1
+    </select>
+
+    <select id="findByTournamentId" resultType="com.asopoketool.model.TournamentRound">
+        SELECT * FROM tournament_round WHERE tournament_id = #{tournamentId} ORDER BY round_number ASC
+    </select>
+
+    <insert id="insert" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO tournament_round (tournament_id, round_number, status, started_at, finished_at)
+        VALUES (#{tournamentId}, #{roundNumber}, #{status}, #{startedAt}, #{finishedAt})
+    </insert>
+
+    <update id="finish">
+        UPDATE tournament_round SET status = 'FINISHED', finished_at = #{finishedAt} WHERE id = #{id}
+    </update>
+
+</mapper>

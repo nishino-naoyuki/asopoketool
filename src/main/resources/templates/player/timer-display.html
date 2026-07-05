@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>対戦タイマー | ASOPokeTool</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
+    <link th:href="@{/css/common.css}" rel="stylesheet">
+    <style>
+        body {
+            overflow: hidden;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            background: radial-gradient(circle at center, #2b2b5c 0%, #080811 100%);
+            background-size: cover;
+            background-position: center;
+            background-repeat: no-repeat;
+        }
+        .timer-glow {
+            text-shadow: 0 0 50px rgba(255, 107, 53, 0.6);
+        }
+        .progress-fs {
+            height: 25px;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 50px;
+            border: 1px solid rgba(255,255,255,0.1);
+        }
+    </style>
+</head>
+<body th:style="${timerSetting.bgImagePath != null} ? 'background-image: linear-gradient(rgba(8, 8, 17, 0.75), rgba(8, 8, 17, 0.75)), url(' + ${timerSetting.bgImagePath} + ');' : ''">
+
+    <!-- Click to Enable Audio Overlay -->
+    <div id="audioActivationOverlay" style="position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(8, 8, 17, 0.96); z-index: 9999; display: flex; flex-direction: column; align-items: center; justify-content: center; cursor: pointer;">
+        <div class="text-center p-5 card-glass" style="max-width: 500px; background: rgba(255,255,255,0.07);">
+            <i class="fa-solid fa-volume-high fa-4x text-warning mb-4" style="filter: drop-shadow(0 0 10px rgba(255,215,0,0.5));"></i>
+            <h3 class="fw-bold text-white mb-3">タイマー画面の有効化</h3>
+            <p class="text-light opacity-75 mb-4 small">ブラウザの自動再生ポリシーを解除し、BGMや効果音を正しく鳴らすために、画面を一度クリックして有効化してください。</p>
+            <button class="btn btn-primary-custom px-4 py-2 fw-bold"><i class="fa-solid fa-check"></i> 有効化してタイマーを表示</button>
+        </div>
+    </div>
+
+    <div class="container text-center text-white">
+        <div class="mb-4">
+            <h1 class="display-3 fw-bold text-white mb-2" th:text="${tournament.name}">大会名</h1>
+            <h2 class="text-warning fw-bold mb-4" th:text="'ラウンド ' + ${tournament.currentRound}">ラウンド 3</h2>
+        </div>
+
+        <!-- Giant Timer Number -->
+        <div class="timer-container-fs my-4">
+            <div id="countdown" class="timer-number timer-glow">30:00</div>
+        </div>
+
+        <!-- Progress Bar -->
+        <div class="progress progress-fs mx-auto mb-5 w-75">
+            <div id="progressBar" class="progress-bar bg-warning progress-bar-striped progress-bar-animated" role="progressbar" style="width: 100%; border-radius: 50px;"></div>
+        </div>
+
+        <div class="d-flex justify-content-center align-items-center gap-3">
+            <i class="fa-solid fa-music text-muted"></i>
+            <span id="bgmName" class="text-muted small">BGM: なし</span>
+        </div>
+
+        <!-- HTML5 Audio -->
+        <audio id="bgmPlayer" loop></audio>
+    </div>
+
+    <!-- Load LocalStorage Sync Logic script -->
+    <script th:inline="javascript">
+        /*<![CDATA[*/
+        const tournamentId = /*[[${tournament.id}]]*/ 0;
+        const initialMinutes = /*[[${timerSetting.durationMinutes}]]*/ 30;
+        const bgmFilePath = /*[[${timerSetting.bgmFilePath}]]*/ '';
+        const bgmDisplayName = /*[[${timerSetting.bgmDisplayName}]]*/ '';
+        /*]]>*/
+
+        const audio = document.getElementById('bgmPlayer');
+        const bgmSpan = document.getElementById('bgmName');
+        if (bgmFilePath) {
+            audio.src = bgmFilePath;
+            bgmSpan.innerText = "BGM: " + (bgmDisplayName || "設定中");
+        }
+
+        // Shared timer state via localStorage
+        const storageKey = 'apt_timer_' + tournamentId;
+
+        function updateUI(minutes, seconds, percent) {
+            const minStr = String(minutes).padStart(2, '0');
+            const secStr = String(seconds).padStart(2, '0');
+            document.getElementById('countdown').innerText = `${minStr}:${secStr}`;
+            document.getElementById('progressBar').style.width = `${percent}%`;
+
+            if (percent < 20) {
+                document.getElementById('progressBar').className = "progress-bar bg-danger progress-bar-striped progress-bar-animated";
+                document.getElementById('countdown').className = "timer-number text-danger timer-glow";
+            } else {
+                document.getElementById('progressBar').className = "progress-bar bg-warning progress-bar-striped progress-bar-animated";
+                document.getElementById('countdown').className = "timer-number text-white timer-glow";
+            }
+        }
+
+        window.addEventListener('storage', function(e) {
+            if (e.key === storageKey && e.newValue) {
+                const state = JSON.parse(e.newValue);
+                updateUI(state.minutes, state.seconds, state.percent);
+                
+                // Play / Pause music based on remote state
+                if (state.isRunning && audio.src) {
+                    audio.play().catch(err => console.log("BGM play failed due to browser interaction requirement"));
+                } else {
+                    audio.pause();
+                }
+
+                if (state.isReset) {
+                    audio.currentTime = 0;
+                }
+            }
+        });
+
+        // Audio unlock overlay event
+        const overlay = document.getElementById('audioActivationOverlay');
+        overlay.addEventListener('click', () => {
+            overlay.style.display = 'none';
+            if (audio.src) {
+                audio.play().then(() => {
+                    audio.pause();
+                }).catch(err => {
+                    console.log("Audio context unlock failed:", err);
+                });
+            }
+        });
+
+        // Initial setup
+        updateUI(initialMinutes, 0, 100);
+    </script>
+</body>
+</html>

@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.asopoketool.mapper.TimerMapper">
+
+    <select id="findByTournamentAndRound" resultType="com.asopoketool.model.TimerSetting">
+        SELECT t.*, b.display_name AS bgm_display_name, b.file_path AS bgm_file_path
+        FROM timer_setting t
+        LEFT JOIN bgm_file b ON t.bgm_file_id = b.id
+        WHERE t.tournament_id = #{tournamentId} AND t.round_number = #{roundNumber}
+        LIMIT 1
+    </select>
+
+    <insert id="upsert">
+        INSERT INTO timer_setting (tournament_id, round_number, duration_minutes, bgm_file_id, bg_image_path, updated_at)
+        VALUES (#{tournamentId}, #{roundNumber}, #{durationMinutes}, #{bgmFileId}, #{bgImagePath}, NOW())
+        ON DUPLICATE KEY UPDATE 
+            duration_minutes = #{durationMinutes},
+            bgm_file_id = #{bgmFileId},
+            bg_image_path = #{bgImagePath},
+            updated_at = NOW()
+    </insert>
+
+    <select id="findAllBgm" resultType="com.asopoketool.model.BgmFile">
+        SELECT * FROM bgm_file ORDER BY id ASC
+    </select>
+
+    <select id="findBgmById" resultType="com.asopoketool.model.BgmFile">
+        SELECT * FROM bgm_file WHERE id = #{id}
+    </select>
+
+    <insert id="insertBgm" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO bgm_file (display_name, file_path, file_size, is_builtin, uploaded_at)
+        VALUES (#{displayName}, #{filePath}, #{fileSize}, #{isBuiltin}, NOW())
+    </insert>
+
+    <delete id="deleteByTournamentId">
+        DELETE FROM timer_setting WHERE tournament_id = #{tournamentId}
+    </delete>
+
+</mapper>

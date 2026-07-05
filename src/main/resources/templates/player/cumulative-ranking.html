@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" th:replace="~{layout/base :: layout(~{::div}, ~{::title})}">
+<head>
+    <title>累計ポイントランキング | ASOPokeTool</title>
+</head>
+<body>
+    <div>
+        <div class="mb-4 text-white text-center">
+            <h1 class="fw-bold mb-2"><i class="fa-solid fa-ranking-star text-warning"></i> 累計ポイントランキング</h1>
+            <p class="text-muted">これまでに開催されたすべての大会で獲得した累計ポイントのランキングです。</p>
+        </div>
+
+        <div class="row justify-content-center">
+            <div class="col-lg-10">
+                <div class="card card-glass text-white p-4">
+                    <div th:if="${#lists.isEmpty(ranking)}" class="p-5 text-center text-muted">
+                        <i class="fa-solid fa-list-ol fa-3x mb-3"></i>
+                        <p class="mb-0">ポイント保有プレイヤーがまだいません。</p>
+                    </div>
+
+                    <div th:unless="${#lists.isEmpty(ranking)}" class="table-responsive">
+                        <table class="table table-custom text-white w-100">
+                            <thead>
+                                <tr>
+                                    <th style="width: 15%">順位</th>
+                                    <th style="width: 50%">プレイヤー名</th>
+                                    <th class="text-center" style="width: 35%">累計ポイント</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr th:each="r, iter : ${ranking}">
+                                    <td class="align-middle fw-bold">
+                                        <!-- Gold, Silver, Bronze style -->
+                                        <span th:if="${iter.count == 1}" class="rank-1"><i class="fa-solid fa-medal"></i> 1位</span>
+                                        <span th:if="${iter.count == 2}" class="rank-2"><i class="fa-solid fa-medal"></i> 2位</span>
+                                        <span th:if="${iter.count == 3}" class="rank-3"><i class="fa-solid fa-medal"></i> 3位</span>
+                                        <span th:if="${iter.count > 3}" th:text="${iter.count} + '位'">4位</span>
+                                    </td>
+                                    <td class="align-middle">
+                                        <h5 class="fw-bold mb-0 text-white" th:text="${r.displayName}">たろう</h5>
+                                    </td>
+                                    <td class="text-center align-middle fw-bold text-warning fs-5 font-monospace" th:text="${r.totalPoint} + ' pt'">350 pt</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

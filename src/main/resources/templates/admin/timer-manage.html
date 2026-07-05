@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>タイマー管理 | ASOPokeTool</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
+    <link th:href="@{/css/common.css}" rel="stylesheet">
+</head>
+<body>
+
+    <nav class="navbar navbar-expand-lg navbar-dark navbar-custom sticky-top">
+        <div class="container">
+            <a class="navbar-brand navbar-brand-custom text-warning" th:href="@{/admin}">
+                <i class="fa-solid fa-screwdriver-wrench"></i> ASOPokeTool 管理画面
+            </a>
+            <div class="collapse navbar-collapse" id="adminNavbar">
+                <ul class="navbar-nav ms-auto">
+                    <li class="nav-item">
+                        <a class="btn btn-outline-danger btn-sm px-3" th:href="@{/admin/logout}"><i class="fa-solid fa-right-from-bracket"></i> ログアウト</a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container my-4">
+        <a th:href="@{/admin/tournament/{id}(id=${tournament.id})}" class="btn btn-outline-light btn-sm mb-4"><i class="fa-solid fa-arrow-left"></i> 大会管理に戻る</a>
+
+        <div class="mb-4 text-white">
+            <h2 class="fw-bold mb-1" th:text="${tournament.name} + ' - タイマー・BGM管理'">タイマー管理</h2>
+            <p class="text-muted mb-0">このラウンドにおける対戦タイマーとバックグラウンドミュージック（BGM）を調整します。</p>
+        </div>
+
+        <div class="row">
+            <!-- Left: Settings Form & Controller -->
+            <div class="col-lg-7 mb-4">
+                <div class="card card-glass text-white p-4">
+                    <h4 class="fw-bold mb-4 text-white"><i class="fa-solid fa-sliders"></i> タイマー設定</h4>
+
+                    <div th:if="${param.success != null}" class="alert alert-success py-2 text-center small" role="alert">
+                        <span th:if="${param.success[0] == 'true'}">タイマー設定を保存しました。</span>
+                        <span th:if="${param.success[0] == 'upload'}">BGM音源を新しくアップロードしました。</span>
+                    </div>
+
+                    <div th:if="${error}" class="alert alert-danger py-2 text-center small" role="alert" th:text="${error}">エラー</div>
+
+                    <form th:action="@{/admin/tournament/{id}/timer(id=${tournament.id})}" method="POST" class="mb-5">
+                        
+                        <!-- Minutes selector -->
+                        <div class="mb-4">
+                            <label for="durationMinutes" class="form-label text-muted small d-block mb-2">対戦制限時間の設定（分）</label>
+                            <select class="form-select bg-dark text-white border-secondary" id="durationMinutes" name="durationMinutes">
+                                <option th:each="m : ${#numbers.sequence(10, 60, 5)}" 
+                                        th:value="${m}" 
+                                        th:text="${m} + '分'" 
+                                        th:selected="${timerSetting.durationMinutes == m}"></option>
+                            </select>
+                        </div>
+
+                        <!-- BGM Selector -->
+                        <div class="mb-4">
+                            <label for="bgmFileId" class="form-label text-muted small">使用するBGMの選択</label>
+                            <select class="form-select bg-dark text-white border-secondary" id="bgmFileId" name="bgmFileId">
+                                <option value="">BGMなし (無音)</option>
+                                <option th:each="bgm : ${bgmFiles}" th:value="${bgm.id}" th:text="${bgm.displayName}" th:selected="${timerSetting.bgmFileId == bgm.id}"></option>
+                            </select>
+                        </div>
+
+                        <button type="submit" class="btn btn-primary-custom w-100"><i class="fa-solid fa-floppy-disk"></i> 設定を保存する</button>
+                    </form>
+
+                    <!-- Real-time Control Box -->
+                    <h4 class="fw-bold mb-3 text-warning border-top border-secondary pt-4"><i class="fa-solid fa-gamepad"></i> タイマーリアルタイム操作</h4>
+                    <p class="small text-muted mb-4">別窓で開いた投影用タイマー画面と、進捗率・再生音源がリアルタイムで自動同期されます。</p>
+
+                    <div class="mb-3">
+                        <button id="ctrlStart" class="btn btn-success w-100 py-3 fw-bold fs-5 shadow" onclick="timerCtrl.start()">
+                            <i class="fa-solid fa-circle-play"></i> 対戦スタート
+                        </button>
+                    </div>
+
+                    <div class="row g-2">
+                        <div class="col-6">
+                            <button id="ctrlPause" class="btn btn-danger-custom w-100 py-2" onclick="timerCtrl.pause()">
+                                <i class="fa-solid fa-pause"></i> 一時停止
+                            </button>
+                        </div>
+                        <div class="col-6">
+                            <button id="ctrlReset" class="btn btn-outline-light w-100 py-2" onclick="timerCtrl.reset()">
+                                <i class="fa-solid fa-rotate-left"></i> リセット
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="d-grid mt-4">
+                        <a th:href="@{/tournament/{id}/timer(id=${tournament.id})}" target="_blank" class="btn btn-warning text-dark py-2"><i class="fa-solid fa-up-right-from-square"></i> 投影用の大画面タイマーを開く</a>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Right: Config & Upload form -->
+            <div class="col-lg-5">
+                <!-- Background Image Upload -->
+                <div class="card card-glass text-white p-4 mb-4">
+                    <h4 class="fw-bold mb-4 text-white"><i class="fa-solid fa-image"></i> タイマー背景画像の変更</h4>
+                    <p class="text-muted small">タイマーの背景に表示する画像（JPG/PNG）をアップロードして設定します。</p>
+
+                    <div th:if="${timerSetting.bgImagePath}" class="mb-4 text-center">
+                        <span class="text-warning small d-block mb-2">設定中の背景画像:</span>
+                        <img th:src="${timerSetting.bgImagePath}" class="img-thumbnail bg-dark border-secondary" style="max-height: 120px; object-fit: contain;">
+                    </div>
+
+                    <form th:action="@{/admin/tournament/{id}/timer/bg-upload(id=${tournament.id})}" method="POST" enctype="multipart/form-data">
+                        <div class="mb-4">
+                            <label for="bgImage" class="form-label text-light fw-bold">画像ファイル <span class="badge bg-danger ms-2 small">必須</span></label>
+                            <input type="file" class="form-control bg-dark text-white border-secondary" id="bgImage" name="bgImage" accept=".jpg,.jpeg,.png" required>
+                        </div>
+                        <button type="submit" class="btn btn-primary-custom w-100"><i class="fa-solid fa-cloud-arrow-up"></i> 画像を適用する</button>
+                    </form>
+                </div>
+
+                <!-- BGM Upload form -->
+                <div class="card card-glass text-white p-4">
+                    <h4 class="fw-bold mb-4 text-white"><i class="fa-solid fa-upload"></i> BGMファイルのアップロード</h4>
+                    <p class="text-muted small">対戦時に流したいお好みの音楽ファイル (MP3形式) をアップロードして登録できます。</p>
+
+                    <form th:action="@{/admin/tournament/{id}/timer/bgm-upload(id=${tournament.id})}" method="POST" enctype="multipart/form-data">
+                        <div class="mb-3">
+                            <label for="displayName" class="form-label text-muted small">BGMの表示名</label>
+                            <input type="text" class="form-control bg-dark text-white border-secondary" id="displayName" name="displayName" placeholder="例: ポケカバトルソング" required>
+                        </div>
+
+                        <div class="mb-4">
+                            <label for="bgmFile" class="form-label text-muted small">MP3ファイル</label>
+                            <input type="file" class="form-control bg-dark text-white border-secondary" id="bgmFile" name="bgmFile" accept=".mp3" required>
+                        </div>
+
+                        <button type="submit" class="btn btn-secondary-custom w-100"><i class="fa-solid fa-cloud-arrow-up"></i> ファイルをアップロード</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Timer Control JavaScript (Using LocalStorage state broadcast) -->
+    <script th:inline="javascript">
+        /*<![CDATA[*/
+        const tournamentId = /*[[${tournament.id}]]*/ 0;
+        const initialMinutes = /*[[${timerSetting.durationMinutes}]]*/ 30;
+        /*]]>*/
+
+        const storageKey = 'apt_timer_' + tournamentId;
+
+        const timerCtrl = {
+            duration: initialMinutes * 60,
+            remaining: initialMinutes * 60,
+            isRunning: false,
+            interval: null,
+
+            start: function() {
+                if (this.isRunning) return;
+                this.isRunning = true;
+                this.interval = setInterval(() => {
+                    this.remaining--;
+                    if (this.remaining <= 0) {
+                        this.remaining = 0;
+                        this.pause();
+                    }
+                    this.broadcast();
+                }, 1000);
+                this.broadcast();
+            },
+
+            pause: function() {
+                if (!this.isRunning) return;
+                this.isRunning = false;
+                clearInterval(this.interval);
+                this.broadcast();
+            },
+
+            reset: function() {
+                this.pause();
+                this.remaining = this.duration;
+                this.broadcast(true);
+            },
+
+            broadcast: function(isReset = false) {
+                const minutes = Math.floor(this.remaining / 60);
+                const seconds = this.remaining % 60;
+                const percent = (this.remaining / this.duration) * 100;
+                
+                const state = {
+                    minutes: minutes,
+                    seconds: seconds,
+                    percent: percent,
+                    isRunning: this.isRunning,
+                    isReset: isReset
+                };
+
+                localStorage.setItem(storageKey, JSON.stringify(state));
+            }
+        };
+
+        // Reset storage state on load
+        timerCtrl.broadcast(true);
+    </script>
+</body>
+</html>

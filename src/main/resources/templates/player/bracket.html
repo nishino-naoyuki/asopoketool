@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" th:replace="~{layout/base :: layout(~{::div}, ~{::title})}">
+<head>
+    <title>決勝トーナメント | ASOPokeTool</title>
+</head>
+<body>
+    <div>
+        <a th:href="@{/tournament/{id}(id=${tournament.id})}" class="btn btn-outline-light btn-sm mb-4"><i class="fa-solid fa-arrow-left"></i> 大会詳細に戻る</a>
+
+        <div class="d-flex justify-content-between align-items-center mb-4 text-white">
+            <div>
+                <h2 class="fw-bold mb-1" th:text="${tournament.name} + ' - 決勝トーナメント'">決勝トーナメント</h2>
+                <p class="text-muted mb-0">スイスドローの結果をもとに編成された決勝トーナメントです。</p>
+            </div>
+            <div class="d-flex gap-2" th:unless="${#lists.isEmpty(brackets)}">
+                <!-- Javascript to capture the active tab panel -->
+                <button class="btn btn-success btn-sm" onclick="captureActiveBracket()">
+                    <i class="fa-solid fa-camera"></i> 画像として保存
+                </button>
+            </div>
+        </div>
+
+        <div th:if="${#lists.isEmpty(brackets)}" class="card-glass p-5 text-center text-muted text-white">
+            <i class="fa-solid fa-sitemap fa-3x mb-3 text-warning"></i>
+            <h4 class="fw-bold text-white">トーナメント未編成</h4>
+            <p class="mb-0">管理者がトーナメント表を編成するまでお待ちください。</p>
+        </div>
+
+        <div th:unless="${#lists.isEmpty(brackets)}">
+            <!-- Bracket Tabs -->
+            <ul class="nav nav-pills mb-4" id="bracketTab" role="tablist">
+                <li class="nav-item" th:each="b, iter : ${brackets}" role="presentation">
+                    <button class="nav-link px-4 py-2 me-2" th:classappend="${iter.first ? 'active btn-primary-custom' : 'btn-outline-light text-white'}" 
+                            th:id="'tab-' + ${b.id}" data-bs-toggle="tab" th:data-bs-target="'#panel-' + ${b.id}" 
+                            type="button" role="tab" th:aria-controls="'panel-' + ${b.id}" th:aria-selected="${iter.first}" 
+                            th:text="${b.groupName}" style="border-radius: 12px; border: 1px solid rgba(255,255,255,0.12);">グループA</button>
+                </li>
+            </ul>
+
+            <!-- Tab Content (Tournament tree view) -->
+            <div class="tab-content" id="bracketTabContent">
+                <div class="tab-pane fade" th:each="b, iter : ${brackets}" th:classappend="${iter.first ? 'show active' : ''}" 
+                     th:id="'panel-' + ${b.id}" role="tabpanel" th:aria-labelledby="'tab-' + ${b.id}">
+                    
+                    <div class="card-glass p-4 overflow-auto" th:id="'bracketArea-' + ${b.id}" style="background-color: #0d0d1a; border-radius: 16px;">
+                        <div class="d-flex gap-5 py-3 align-items-center" style="min-width: 600px; background-color: #0d0d1a;">
+                            
+                            <!-- Round 1: Quarterfinals (QF) -->
+                            <div class="d-flex flex-column justify-content-around h-100" style="gap: 40px; min-width: 220px;">
+                                <h5 class="text-center text-muted small border-bottom border-secondary pb-2">1回戦 (準々決勝)</h5>
+                                <div th:each="m : ${b.matches}" th:if="${m.roundNumber == 1}" class="bracket-match-box">
+                                    <div class="small text-muted mb-1 text-center font-monospace" th:text="'マッチ ' + ${m.matchNumber}">M1</div>
+                                    <div class="bracket-player" th:classappend="${m.winnerEntryId != null && m.winnerEntryId == m.player1EntryId ? 'winner' : ''}">
+                                        <span th:text="${m.player1Name != null ? m.player1Name : '（TBD）'}">選手A</span>
+                                    </div>
+                                    <div class="bracket-player" th:classappend="${m.winnerEntryId != null && m.winnerEntryId == m.player2EntryId ? 'winner' : ''}">
+                                        <span th:text="${m.isBye ? '（不戦勝）' : (m.player2Name != null ? m.player2Name : '（TBD）')}">選手B</span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Connection Line (visual bridge arrow) -->
+                            <div class="d-flex flex-column justify-content-around h-100 text-muted" style="min-width: 30px;">
+                                <i class="fa-solid fa-chevron-right my-5 py-3 block text-center"></i>
+                                <i class="fa-solid fa-chevron-right my-5 py-3 block text-center"></i>
+                            </div>
+
+                            <!-- Round 2: Semifinals (SF) -->
+                            <div class="d-flex flex-column justify-content-around h-100" style="gap: 120px; min-width: 220px;">
+                                <h5 class="text-center text-muted small border-bottom border-secondary pb-2">準決勝</h5>
+                                <div th:each="m : ${b.matches}" th:if="${m.roundNumber == 2}" class="bracket-match-box">
+                                    <div class="small text-muted mb-1 text-center font-monospace" th:text="'準決勝 ' + ${m.matchNumber}">SF1</div>
+                                    <div class="bracket-player" th:classappend="${m.winnerEntryId != null && m.winnerEntryId == m.player1EntryId ? 'winner' : ''}">
+                                        <span th:text="${m.player1Name != null ? m.player1Name : '（1回戦の勝者）'}">選手A</span>
+                                    </div>
+                                    <div class="bracket-player" th:classappend="${m.winnerEntryId != null && m.winnerEntryId == m.player2EntryId ? 'winner' : ''}">
+                                        <span th:text="${m.player2Name != null ? m.player2Name : '（1回戦の勝者）'}">選手B</span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Connection Line -->
+                            <div class="d-flex flex-column justify-content-around h-100 text-muted" style="min-width: 30px;">
+                                <i class="fa-solid fa-chevron-right my-5 py-5 block text-center"></i>
+                            </div>
+
+                            <!-- Round 3: Finals -->
+                            <div class="d-flex flex-column justify-content-around h-100" style="min-width: 220px;">
+                                <h5 class="text-center text-muted small border-bottom border-secondary pb-2">決勝戦</h5>
+                                <div th:each="m : ${b.matches}" th:if="${m.roundNumber == 3}" class="bracket-match-box" style="border: 1px solid var(--accent); box-shadow: 0 0 15px rgba(255, 215, 0, 0.2);">
+                                    <div class="small text-warning mb-1 text-center font-monospace"><i class="fa-solid fa-crown text-warning"></i> 決勝</div>
+                                    <div class="bracket-player" th:classappend="${m.winnerEntryId != null && m.winnerEntryId == m.player1EntryId ? 'winner' : ''}">
+                                        <span th:text="${m.player1Name != null ? m.player1Name : '（準決勝の勝者）'}">選手A</span>
+                                    </div>
+                                    <div class="bracket-player" th:classappend="${m.winnerEntryId != null && m.winnerEntryId == m.player2EntryId ? 'winner' : ''}">
+                                        <span th:text="${m.player2Name != null ? m.player2Name : '（準決勝の勝者）'}">選手B</span>
+                                    </div>
+                                </div>
+                            </div>
+
+                        </div>
+                    </div>
+                </div>
+            </div>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+        <script>
+            function downloadScreenshot(elementId, filename) {
+                const element = document.getElementById(elementId);
+                if (!element) return;
+                html2canvas(element, {
+                    backgroundColor: '#0d0d1a',
+                    useCORS: true,
+                    scale: 2
+                }).then(canvas => {
+                    const link = document.createElement('a');
+                    link.download = filename + '_' + new Date().toISOString().slice(0, 10) + '.png';
+                    link.href = canvas.toDataURL('image/png');
+                    link.click();
+                });
+            }
+
+            function captureAllBrackets() {
+                const panes = document.querySelectorAll('.tab-pane');
+                panes.forEach(pane => {
+                    const target = pane.querySelector('.card-glass');
+                    if (target && target.id) {
+                        const tabId = 'tab-' + pane.id.replace('panel-', '');
+                        const tabButton = document.getElementById(tabId);
+                        const groupName = tabButton ? tabButton.innerText.trim() : 'group';
+                        downloadScreenshot(target.id, 'tournament_bracket_' + groupName);
+                    }
+                });
+            }
+        </script>
+    </div>
+</body>
+</html>

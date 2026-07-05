@@ -1,0 +1,62 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.asopoketool.mapper.MatchGameMapper">
+
+    <select id="findByRoundId" resultType="com.asopoketool.model.MatchGame">
+        SELECT m.*, 
+               e1.player_name AS player1_name, 
+               e2.player_name AS player2_name,
+               r.winner_entry_id AS result_winner_entry_id
+        FROM match_game m
+        JOIN entry e1 ON m.player1_entry_id = e1.id
+        LEFT JOIN entry e2 ON m.player2_entry_id = e2.id
+        LEFT JOIN match_result r ON m.id = r.match_id
+        WHERE m.round_id = #{roundId}
+        ORDER BY m.table_number ASC
+    </select>
+
+    <select id="findById" resultType="com.asopoketool.model.MatchGame">
+        SELECT m.*, 
+               e1.player_name AS player1_name, 
+               e2.player_name AS player2_name,
+               r.winner_entry_id AS result_winner_entry_id
+        FROM match_game m
+        JOIN entry e1 ON m.player1_entry_id = e1.id
+        LEFT JOIN entry e2 ON m.player2_entry_id = e2.id
+        LEFT JOIN match_result r ON m.id = r.match_id
+        WHERE m.id = #{id}
+    </select>
+
+    <select id="findByEntryId" resultType="com.asopoketool.model.MatchGame">
+        SELECT m.*, 
+               e1.player_name AS player1_name, 
+               e2.player_name AS player2_name,
+               r.winner_entry_id AS result_winner_entry_id
+        FROM match_game m
+        JOIN entry e1 ON m.player1_entry_id = e1.id
+        LEFT JOIN entry e2 ON m.player2_entry_id = e2.id
+        LEFT JOIN match_result r ON m.id = r.match_id
+        WHERE m.player1_entry_id = #{entryId} OR m.player2_entry_id = #{entryId}
+    </select>
+
+    <select id="findAllByTournamentId" resultType="com.asopoketool.model.MatchGame">
+        SELECT m.*
+        FROM match_game m
+        JOIN tournament_round r ON m.round_id = r.id
+        WHERE r.tournament_id = #{tournamentId}
+    </select>
+
+    <insert id="insert" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO match_game (round_id, table_number, player1_entry_id, player2_entry_id, is_bye)
+        VALUES (#{roundId}, #{tableNumber}, #{player1EntryId}, #{player2EntryId}, #{isBye})
+    </insert>
+
+    <insert id="batchInsert">
+        INSERT INTO match_game (round_id, table_number, player1_entry_id, player2_entry_id, is_bye)
+        VALUES 
+        <foreach collection="list" item="item" separator=",">
+            (#{item.roundId}, #{item.tableNumber}, #{item.player1EntryId}, #{item.player2EntryId}, #{item.isBye})
+        </foreach>
+    </insert>
+
+</mapper>

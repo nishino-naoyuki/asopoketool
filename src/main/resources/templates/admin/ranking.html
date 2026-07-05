@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>大会順位表 | ASOPokeTool</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
+    <link th:href="@{/css/common.css}" rel="stylesheet">
+</head>
+<body>
+
+    <nav class="navbar navbar-expand-lg navbar-dark navbar-custom sticky-top">
+        <div class="container">
+            <a class="navbar-brand navbar-brand-custom text-warning" th:href="@{/admin}">
+                <i class="fa-solid fa-screwdriver-wrench"></i> ASOPokeTool 管理画面
+            </a>
+            <div class="collapse navbar-collapse" id="adminNavbar">
+                <ul class="navbar-nav ms-auto align-items-center gap-3">
+                    <li class="nav-item">
+                        <a class="nav-link text-light opacity-75" th:href="@{/admin/users}"><i class="fa-solid fa-users-gear"></i> 管理者管理</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link text-light opacity-75" th:href="@{/admin/players}"><i class="fa-solid fa-users"></i> 全ユーザー一覧</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="btn btn-outline-danger btn-sm px-3" th:href="@{/admin/logout}"><i class="fa-solid fa-right-from-bracket"></i> ログアウト</a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container my-4">
+        <a th:href="@{/admin/tournament/{id}(id=${tournament.id})}" class="btn btn-outline-light btn-sm mb-4"><i class="fa-solid fa-arrow-left"></i> 大会管理に戻る</a>
+
+        <div class="d-flex justify-content-between align-items-center mb-4 text-white">
+            <div>
+                <h2 class="fw-bold mb-1" th:text="${tournament.name} + ' - 中間/最終順位表'">大会ランキング</h2>
+                <p class="text-muted mb-0">タイブレイカー値をもとに順位が自動計算されます。</p>
+            </div>
+            <div class="d-flex gap-2">
+                <button class="btn btn-success btn-sm" onclick="downloadScreenshot('rankingTableArea', 'admin_ranking')">
+                    <i class="fa-solid fa-camera"></i> 画像として保存
+                </button>
+                <button class="btn btn-outline-warning text-warning btn-sm" onclick="location.reload();">
+                    <i class="fa-solid fa-arrows-rotate"></i> 更新
+                </button>
+            </div>
+        </div>
+
+        <div class="card card-glass p-3 text-white mb-4 small text-muted">
+            <i class="fa-solid fa-circle-info text-warning me-1"></i>
+            <strong>判定順</strong>: 
+            1. 勝ち点 (勝利 3pt) &gt;&gt; 
+            2. OMW% (対戦相手の勝率平均、下限 33%) &gt;&gt; 
+            3. 対戦相手の勝ち点合計 &gt;&gt; 
+            4. OOMW% (対戦相手のOMW%平均) &gt;&gt; 
+            5. 直接対決結果
+        </div>
+
+        <div class="card card-glass p-4 text-white" id="rankingTableArea" style="background-color: #0d0d1a; border-radius: 16px;">
+            <div class="table-responsive">
+                <table class="table table-custom text-white w-100 mb-0">
+                    <thead>
+                        <tr>
+                            <th style="width: 10%">順位</th>
+                            <th style="width: 30%">プレイヤー名</th>
+                            <th class="text-center" style="width: 15%">勝敗 (W-L)</th>
+                            <th class="text-center" style="width: 15%">勝ち点</th>
+                            <th class="text-center" style="width: 15%">OMW% (オポ)</th>
+                            <th class="text-center" style="width: 15%">相手勝ち点合計 (オポ2)</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr th:each="r : ${ranking}">
+                            <td class="align-middle fw-bold">
+                                <!-- Medal Emojis for top 3 -->
+                                <span th:if="${r.rank == 1}" class="text-warning"><i class="fa-solid fa-medal"></i> 1位</span>
+                                <span th:if="${r.rank == 2}" class="text-light"><i class="fa-solid fa-medal"></i> 2位</span>
+                                <span th:if="${r.rank == 3}" class="text-danger"><i class="fa-solid fa-medal"></i> 3位</span>
+                                <span th:if="${r.rank > 3}" th:text="${r.rank} + '位'">4位</span>
+                            </td>
+                            <td class="align-middle">
+                                <span th:text="${r.playerName}" th:style="${r.isDropout ? 'text-decoration: line-through; color: #777;' : ''}">たろう</span>
+                                <span class="badge bg-danger ms-2" th:if="${r.isDropout}">棄権</span>
+                            </td>
+                            <td class="text-center align-middle font-monospace" th:text="${r.wins} + ' - ' + ${r.losses}">5 - 0</td>
+                            <td class="text-center align-middle fw-bold text-warning font-monospace" th:text="${r.winPoints} + ' pt'">15 pt</td>
+                            <td class="text-center align-middle font-monospace" th:text="${#numbers.formatDecimal(r.omwPercent * 100, 1, 2)} + ' %'">60.00 %</td>
+                            <td class="text-center align-middle font-monospace" th:text="${r.opponentWinPointsTotal} + ' pt'">45 pt</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <script>
+        function downloadScreenshot(elementId, filename) {
+            const element = document.getElementById(elementId);
+            if (!element) return;
+            html2canvas(element, {
+                backgroundColor: '#0d0d1a',
+                useCORS: true,
+                scale: 2
+            }).then(canvas => {
+                const link = document.createElement('a');
+                link.download = filename + '_' + new Date().toISOString().slice(0, 10) + '.png';
+                link.href = canvas.toDataURL('image/png');
+                link.click();
+            });
+        }
+    </script>
+</body>
+</html>

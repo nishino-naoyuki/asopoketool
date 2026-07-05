@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.asopoketool.mapper.AccountMapper">
+
+    <select id="findById" resultType="com.asopoketool.model.PlayerAccount">
+        SELECT * FROM player_account WHERE id = #{id}
+    </select>
+
+    <select id="findByDisplayName" resultType="com.asopoketool.model.PlayerAccount">
+        SELECT * FROM player_account WHERE display_name = #{displayName}
+    </select>
+
+    <insert id="insertAccount" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO player_account (display_name, password_hash, created_at, updated_at)
+        VALUES (#{displayName}, #{passwordHash}, NOW(), NOW())
+    </insert>
+
+    <update id="updateDisplayName">
+        UPDATE player_account SET display_name = #{displayName}, updated_at = NOW() WHERE id = #{id}
+    </update>
+
+    <update id="updatePassword">
+        UPDATE player_account SET password_hash = #{passwordHash}, updated_at = NOW() WHERE id = #{id}
+    </update>
+
+    <select id="findTokenByToken" resultType="com.asopoketool.model.PlayerAccountToken">
+        SELECT * FROM player_account_token WHERE token = #{token}
+    </select>
+
+    <insert id="insertToken" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO player_account_token (account_id, token, expire_at, created_at, last_used_at)
+        VALUES (#{accountId}, #{token}, #{expireAt}, NOW(), #{lastUsedAt})
+    </insert>
+
+    <delete id="deleteToken">
+        DELETE FROM player_account_token WHERE token = #{token}
+    </delete>
+
+    <delete id="deleteExpiredTokens">
+        DELETE FROM player_account_token WHERE expire_at &lt; NOW()
+    </delete>
+
+    <update id="updateLastUsed">
+        UPDATE player_account_token SET last_used_at = #{lastUsedAt} WHERE token = #{token}
+    </update>
+
+</mapper>

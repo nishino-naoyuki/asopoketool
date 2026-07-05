@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" th:replace="~{layout/base :: layout(~{::div}, ~{::title})}">
+<head>
+    <title>ログイン | ASOPokeTool</title>
+</head>
+<body>
+    <div>
+        <div class="row justify-content-center my-5">
+            <div class="col-md-8 col-lg-6">
+                <div class="card card-glass text-white p-4">
+                    <h2 class="fw-bold text-center mb-3"><i class="fa-solid fa-right-to-bracket text-primary"></i> ログイン</h2>
+                    <p class="text-center text-muted small mb-4">登録した表示名とパスワードを入力してください。</p>
+
+                    <div th:if="${error}" class="alert alert-danger" role="alert" th:text="${error}">エラー</div>
+
+                    <form th:action="@{/account/login}" method="POST">
+                        <div class="mb-3">
+                            <label for="displayName" class="form-label text-muted small">表示名（ニックネーム）</label>
+                            <input type="text" class="form-control bg-dark text-white border-secondary" id="displayName" name="displayName" required>
+                        </div>
+
+                        <div class="mb-4">
+                            <label for="password" class="form-label text-muted small">パスワード</label>
+                            <input type="password" class="form-control bg-dark text-white border-secondary" id="password" name="password" required>
+                        </div>
+
+                        <div class="d-grid gap-2">
+                            <button type="submit" class="btn btn-primary-custom py-2"><i class="fa-solid fa-right-to-bracket"></i> ログインする</button>
+                            <a th:href="@{/account/register}" class="btn btn-outline-light btn-sm mt-2">アカウントを新規作成する</a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

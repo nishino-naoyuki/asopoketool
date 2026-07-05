@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>チェックイン管理 | ASOPokeTool</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
+    <link th:href="@{/css/common.css}" rel="stylesheet">
+    <!-- html5-qrcode Library for Web Camera Scanning -->
+    <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
+</head>
+<body>
+
+    <nav class="navbar navbar-expand-lg navbar-dark navbar-custom sticky-top">
+        <div class="container">
+            <a class="navbar-brand navbar-brand-custom text-warning" th:href="@{/admin}">
+                <i class="fa-solid fa-screwdriver-wrench"></i> ASOPokeTool 管理画面
+            </a>
+            <div class="collapse navbar-collapse" id="adminNavbar">
+                <ul class="navbar-nav ms-auto">
+                    <li class="nav-item">
+                        <a class="btn btn-outline-danger btn-sm px-3" th:href="@{/admin/logout}"><i class="fa-solid fa-right-from-bracket"></i> ログアウト</a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container my-4">
+        <a th:href="@{/admin/tournament/{id}(id=${tournament.id})}" class="btn btn-outline-light btn-sm mb-4"><i class="fa-solid fa-arrow-left"></i> 大会管理に戻る</a>
+
+        <div class="row">
+            <!-- Left Side: QR Scanner Box -->
+            <div class="col-lg-5 mb-4">
+                <div class="card card-glass text-white p-4 text-center">
+                    <h4 class="fw-bold mb-3 text-white"><i class="fa-solid fa-camera"></i> QRコードスキャン</h4>
+                    <p class="text-muted small">受付で提示されたQRコードをカメラにかざしてください。</p>
+
+                    <!-- Camera Viewport container -->
+                    <div id="reader" style="width:100%; border-radius: 12px; overflow: hidden; border: 1px solid var(--card-border);" class="bg-dark"></div>
+
+                    <!-- Scan Success Message banner -->
+                    <div id="scanResult" class="alert alert-success mt-3 d-none" role="alert">
+                        <i class="fa-solid fa-circle-check"></i> <span id="successName">選手名</span> さんチェックイン完了！
+                    </div>
+                    <div id="scanError" class="alert alert-danger mt-3 d-none" role="alert">
+                        <i class="fa-solid fa-circle-exclamation"></i> <span id="errorMsg">エラー</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Right Side: Entries Checked-in list -->
+            <div class="col-lg-7">
+                <div class="card card-glass text-white p-4">
+                    <h4 class="fw-bold mb-4 text-white"><i class="fa-solid fa-user-group"></i> 参加者エントリーリスト</h4>
+
+                    <div class="table-responsive">
+                        <table class="table table-custom text-white w-100">
+                            <thead>
+                                <tr>
+                                    <th>選手登録名</th>
+                                    <th>アカウント名</th>
+                                    <th class="text-center">ステータス</th>
+                                    <th class="text-center">操作</th>
+                                </tr>
+                            </thead>
+                            <tbody id="entryTableBody">
+                                <tr th:each="e : ${entries}">
+                                    <td class="align-middle fw-bold text-white" th:text="${e.playerName}">登録名</td>
+                                    <td class="align-middle text-muted" th:text="${e.account != null ? e.account.displayName : '（ゲスト）'}">アカウント</td>
+                                    <td class="text-center align-middle">
+                                        <span class="badge" th:classappend="${e.checkinFlg ? 'bg-success' : 'bg-secondary'}" th:text="${e.checkinFlg ? '完了' : '未チェック'}">未チェック</span>
+                                    </td>
+                                    <td class="text-center align-middle">
+                                        <form th:action="@{/admin/tournament/{id}/checkin/{entryId}(id=${tournament.id}, entryId=${e.id})}" method="POST" th:if="${!e.checkinFlg}">
+                                            <button type="submit" class="btn btn-secondary-custom btn-sm">手動チェックイン</button>
+                                        </form>
+                                        <span th:if="${e.checkinFlg}" class="text-success"><i class="fa-solid fa-circle-check"></i> 完了</span>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- html5-qrcode scanner controller script -->
+    <script th:inline="javascript">
+        /*<![CDATA[*/
+        const tournamentId = /*[[${tournament.id}]]*/ 0;
+        /*]]>*/
+
+        function onScanSuccess(decodedText, decodedResult) {
+            // Decoded payload contains 'entryId|tournamentId|Signature'
+            // Send checkin payload to server via Ajax
+            const url = `/asopoketool/admin/tournament/${tournamentId}/checkin/scan`;
+            
+            // Temporary stop scanner to prevent duplicate scans
+            html5QrcodeScanner.clear();
+
+            fetch(url, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                },
+                body: 'qrToken=' + encodeURIComponent(decodedText)
+            })
+            .then(res => res.json())
+            .then(data => {
+                if (data.success) {
+                    document.getElementById('scanError').classList.add('d-none');
+                    const successBanner = document.getElementById('scanResult');
+                    document.getElementById('successName').innerText = data.playerName;
+                    successBanner.classList.remove('d-none');
+                    
+                    // Reload lists after 1.5 seconds and restart scanner
+                    setTimeout(() => {
+                        location.reload();
+                    }, 1500);
+                } else {
+                    showError(data.message);
+                }
+            })
+            .catch(err => {
+                showError("接続エラーが発生しました。");
+            });
+        }
+
+        function showError(msg) {
+            document.getElementById('scanResult').classList.add('d-none');
+            const errorBanner = document.getElementById('scanError');
+            document.getElementById('errorMsg').innerText = msg;
+            errorBanner.classList.remove('d-none');
+
+            // Restart scanner after 2.5 seconds
+            setTimeout(() => {
+                errorBanner.classList.add('d-none');
+                startScanner();
+            }, 2500);
+        }
+
+        let html5QrcodeScanner;
+        function startScanner() {
+            html5QrcodeScanner = new Html5QrcodeScanner(
+                "reader", { fps: 10, qrbox: 250 }, false);
+            html5QrcodeScanner.render(onScanSuccess, (err) => {});
+        }
+
+        startScanner();
+    </script>
+</body>
+</html>
