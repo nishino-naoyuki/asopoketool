@@ -33,7 +33,7 @@
                 <div class="card card-glass text-white p-4">
                     <h2 class="fw-bold mb-4 text-white"><i class="fa-solid fa-circle-plus text-primary"></i> 大会の新規作成</h2>
 
-                    <form th:action="@{/admin/tournament/create}" method="POST">
+                    <form th:action="@{/admin/tournament/create}" method="POST" enctype="multipart/form-data">
                         
                         <!-- Basic Info -->
                         <h4 class="text-warning mb-3 border-bottom border-secondary pb-2"><i class="fa-solid fa-circle-info"></i> 基本情報</h4>
@@ -61,6 +61,11 @@
                             <div class="col-12">
                                 <label for="description" class="form-label text-light fw-bold">大会概要 <span class="badge bg-secondary ms-2 small">任意</span></label>
                                 <textarea class="form-control bg-dark text-white border-secondary" id="description" name="description" rows="3" placeholder="ルール、持ち物などの詳細"></textarea>
+                            </div>
+                            <div class="col-12">
+                                <label for="iconFile" class="form-label text-light fw-bold">大会アイコン画像 <span class="badge bg-secondary ms-2 small">任意</span></label>
+                                <input type="file" class="form-control bg-dark text-white border-secondary" id="iconFile" name="iconFile" accept="image/*">
+                                <div class="form-text text-muted">大会一覧に表示するアイコン画像をアップロードします。</div>
                             </div>
                         </div>
 

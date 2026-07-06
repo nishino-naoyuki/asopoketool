@@ -1,0 +1,1 @@
+ALTER TABLE tournament ADD COLUMN icon_path VARCHAR(255) DEFAULT NULL;

@@ -29,7 +29,7 @@ public class AccountController {
         if (Boolean.TRUE.equals(request.getAttribute("isLoggedIn"))) {
             return "redirect:/";
         }
-        return "player/register";
+        return "account/register";
     }
 
     @PostMapping("/register")
@@ -40,7 +40,7 @@ public class AccountController {
                                   Model model) {
         if (!password.equals(passwordConfirm)) {
             model.addAttribute("error", "パスワードと確認用パスワードが一致しません。");
-            return "player/register";
+            return "account/register";
         }
 
         try {
@@ -49,7 +49,7 @@ public class AccountController {
             return "redirect:/";
         } catch (Exception e) {
             model.addAttribute("error", e.getMessage());
-            return "player/register";
+            return "account/register";
         }
     }
 
@@ -58,7 +58,7 @@ public class AccountController {
         if (Boolean.TRUE.equals(request.getAttribute("isLoggedIn"))) {
             return "redirect:/";
         }
-        return "player/login";
+        return "account/login";
     }
 
     @PostMapping("/login")
@@ -72,7 +72,7 @@ public class AccountController {
             return "redirect:/";
         } catch (Exception e) {
             model.addAttribute("error", e.getMessage());
-            return "player/login";
+            return "account/login";
         }
     }
 
@@ -108,7 +108,7 @@ public class AccountController {
         List<PointHistory> histories = pointMapper.findHistoryByAccountId(current.getId());
         model.addAttribute("histories", histories);
 
-        return "player/mypage";
+        return "account/mypage";
     }
 
     @PostMapping("/update-name")
@@ -127,7 +127,7 @@ public class AccountController {
             model.addAttribute("account", current);
             model.addAttribute("points", pointMapper.findByAccountId(current.getId()));
             model.addAttribute("histories", pointMapper.findHistoryByAccountId(current.getId()));
-            return "player/mypage";
+            return "account/mypage";
         }
     }
 
@@ -147,7 +147,7 @@ public class AccountController {
             model.addAttribute("account", current);
             model.addAttribute("points", pointMapper.findByAccountId(current.getId()));
             model.addAttribute("histories", pointMapper.findHistoryByAccountId(current.getId()));
-            return "player/mypage";
+            return "account/mypage";
         }
 
         try {
@@ -158,7 +158,7 @@ public class AccountController {
             model.addAttribute("account", current);
             model.addAttribute("points", pointMapper.findByAccountId(current.getId()));
             model.addAttribute("histories", pointMapper.findHistoryByAccountId(current.getId()));
-            return "player/mypage";
+            return "account/mypage";
         }
     }
 

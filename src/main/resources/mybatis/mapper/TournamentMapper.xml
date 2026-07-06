@@ -15,8 +15,8 @@
     </select>
 
     <insert id="insert" useGeneratedKeys="true" keyProperty="id">
-        INSERT INTO tournament (name, held_date, capacity, total_rounds, win_point, lose_point, participation_point, bracket_group_size, status, description, venue, created_at, updated_at)
-        VALUES (#{name}, #{heldDate}, #{capacity}, #{totalRounds}, #{winPoint}, #{losePoint}, #{participationPoint}, #{bracketGroupSize}, #{status}, #{description}, #{venue}, NOW(), NOW())
+        INSERT INTO tournament (name, held_date, capacity, total_rounds, win_point, lose_point, participation_point, bracket_group_size, status, description, venue, icon_path, created_at, updated_at)
+        VALUES (#{name}, #{heldDate}, #{capacity}, #{totalRounds}, #{winPoint}, #{losePoint}, #{participationPoint}, #{bracketGroupSize}, #{status}, #{description}, #{venue}, #{iconPath}, NOW(), NOW())
     </insert>
 
     <update id="update">
@@ -24,7 +24,7 @@
         SET name = #{name}, held_date = #{heldDate}, capacity = #{capacity}, total_rounds = #{totalRounds},
             win_point = #{winPoint}, lose_point = #{losePoint}, participation_point = #{participationPoint},
             bracket_group_size = #{bracketGroupSize}, status = #{status}, description = #{description}, venue = #{venue},
-            updated_at = NOW()
+            icon_path = #{iconPath}, updated_at = NOW()
         WHERE id = #{id}
     </update>
 

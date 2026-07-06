@@ -91,8 +91,25 @@ public class AdminController {
                                    @RequestParam int bracketGroupSize,
                                    @RequestParam(required = false) String venue,
                                    @RequestParam(required = false) String description,
+                                   @RequestParam(required = false) org.springframework.web.multipart.MultipartFile iconFile,
                                    @RequestParam Map<String, String> allParams) {
         
+        String iconPath = null;
+        if (iconFile != null && !iconFile.isEmpty()) {
+            try {
+                java.io.File dir = new java.io.File("/opt/asopoketool/images");
+                if (!dir.exists()) {
+                    dir.mkdirs();
+                }
+                String filename = "icon_" + System.currentTimeMillis() + "_" + iconFile.getOriginalFilename();
+                java.io.File dest = new java.io.File(dir, filename);
+                iconFile.transferTo(dest);
+                iconPath = "/asopoketool/timer-bg-files/" + filename;
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        }
+
         Tournament tournament = Tournament.builder()
                 .name(name)
                 .heldDate(LocalDate.parse(heldDate))
@@ -104,6 +121,7 @@ public class AdminController {
                 .bracketGroupSize(bracketGroupSize)
                 .venue(venue)
                 .description(description)
+                .iconPath(iconPath)
                 .build();
         tournamentService.createTournament(tournament);
 

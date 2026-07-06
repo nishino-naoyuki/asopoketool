@@ -25,6 +25,7 @@ public class Tournament {
     private String status; // ENTRY, IN_PROGRESS, BRACKET, FINISHED
     private String description;
     private String venue;
+    private String iconPath;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
 }
