@@ -255,10 +255,6 @@
                         drawLine(midX, winY, midX, midY, '#ff0000', 4);
                         drawLine(midX, midY, midX + 60, midY, '#ff0000', 4);
                     }
-
-                    // 丸囲み卓番号（QF1=2, QF2=3, QF3=1, QF4=4）
-                    const tableMap = { 1: '②', 2: '③', 3: '①', 4: '④' };
-                    drawMatchBadge(tableMap[i + 1], midX, midY);
                 }
 
                 // --- 2回戦 (Semifinals) ---
@@ -284,10 +280,6 @@
                         drawLine(rightX, winY, rightX, posMidY, '#ff0000', 4);
                         drawLine(rightX, posMidY, rightX + 60, posMidY, '#ff0000', 4);
                     }
-
-                    // 丸囲み卓番号 (SF1=⑤, SF2=⑥)
-                    const tableMap = { 1: '⑤', 2: '⑥' };
-                    drawMatchBadge(tableMap[i + 1], rightX, posMidY);
                 }
 
                 // --- 3回戦 (Finals) ---
@@ -309,9 +301,6 @@
                     drawLine(rightX, winY, rightX, finalY, '#ff0000', 4);
                     drawLine(rightX, finalY, rightX + 80, finalY, '#ff0000', 4);
                 }
-
-                // 決勝 卓番号⑦
-                drawMatchBadge('⑦', rightX, finalY);
 
                 // --- 3位決定戦 ---
                 if (hasThirdPlaceMatch) {
