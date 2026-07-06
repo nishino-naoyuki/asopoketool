@@ -165,6 +165,17 @@ body {
     border: none !important;
     padding: 16px 12px !important;
     vertical-align: middle;
+    color: var(--light) !important;
+}
+
+.table-custom td h1,
+.table-custom td h2,
+.table-custom td h3,
+.table-custom td h4,
+.table-custom td h5,
+.table-custom td h6,
+.table-custom td a {
+    color: #ffffff !important;
 }
 
 .table-custom tbody tr:hover {
