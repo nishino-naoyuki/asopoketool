@@ -608,3 +608,27 @@ body {
 .card-glass p, .card-glass span, .card-glass div {
     color: #4A3E3D;
 }
+
+/* Force override outline light buttons for pastel theme */
+.btn-outline-light {
+    border: 2px solid var(--primary) !important;
+    color: var(--primary) !important;
+    background-color: transparent !important;
+    font-weight: 700 !important;
+    border-radius: 12px !important;
+    transition: all 0.3s ease !important;
+}
+
+.btn-outline-light:hover {
+    background-color: var(--primary) !important;
+    color: #ffffff !important;
+    box-shadow: 0 4px 12px var(--primary-glow) !important;
+}
+
+/* Force override dark benefit boxes in registration benefit display */
+.card-glass .bg-dark {
+    background-color: #FFFDF0 !important;
+    border: 2px solid rgba(255, 123, 84, 0.15) !important;
+    color: var(--light) !important;
+    border-radius: 12px !important;
+}

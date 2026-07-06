@@ -91,19 +91,27 @@ public class AdminController {
                                    @RequestParam int bracketGroupSize,
                                    @RequestParam(required = false) String venue,
                                    @RequestParam(required = false) String description,
-                                   @RequestParam(required = false) org.springframework.web.multipart.MultipartFile iconFile,
+                                   @RequestParam(required = false) String iconBase64,
                                    @RequestParam Map<String, String> allParams) {
         
         String iconPath = null;
-        if (iconFile != null && !iconFile.isEmpty()) {
+        if (iconBase64 != null && !iconBase64.trim().isEmpty()) {
             try {
+                String base64Data = iconBase64;
+                if (base64Data.contains(",")) {
+                    base64Data = base64Data.substring(base64Data.indexOf(",") + 1);
+                }
+                byte[] decodedBytes = java.util.Base64.getDecoder().decode(base64Data);
+
                 java.io.File dir = new java.io.File("/opt/asopoketool/images");
                 if (!dir.exists()) {
                     dir.mkdirs();
                 }
-                String filename = "icon_" + System.currentTimeMillis() + "_" + iconFile.getOriginalFilename();
+                String filename = "icon_" + System.currentTimeMillis() + ".png";
                 java.io.File dest = new java.io.File(dir, filename);
-                iconFile.transferTo(dest);
+                try (java.io.FileOutputStream fos = new java.io.FileOutputStream(dest)) {
+                    fos.write(decodedBytes);
+                }
                 iconPath = "/asopoketool/timer-bg-files/" + filename;
             } catch (Exception e) {
                 e.printStackTrace();

@@ -10,37 +10,45 @@
         <div class="row">
             <div class="col-lg-8">
                 <!-- Tournament Detail Card -->
-                <div class="card card-glass text-white p-4 mb-4">
-                    <div class="d-flex justify-content-between align-items-center mb-3">
-                        <h2 class="fw-bold text-white mb-0" th:text="${tournament.name}">大会名</h2>
-                        <span class="badge-status" 
-                              th:classappend="${tournament.status == 'ENTRY' ? 'badge-entry' : (tournament.status == 'IN_PROGRESS' ? 'badge-in-progress' : (tournament.status == 'BRACKET' ? 'badge-bracket' : 'badge-finished'))}"
-                              th:text="${tournament.status == 'ENTRY' ? 'エントリー受付中' : (tournament.status == 'IN_PROGRESS' ? 'スイスドロー進行中' : (tournament.status == 'BRACKET' ? '決勝T進行中' : '大会終了'))}">
-                            ステータス
-                        </span>
+                <div class="card card-glass text-white overflow-hidden mb-4">
+                    <!-- Tournament Banner (10:4) -->
+                    <div style="width: 100%; aspect-ratio: 10/4; overflow: hidden; background: #ffe5d9; border-bottom: 2px solid var(--card-border);">
+                        <img th:src="${tournament.iconPath != null ? tournament.iconPath : '/asopoketool/images/pikachu.png'}" 
+                             style="width: 100%; height: 100%; object-fit: cover;" 
+                             alt="Tournament Banner">
                     </div>
-
-                    <p class="text-muted" th:text="${tournament.description}">大会説明文がここに入ります。</p>
-
-                    <hr class="border-secondary my-4">
-
-                    <h4 class="mb-3 text-warning"><i class="fa-solid fa-circle-info"></i> 開催情報</h4>
-                    <div class="row g-3">
-                        <div class="col-md-6">
-                            <p class="mb-1 text-muted"><i class="fa-solid fa-location-dot text-primary"></i> 開催場所</p>
-                            <p class="fw-bold" th:text="${tournament.venue != null ? tournament.venue : '未定'}">会場</p>
+                    <div class="p-4">
+                        <div class="d-flex justify-content-between align-items-center mb-3">
+                            <h2 class="fw-bold text-white mb-0" th:text="${tournament.name}">大会名</h2>
+                            <span class="badge-status" 
+                                  th:classappend="${tournament.status == 'ENTRY' ? 'badge-entry' : (tournament.status == 'IN_PROGRESS' ? 'badge-in-progress' : (tournament.status == 'BRACKET' ? 'badge-bracket' : 'badge-finished'))}"
+                                  th:text="${tournament.status == 'ENTRY' ? 'エントリー受付中' : (tournament.status == 'IN_PROGRESS' ? 'スイスドロー進行中' : (tournament.status == 'BRACKET' ? '決勝T進行中' : '大会終了'))}">
+                                ステータス
+                            </span>
                         </div>
-                        <div class="col-md-6">
-                            <p class="mb-1 text-muted"><i class="fa-solid fa-calendar text-primary"></i> 開催日</p>
-                            <p class="fw-bold" th:text="${tournament.heldDate}">2026-07-10</p>
-                        </div>
-                        <div class="col-md-6">
-                            <p class="mb-1 text-muted"><i class="fa-solid fa-user-group text-primary"></i> 定員</p>
-                            <p class="fw-bold"><span th:text="${entryCount}">0</span> / <span th:text="${tournament.capacity}">32</span> 名</p>
-                        </div>
-                        <div class="col-md-6" th:if="${tournament.status != 'ENTRY'}">
-                            <p class="mb-1 text-muted"><i class="fa-solid fa-user-check text-primary"></i> チェックイン済み</p>
-                            <p class="fw-bold"><span th:text="${checkedInCount}">0</span> 名</p>
+
+                        <p class="text-muted" th:text="${tournament.description}">大会説明文がここに入ります。</p>
+
+                        <hr class="border-secondary my-4">
+
+                        <h4 class="mb-3 text-warning"><i class="fa-solid fa-circle-info"></i> 開催情報</h4>
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <p class="mb-1 text-muted"><i class="fa-solid fa-location-dot text-primary"></i> 開催場所</p>
+                                <p class="fw-bold" th:text="${tournament.venue != null ? tournament.venue : '未定'}">会場</p>
+                            </div>
+                            <div class="col-md-6">
+                                <p class="mb-1 text-muted"><i class="fa-solid fa-calendar text-primary"></i> 開催日</p>
+                                <p class="fw-bold" th:text="${tournament.heldDate}">2026-07-10</p>
+                            </div>
+                            <div class="col-md-6">
+                                <p class="mb-1 text-muted"><i class="fa-solid fa-user-group text-primary"></i> 定員</p>
+                                <p class="fw-bold"><span th:text="${entryCount}">0</span> / <span th:text="${tournament.capacity}">32</span> 名</p>
+                            </div>
+                            <div class="col-md-6" th:if="${tournament.status != 'ENTRY'}">
+                                <p class="mb-1 text-muted"><i class="fa-solid fa-user-check text-primary"></i> チェックイン済み</p>
+                                <p class="fw-bold"><span th:text="${checkedInCount}">0</span> 名</p>
+                            </div>
                         </div>
                     </div>
                 </div>
