@@ -145,8 +145,8 @@
                 
                 // キャンバスを作成
                 const canvas = document.createElement('canvas');
-                canvas.width = 1100;
-                canvas.height = 700;
+                canvas.width = 1000;
+                canvas.height = 650;
                 const ctx = canvas.getContext('2d');
                 
                 // 白背景で塗りつぶし
@@ -154,27 +154,9 @@
                 ctx.fillRect(0, 0, canvas.width, canvas.height);
                 
                 // フォント設定
-                ctx.font = 'bold 16px "Noto Sans JP", "Hiragino Kaku Gothic ProN", sans-serif';
+                ctx.font = 'bold 15px "Noto Sans JP", sans-serif';
                 ctx.textBaseline = 'middle';
                 
-                // ラウンドとマッチの座標マップを定義
-                const positions = {
-                    1: {
-                        1: { x: 50, y: 100 },
-                        2: { x: 50, y: 220 },
-                        3: { x: 50, y: 340 },
-                        4: { x: 50, y: 460 }
-                    },
-                    2: {
-                        1: { x: 380, y: 160 },
-                        2: { x: 380, y: 400 }
-                    },
-                    3: {
-                        1: { x: 710, y: 280 }, // 決勝
-                        2: { x: 50, y: 600 }  // 3位決定戦
-                    }
-                };
-
                 // 線を描画する共通ヘルパー
                 function drawLine(x1, y1, x2, y2, color, width) {
                     ctx.beginPath();
@@ -189,7 +171,7 @@
                 // 丸囲み卓番号を描画するヘルパー
                 function drawMatchBadge(numStr, x, y) {
                     ctx.beginPath();
-                    ctx.arc(x, y, 12, 0, Math.PI * 2);
+                    ctx.arc(x, y, 11, 0, Math.PI * 2);
                     ctx.fillStyle = '#ffffff';
                     ctx.fill();
                     ctx.strokeStyle = '#000000';
@@ -197,120 +179,159 @@
                     ctx.stroke();
                     
                     ctx.fillStyle = '#000000';
-                    ctx.font = 'bold 12px "Noto Sans JP", sans-serif';
+                    ctx.font = 'bold 11px "Noto Sans JP", sans-serif';
                     ctx.textAlign = 'center';
                     ctx.fillText(numStr, x, y + 1);
                     ctx.textAlign = 'left'; // リセット
-                    ctx.font = 'bold 16px "Noto Sans JP", sans-serif';
+                    ctx.font = 'bold 15px "Noto Sans JP", sans-serif';
                 }
+
+                // 各種定数と座標マッピング
+                // 1回戦の選手名は左寄せで、X=170を右端として揃えます。
+                const startX = 180;
+                
+                // 8名の縦座標位置 (Y座標)
+                const yPositions = [60, 120, 180, 240, 300, 360, 420, 480];
+                
+                // 各ラウンドの中央Y座標
+                const qfY = { 1: 90, 2: 210, 3: 330, 4: 450 };
+                const sfY = { 1: 150, 2: 390 };
+                const finalY = 270;
+
+                // 3位決定戦の座標
+                const thirdP1Y = 540;
+                const thirdP2Y = 590;
+                const thirdMidY = 565;
 
                 let hasThirdPlaceMatch = false;
 
-                // 選手名と線の描画
-                matches.forEach(m => {
-                    const pos = (positions[m.round] && positions[m.round][m.matchNum]) ? positions[m.round][m.matchNum] : null;
-                    if (!pos) return;
-
-                    if (m.round === 3 && m.matchNum === 2) {
-                        hasThirdPlaceMatch = true;
-                    }
-
-                    const boxW = 200;
-                    const y1 = pos.y - 25; // プレイヤー1のY
-                    const y2 = pos.y + 25; // プレイヤー2のY
-                    const lineEndX = pos.x + boxW; // 横線の右端
+                // 1. まず左端の選手名（1回戦）を描画する
+                ctx.fillStyle = '#000000';
+                ctx.textAlign = 'right';
+                
+                const qfMatches = matches.filter(m => m.round === 1);
+                for (let i = 0; i < 4; i++) {
+                    const m = qfMatches.find(x => x.matchNum === (i + 1));
+                    const p1Y = yPositions[i * 2];
+                    const p2Y = yPositions[i * 2 + 1];
                     
-                    // 1. 選手名の描画
-                    ctx.fillStyle = '#000000';
-                    ctx.fillText(m.p1Name || '（TBD）', pos.x, y1 - 8);
-                    ctx.fillText(m.p2Name || (m.isBye ? '（不戦勝）' : '（TBD）'), pos.x, y2 - 8);
-
-                    // 2. 基本対戦アンダーライン (黒線)
-                    drawLine(pos.x, y1, lineEndX, y1, '#000000', 2);
-                    drawLine(pos.x, y2, lineEndX, y2, '#000000', 2);
-
-                    // 3. 勝ち上がり接続線の描画
-                    if (m.round === 1) {
-                        const midX = lineEndX + 50; // コの字の縦線の位置
-                        
-                        drawLine(lineEndX, y1, midX, y1, '#000000', 2);
-                        drawLine(lineEndX, y2, midX, y2, '#000000', 2);
-                        drawLine(midX, y1, midX, y2, '#000000', 2);
-                        
-                        const nextY = (m.matchNum === 1 || m.matchNum === 2) ? 160 : 400;
-                        drawLine(midX, pos.y, midX + 80, pos.y, '#000000', 2);
-
-                        if (m.winnerId !== null) {
-                            const isP1Winner = (m.winnerId === m.p1Id);
-                            const winY = isP1Winner ? y1 : y2;
-                            
-                            drawLine(lineEndX, winY, midX, winY, '#ff0000', 4);
-                            drawLine(midX, winY, midX, pos.y, '#ff0000', 4);
-                            drawLine(midX, pos.y, midX + 80, pos.y, '#ff0000', 4);
-                        }
-
-                        // 丸囲み卓番号（QF1=2, QF2=3, QF3=1, QF4=4）
-                        const tableMap = { 1: '②', 2: '③', 3: '①', 4: '④' };
-                        drawMatchBadge(tableMap[m.matchNum], midX, pos.y);
-
-                    } else if (m.round === 2) {
-                        const rightMidX = lineEndX + 80; // (660)
-                        const targetY = (m.matchNum === 1) ? 255 : 305;
-                        
-                        drawLine(lineEndX, pos.y, rightMidX, pos.y, '#000000', 2);
-                        drawLine(rightMidX, pos.y, rightMidX, targetY, '#000000', 2);
-                        drawLine(rightMidX, targetY, rightMidX + 50, targetY, '#000000', 2);
-
-                        if (m.winnerId !== null) {
-                            drawLine(lineEndX, pos.y, rightMidX, pos.y, '#ff0000', 4);
-                            drawLine(rightMidX, pos.y, rightMidX, targetY, '#ff0000', 4);
-                            drawLine(rightMidX, targetY, rightMidX + 50, targetY, '#ff0000', 4);
-                        }
-
-                        const badgeY = (pos.y + targetY) / 2;
-                        const tableMap = { 1: '⑤', 2: '⑥' };
-                        drawMatchBadge(tableMap[m.matchNum], rightMidX, badgeY);
-
-                    } else if (m.round === 3 && m.matchNum === 1) {
-                        const midX = lineEndX + 50; // (960)
-                        drawLine(lineEndX, y1, midX, y1, '#000000', 2);
-                        drawLine(lineEndX, y2, midX, y2, '#000000', 2);
-                        drawLine(midX, y1, midX, y2, '#000000', 2);
-                        
-                        drawLine(midX, pos.y, midX + 80, pos.y, '#000000', 2);
-
-                        if (m.winnerId !== null) {
-                            const isP1Winner = (m.winnerId === m.p1Id);
-                            const winY = isP1Winner ? y1 : y2;
-                            
-                            drawLine(lineEndX, winY, midX, winY, '#ff0000', 4);
-                            drawLine(midX, winY, midX, pos.y, '#ff0000', 4);
-                            drawLine(midX, pos.y, midX + 80, pos.y, '#ff0000', 4);
-                        }
-
-                        drawMatchBadge('⑦', midX, pos.y);
-                    } else if (m.round === 3 && m.matchNum === 2) {
-                        // 3位決定戦
-                        const midX = lineEndX + 50;
-                        drawLine(lineEndX, y1, midX, y1, '#000000', 2);
-                        drawLine(lineEndX, y2, midX, y2, '#000000', 2);
-                        drawLine(midX, pos.y, midX + 80, pos.y, '#000000', 2);
-
-                        if (m.winnerId !== null) {
-                            const isP1Winner = (m.winnerId === m.p1Id);
-                            const winY = isP1Winner ? y1 : y2;
-                            
-                            drawLine(lineEndX, winY, midX, winY, '#ff0000', 4);
-                            drawLine(midX, winY, midX, pos.y, '#ff0000', 4);
-                            drawLine(midX, pos.y, midX + 80, pos.y, '#ff0000', 4);
-                        }
+                    if (m) {
+                        ctx.fillText(m.p1Name || '（TBD）', 170, p1Y);
+                        ctx.fillText(m.p2Name || (m.isBye ? '（不戦勝）' : '（TBD）'), 170, p2Y);
+                    } else {
+                        ctx.fillText('（TBD）', 170, p1Y);
+                        ctx.fillText('（TBD）', 170, p2Y);
                     }
-                });
+                }
 
+                // 3位決定戦の選手名
+                const thirdMatch = matches.find(m => m.round === 3 && m.matchNum === 2);
+                if (thirdMatch) {
+                    hasThirdPlaceMatch = true;
+                    ctx.fillText(thirdMatch.p1Name || '（TBD）', 170, thirdP1Y);
+                    ctx.fillText(thirdMatch.p2Name || '（TBD）', 170, thirdP2Y);
+                }
+                
+                ctx.textAlign = 'left'; // リセット
+
+                // 2. 対戦ツリー線の描画
+                // --- 1回戦 (Quarterfinals) ---
+                for (let i = 0; i < 4; i++) {
+                    const m = qfMatches.find(x => x.matchNum === (i + 1));
+                    const p1Y = yPositions[i * 2];
+                    const p2Y = yPositions[i * 2 + 1];
+                    const midY = qfY[i + 1];
+                    const midX = startX + 70; // 250
+                    
+                    // 基本線(黒)
+                    drawLine(startX, p1Y, midX, p1Y, '#000000', 2);
+                    drawLine(startX, p2Y, midX, p2Y, '#000000', 2);
+                    drawLine(midX, p1Y, midX, p2Y, '#000000', 2);
+                    drawLine(midX, midY, midX + 60, midY, '#000000', 2); // 250 -> 310
+
+                    if (m && m.winnerId !== null) {
+                        const winY = (m.winnerId === m.p1Id) ? p1Y : p2Y;
+                        drawLine(startX, winY, midX, winY, '#ff0000', 4);
+                        drawLine(midX, winY, midX, midY, '#ff0000', 4);
+                        drawLine(midX, midY, midX + 60, midY, '#ff0000', 4);
+                    }
+
+                    // 丸囲み卓番号（QF1=2, QF2=3, QF3=1, QF4=4）
+                    const tableMap = { 1: '②', 2: '③', 3: '①', 4: '④' };
+                    drawMatchBadge(tableMap[i + 1], midX, midY);
+                }
+
+                // --- 2回戦 (Semifinals) ---
+                const sfMatches = matches.filter(m => m.round === 2);
+                for (let i = 0; i < 2; i++) {
+                    const m = sfMatches.find(x => x.matchNum === (i + 1));
+                    const qf1Y = qfY[i * 2 + 1];
+                    const qf2Y = qfY[i * 2 + 2];
+                    const posMidY = sfY[i + 1]; // SF中央 (150, 390)
+                    const leftX = startX + 130; // 310
+                    const rightX = leftX + 120; // 430
+                    
+                    // 基本線(黒)
+                    drawLine(leftX, qf1Y, rightX, qf1Y, '#000000', 2);
+                    drawLine(leftX, qf2Y, rightX, qf2Y, '#000000', 2);
+                    drawLine(rightX, qf1Y, rightX, qf2Y, '#000000', 2);
+                    drawLine(rightX, posMidY, rightX + 60, posMidY, '#000000', 2); // 430 -> 490
+
+                    if (m && m.winnerId !== null) {
+                        // QFの勝者がSFのP1/P2
+                        const winY = (m.winnerId === m.p1Id) ? qf1Y : qf2Y;
+                        drawLine(leftX, winY, rightX, winY, '#ff0000', 4);
+                        drawLine(rightX, winY, rightX, posMidY, '#ff0000', 4);
+                        drawLine(rightX, posMidY, rightX + 60, posMidY, '#ff0000', 4);
+                    }
+
+                    // 丸囲み卓番号 (SF1=⑤, SF2=⑥)
+                    const tableMap = { 1: '⑤', 2: '⑥' };
+                    drawMatchBadge(tableMap[i + 1], rightX, posMidY);
+                }
+
+                // --- 3回戦 (Finals) ---
+                const finalMatch = matches.find(m => m.round === 3 && m.matchNum === 1);
+                const sf1Y = sfY[1]; // 150
+                const sf2Y = sfY[2]; // 390
+                const leftX = startX + 310; // 490
+                const rightX = leftX + 160; // 650
+                
+                // 基本線(黒)
+                drawLine(leftX, sf1Y, rightX, sf1Y, '#000000', 2);
+                drawLine(leftX, sf2Y, rightX, sf2Y, '#000000', 2);
+                drawLine(rightX, sf1Y, rightX, sf2Y, '#000000', 2);
+                drawLine(rightX, finalY, rightX + 80, finalY, '#000000', 2); // 650 -> 730
+
+                if (finalMatch && finalMatch.winnerId !== null) {
+                    const winY = (finalMatch.winnerId === finalMatch.p1Id) ? sf1Y : sf2Y;
+                    drawLine(leftX, winY, rightX, winY, '#ff0000', 4);
+                    drawLine(rightX, winY, rightX, finalY, '#ff0000', 4);
+                    drawLine(rightX, finalY, rightX + 80, finalY, '#ff0000', 4);
+                }
+
+                // 決勝 卓番号⑦
+                drawMatchBadge('⑦', rightX, finalY);
+
+                // --- 3位決定戦 ---
                 if (hasThirdPlaceMatch) {
+                    const midX = startX + 70; // 250
+                    
+                    drawLine(startX, thirdP1Y, midX, thirdP1Y, '#000000', 2);
+                    drawLine(startX, thirdP2Y, midX, thirdP2Y, '#000000', 2);
+                    drawLine(midX, thirdP1Y, midX, thirdP2Y, '#000000', 2);
+                    drawLine(midX, thirdMidY, midX + 60, thirdMidY, '#000000', 2);
+
+                    if (thirdMatch && thirdMatch.winnerId !== null) {
+                        const winY = (thirdMatch.winnerId === thirdMatch.p1Id) ? thirdP1Y : thirdP2Y;
+                        drawLine(startX, winY, midX, winY, '#ff0000', 4);
+                        drawLine(midX, winY, midX, thirdMidY, '#ff0000', 4);
+                        drawLine(midX, thirdMidY, midX + 60, thirdMidY, '#ff0000', 4);
+                    }
+
                     ctx.fillStyle = '#000000';
-                    ctx.font = 'bold 16px "Noto Sans JP", sans-serif';
-                    ctx.fillText('3位決定戦', 50, 540);
+                    ctx.font = 'bold 13px "Noto Sans JP", sans-serif';
+                    ctx.fillText('3位決定戦', startX - 130, thirdMidY);
                 }
 
                 // ダウンロード
