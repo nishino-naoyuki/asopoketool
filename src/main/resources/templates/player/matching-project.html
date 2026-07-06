@@ -9,62 +9,140 @@
     <link th:href="@{/css/common.css}" rel="stylesheet">
     <style>
         body {
-            background-color: #0d0d1a;
-            color: #ffffff;
+            background-color: #FFFDF0; /* パステルイエロー背景 */
+            color: #4A3E3D; /* 優しいダークブラウン */
             font-family: 'Noto Sans JP', sans-serif;
             min-height: 100vh;
             margin: 0;
-            padding: 20px;
+            padding: 40px;
+            position: relative;
+            overflow-x: hidden;
         }
         .project-header {
-            border-bottom: 2px solid var(--primary);
-            padding-bottom: 15px;
-            margin-bottom: 30px;
+            border-bottom: 4px dashed #FFB6C1; /* パステルピンクの点線 */
+            padding-bottom: 20px;
+            margin-bottom: 25px;
         }
+        .project-title {
+            color: #FF7F50; /* コーラルオレンジ */
+            font-weight: 800;
+        }
+        
+        /* 見出し行 */
+        .project-table-header {
+            display: flex;
+            background: #FFE4E1; /* パステルピンク */
+            border-radius: 12px;
+            padding: 12px 20px;
+            margin-bottom: 15px;
+            font-weight: bold;
+            color: #D05A6E;
+            font-size: 1.1rem;
+            border: 2px solid #FFC0CB;
+        }
+        .header-num {
+            min-width: 80px;
+            text-align: center;
+        }
+        .header-players {
+            flex-grow: 1;
+            padding-left: 20px;
+        }
+
         .matching-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(360px, 1fr));
+            grid-template-columns: repeat(auto-fill, minmax(380px, 1fr));
             gap: 20px;
+            padding-bottom: 60px;
         }
         .project-match-card {
-            background: rgba(255, 255, 255, 0.05);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            border-radius: 12px;
+            background: #ffffff;
+            border: 3px solid #FFE4E1; /* かわいいピンクの太枠 */
+            border-radius: 20px;
             padding: 20px;
-            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+            box-shadow: 0 8px 16px rgba(255, 182, 193, 0.2);
             display: flex;
             align-items: center;
             justify-content: space-between;
+            transition: transform 0.2s ease;
+        }
+        .project-match-card:hover {
+            transform: scale(1.02);
         }
         .table-num {
-            font-size: 2.2rem;
-            font-weight: 700;
-            color: var(--accent);
-            text-shadow: 0 0 10px rgba(255, 215, 0, 0.3);
-            border-right: 1px solid rgba(255, 255, 255, 0.15);
+            font-size: 2.4rem;
+            font-weight: 800;
+            color: #FF6B6B; /* パステルレッド */
+            border-right: 3px dashed #FFE4E1;
             padding-right: 15px;
-            min-width: 65px;
+            min-width: 80px;
         }
         .players-area {
             flex-grow: 1;
-            padding-left: 15px;
+            padding-left: 20px;
             display: flex;
             flex-direction: column;
-            gap: 4px;
+            gap: 6px;
         }
         .player-name-project {
-            font-size: 1.3rem;
-            font-weight: 600;
-            color: #ffffff;
+            font-size: 1.4rem;
+            font-weight: 700;
+            color: #4A3E3D;
             white-space: nowrap;
             overflow: hidden;
             text-overflow: ellipsis;
         }
-        .vs-text {
-            font-size: 0.8rem;
-            color: #888899;
-            font-weight: 700;
-            margin-left: 5px;
+        .turn-badge {
+            font-size: 0.85rem;
+            padding: 2px 8px;
+            border-radius: 10px;
+            font-weight: bold;
+            margin-right: 6px;
+        }
+        .turn-first {
+            background-color: #E6F3FF;
+            color: #1E90FF;
+            border: 1px solid #B0D4FF;
+        }
+        .turn-second {
+            background-color: #FFEAEF;
+            color: #FF4D79;
+            border: 1px solid #FFCCD8;
+        }
+
+        /* 🌸 四隅のデコレーションポケモン 🌸 */
+        .pokemon-corner {
+            position: fixed;
+            width: 140px;
+            height: 140px;
+            z-index: 99;
+            pointer-events: none; /* クリックを邪魔しない */
+            filter: drop-shadow(0 6px 8px rgba(0,0,0,0.1));
+        }
+        .pokemon-top-left {
+            top: 10px;
+            left: 10px;
+            transform: rotate(-10deg);
+        }
+        .pokemon-top-right {
+            top: 10px;
+            right: 10px;
+            transform: rotate(10deg);
+        }
+        .pokemon-bottom-left {
+            bottom: 10px;
+            left: 10px;
+            transform: rotate(10deg);
+        }
+        .pokemon-bottom-right {
+            bottom: 10px;
+            right: 10px;
+            transform: rotate(-10deg);
+        }
+
+        /* コンテナのパディング調整 (ポケモンと被らないように) */
+        .project-container {
+            padding: 0 80px;
         }
     </style>
     <!-- Auto refresh every 30 seconds -->
@@ -72,35 +150,49 @@
 </head>
 <body>
 
-    <div class="container-fluid">
+    <!-- 🌸 ポケモン画像配置 🌸 -->
+    <img th:src="@{/images/bulbasaur.png}" class="pokemon-corner pokemon-top-left" alt="フシギダネ">
+    <img th:src="@{/images/charmander.png}" class="pokemon-corner pokemon-top-right" alt="ヒトカゲ">
+    <img th:src="@{/images/squirtle.png}" class="pokemon-corner pokemon-bottom-left" alt="ゼニガメ">
+    <img th:src="@{/images/pikachu.png}" class="pokemon-corner pokemon-bottom-right" alt="ピカチュウ">
+
+    <div class="container-fluid project-container">
         <div class="project-header d-flex justify-content-between align-items-center">
             <div>
-                <h1 class="display-5 fw-bold text-white mb-0" th:text="${tournament.name}">大会名</h1>
-                <p class="text-warning mb-0 fs-4 fw-bold" th:if="${round != null}" th:text="'スイスドロー予選：ラウンド ' + ${round.roundNumber} + ' 対戦ペアリング'"></p>
+                <h1 class="display-5 fw-bold project-title mb-0" th:text="${tournament.name}">大会名</h1>
+                <p class="text-muted mb-0 fs-4 fw-bold" th:if="${round != null}" th:text="'スイスドロー予選：ラウンド ' + ${round.roundNumber} + ' 対戦ペアリング'"></p>
             </div>
             <div class="text-end text-muted small">
-                <span class="d-block"><i class="fa-solid fa-arrows-rotate"></i> 30秒ごとに自動更新</span>
-                <span id="last-updated">最終更新: --:--:--</span>
+                <span class="d-block fw-bold"><i class="fa-solid fa-arrows-rotate text-success"></i> 30秒ごとに自動更新</span>
+                <span id="last-updated" class="font-monospace fw-bold">最終更新: --:--:--</span>
             </div>
         </div>
 
         <!-- No matching state -->
-        <div th:if="${noMatchingYet}" class="card-glass p-5 text-center text-muted">
-            <i class="fa-solid fa-circle-exclamation fa-4x mb-3 text-warning"></i>
-            <h2 class="fw-bold text-white">対戦ペアリングは現在準備中です</h2>
+        <div th:if="${noMatchingYet}" class="p-5 text-center text-muted card-glass" style="background: white; border: 3px dashed #FFE4E1; border-radius: 20px;">
+            <i class="fa-solid fa-circle-exclamation fa-4x mb-3" style="color: #FFB6C1;"></i>
+            <h2 class="fw-bold" style="color: #4A3E3D;">対戦ペアリングは現在準備中です</h2>
             <p class="fs-5">しばらくお待ちください。</p>
         </div>
 
         <!-- Matching list layout -->
-        <div th:unless="${noMatchingYet}" class="matching-grid">
-            <div th:each="m : ${matches}" class="project-match-card">
-                <div class="table-num text-center" th:text="${m.tableNumber}">1</div>
-                <div class="players-area">
-                    <div class="player-name-project">
-                        <span class="text-info">先:</span> <span th:text="${m.player1Name}">プレイヤー1</span>
-                    </div>
-                    <div class="player-name-project">
-                        <span class="text-danger">後:</span> <span th:text="${m.isBye ? '不戦勝 (BYE)' : m.player2Name}">プレイヤー2</span>
+        <div th:unless="${noMatchingYet}">
+            <!-- 見出し行 -->
+            <div class="project-table-header">
+                <div class="header-num">卓番号</div>
+                <div class="header-players">対戦カード（先手 vs 後手）</div>
+            </div>
+
+            <div class="matching-grid">
+                <div th:each="m : ${matches}" class="project-match-card">
+                    <div class="table-num text-center" th:text="${m.tableNumber}">1</div>
+                    <div class="players-area">
+                        <div class="player-name-project">
+                            <span class="turn-badge turn-first">先</span><span th:text="${m.player1Name}">プレイヤー1</span>
+                        </div>
+                        <div class="player-name-project">
+                            <span class="turn-badge turn-second">後</span><span th:text="${m.isBye ? '不戦勝 (BYE)' : m.player2Name}">プレイヤー2</span>
+                        </div>
                     </div>
                 </div>
             </div>
