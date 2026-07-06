@@ -193,10 +193,22 @@
             // 一時的に印刷用白背景スタイルを適用
             element.classList.add('print-mode');
             
+            // 横スクロールで見切れないように一時的に幅をコンテンツ全体の幅に展開
+            const originalStyleWidth = element.style.width;
+            const scrollWidth = element.scrollWidth;
+            const scrollHeight = element.scrollHeight;
+            element.style.width = scrollWidth + 'px';
+            
             html2canvas(element, {
                 backgroundColor: '#ffffff',
                 useCORS: true,
-                scale: 2
+                scale: 2,
+                width: scrollWidth,
+                height: scrollHeight,
+                scrollX: 0,
+                scrollY: 0,
+                windowWidth: scrollWidth,
+                windowHeight: scrollHeight
             }).then(canvas => {
                 const link = document.createElement('a');
                 link.download = filename + '_' + new Date().toISOString().slice(0, 10) + '.png';
@@ -204,8 +216,10 @@
                 link.click();
                 
                 // スタイルを元に戻す
+                element.style.width = originalStyleWidth;
                 element.classList.remove('print-mode');
             }).catch(err => {
+                element.style.width = originalStyleWidth;
                 element.classList.remove('print-mode');
                 console.error("Screenshot capture failed", err);
             });
