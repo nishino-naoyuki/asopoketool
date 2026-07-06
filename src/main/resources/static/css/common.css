@@ -148,16 +148,25 @@ body {
     border-spacing: 0 8px;
 }
 
+/* Force override Bootstrap white backgrounds */
+.table-custom th,
+.table-custom td,
+.table-custom tr {
+    background-color: transparent !important;
+    background: transparent !important;
+    color: var(--light) !important;
+}
+
 .table-custom th {
     border: none !important;
-    color: var(--text-muted);
+    color: var(--text-muted) !important;
     font-weight: 500;
     text-transform: uppercase;
     font-size: 0.85rem;
 }
 
-.table-custom tr {
-    background: rgba(255, 255, 255, 0.03);
+.table-custom tbody tr {
+    background: rgba(255, 255, 255, 0.05) !important;
     border-radius: 8px;
 }
 
@@ -165,7 +174,6 @@ body {
     border: none !important;
     padding: 16px 12px !important;
     vertical-align: middle;
-    color: var(--light) !important;
 }
 
 .table-custom td h1,
@@ -178,8 +186,16 @@ body {
     color: #ffffff !important;
 }
 
+/* Improve small details / date contrast */
+.table-custom td.text-muted,
+.table-custom td .text-muted,
+.table-custom td .small,
+.table-custom td.small {
+    color: #b2b2c5 !important;
+}
+
 .table-custom tbody tr:hover {
-    background: rgba(255, 255, 255, 0.08);
+    background: rgba(255, 255, 255, 0.1) !important;
 }
 
 /* Ranking Highlights */
