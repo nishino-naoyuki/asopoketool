@@ -67,12 +67,13 @@
                      th:id="'panel-' + ${b.id}" role="tabpanel" th:aria-labelledby="'tab-' + ${b.id}">
                     
                     <div th:id="'bracketArea-' + ${b.id}" class="card-glass p-4 overflow-auto" style="background-color: #0d0d1a;">
-                        <div class="d-flex gap-5 py-3 align-items-center" style="min-width: 600px;">
+                        <div class="d-flex gap-5 py-3 align-items-center justify-content-between bracket-tree-container" style="min-width: 800px; background-color: #0d0d1a; position: relative;">
                             
                             <!-- Round 1 matches -->
-                            <div class="d-flex flex-column justify-content-around h-100" style="gap: 40px; min-width: 220px;">
-                                <h5 class="text-center text-muted small border-bottom border-secondary pb-2">1回戦 (準々決勝)</h5>
-                                <div th:each="m : ${b.matches}" th:if="${m.roundNumber == 1}" class="bracket-match-box">
+                            <div class="bracket-round bracket-round-1 d-flex flex-column justify-content-around h-100" style="min-height: 500px; min-width: 220px;">
+                                <h5 class="text-center text-muted small border-bottom border-secondary pb-2 mb-4">1回戦 (準々決勝)</h5>
+                                <div th:each="m : ${b.matches}" th:if="${m.roundNumber == 1}" class="bracket-match-box"
+                                     th:classappend="${m.winnerEntryId != null} ? (${m.winnerEntryId == m.player1EntryId} ? 'winner-p1' : 'winner-p2') : ''">
                                     <div class="small text-muted mb-1 text-center font-monospace" th:text="'マッチ ' + ${m.matchNumber}">M1</div>
                                     
                                     <!-- Player 1 -->
@@ -90,19 +91,15 @@
                                             th:disabled="${m.player2EntryId == null || m.isBye || m.winnerEntryId != null}">
                                         <span th:text="${m.isBye ? '（不戦勝）' : (m.player2Name != null ? m.player2Name : '（TBD）')}">選手B</span>
                                     </button>
+                                    <div class="match-number-badge" th:text="${m.matchNumber}">1</div>
                                 </div>
                             </div>
 
-                            <!-- Connection Line -->
-                            <div class="d-flex flex-column justify-content-around h-100 text-muted" style="min-width: 30px;">
-                                <i class="fa-solid fa-chevron-right my-5 py-3 block text-center"></i>
-                                <i class="fa-solid fa-chevron-right my-5 py-3 block text-center"></i>
-                            </div>
-
                             <!-- Round 2 matches -->
-                            <div class="d-flex flex-column justify-content-around h-100" style="gap: 120px; min-width: 220px;">
-                                <h5 class="text-center text-muted small border-bottom border-secondary pb-2">準決勝</h5>
-                                <div th:each="m : ${b.matches}" th:if="${m.roundNumber == 2}" class="bracket-match-box">
+                            <div class="bracket-round bracket-round-2 d-flex flex-column justify-content-around h-100" style="min-height: 500px; min-width: 220px;">
+                                <h5 class="text-center text-muted small border-bottom border-secondary pb-2 mb-4">準決勝</h5>
+                                <div th:each="m : ${b.matches}" th:if="${m.roundNumber == 2}" class="bracket-match-box"
+                                     th:classappend="${m.winnerEntryId != null} ? (${m.winnerEntryId == m.player1EntryId} ? 'winner-p1' : 'winner-p2') : ''">
                                     <div class="small text-muted mb-1 text-center font-monospace" th:text="'準決勝 ' + ${m.matchNumber}">SF1</div>
                                     
                                     <!-- Player 1 -->
@@ -120,18 +117,16 @@
                                             th:disabled="${m.player2EntryId == null || m.winnerEntryId != null}">
                                         <span th:text="${m.player2Name != null ? m.player2Name : '（待機中）'}">選手B</span>
                                     </button>
+                                    <div class="match-number-badge" th:text="${m.matchNumber + 4}">5</div>
                                 </div>
                             </div>
 
-                            <!-- Connection Line -->
-                            <div class="d-flex flex-column justify-content-around h-100 text-muted" style="min-width: 30px;">
-                                <i class="fa-solid fa-chevron-right my-5 py-5 block text-center"></i>
-                            </div>
-
                             <!-- Round 3 matches (Final) -->
-                            <div class="d-flex flex-column justify-content-around h-100" style="min-width: 220px;">
-                                <h5 class="text-center text-muted small border-bottom border-secondary pb-2">決勝戦</h5>
-                                <div th:each="m : ${b.matches}" th:if="${m.roundNumber == 3}" class="bracket-match-box" style="border: 1px solid var(--accent);">
+                            <div class="bracket-round bracket-round-3 d-flex flex-column justify-content-around h-100" style="min-height: 500px; min-width: 220px;">
+                                <h5 class="text-center text-muted small border-bottom border-secondary pb-2 mb-4">決勝戦</h5>
+                                <div th:each="m : ${b.matches}" th:if="${m.roundNumber == 3}" class="bracket-match-box bracket-match-box-final"
+                                     th:classappend="${m.winnerEntryId != null} ? (${m.winnerEntryId == m.player1EntryId} ? 'winner-p1' : 'winner-p2') : ''"
+                                     style="border: 1px solid var(--accent); box-shadow: 0 0 15px rgba(255, 215, 0, 0.2);">
                                     <div class="small text-warning mb-1 text-center font-monospace"><i class="fa-solid fa-crown"></i> 決勝</div>
                                     
                                     <!-- Player 1 -->
@@ -149,6 +144,7 @@
                                             th:disabled="${m.player2EntryId == null || m.winnerEntryId != null}">
                                         <span th:text="${m.player2Name != null ? m.player2Name : '（待機中）'}">選手B</span>
                                     </button>
+                                    <div class="match-number-badge" th:text="7">7</div>
                                 </div>
                             </div>
 
@@ -193,8 +189,12 @@
         function downloadScreenshot(elementId, filename) {
             const element = document.getElementById(elementId);
             if (!element) return;
+            
+            // 一時的に印刷用白背景スタイルを適用
+            element.classList.add('print-mode');
+            
             html2canvas(element, {
-                backgroundColor: '#0d0d1a',
+                backgroundColor: '#ffffff',
                 useCORS: true,
                 scale: 2
             }).then(canvas => {
@@ -202,6 +202,12 @@
                 link.download = filename + '_' + new Date().toISOString().slice(0, 10) + '.png';
                 link.href = canvas.toDataURL('image/png');
                 link.click();
+                
+                // スタイルを元に戻す
+                element.classList.remove('print-mode');
+            }).catch(err => {
+                element.classList.remove('print-mode');
+                console.error("Screenshot capture failed", err);
             });
         }
 

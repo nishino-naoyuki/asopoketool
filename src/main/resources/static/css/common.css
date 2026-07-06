@@ -213,46 +213,282 @@ body {
 }
 
 /* Bracket tree visual styles */
-.bracket-wrapper {
-    display: flex;
-    gap: 40px;
-    padding: 20px;
-    overflow-x: auto;
+.bracket-tree-container {
+    position: relative;
+    padding: 20px 40px !important;
 }
 
 .bracket-round {
-    display: flex;
-    flex-direction: column;
-    justify-content: space-around;
-    min-width: 200px;
+    position: relative;
+    z-index: 2;
 }
 
 .bracket-match-box {
-    background: rgba(255, 255, 255, 0.04);
-    border: 1px solid var(--card-border);
-    border-radius: 12px;
-    padding: 8px;
-    margin: 16px 0;
     position: relative;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 8px;
+    padding: 10px;
+    width: 220px;
+    margin: 30px 0;
+    z-index: 5;
 }
 
 .bracket-player {
     padding: 6px 12px;
-    border-radius: 6px;
+    border-radius: 4px;
     margin: 4px 0;
     display: flex;
     justify-content: space-between;
     font-size: 0.9rem;
+    background: rgba(255, 255, 255, 0.02);
+    border-left: 3px solid transparent;
 }
 
 .bracket-player.winner {
-    background: rgba(76, 175, 80, 0.2);
-    color: #4CAF50;
+    background: rgba(25, 135, 84, 0.15);
+    border-left: 3px solid #198754;
+    color: #28a745;
     font-weight: bold;
 }
 
 .bracket-player.loser {
     opacity: 0.5;
+}
+
+/* 卓番号・マッチ番号バッジ (丸囲み風) */
+.match-number-badge {
+    position: absolute;
+    right: -24px;
+    top: calc(50% - 10px);
+    width: 20px;
+    height: 20px;
+    background: #0d0d1a;
+    border: 1px solid rgba(255, 255, 255, 0.4);
+    border-radius: 50%;
+    color: #fff;
+    font-size: 11px;
+    font-weight: bold;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 10;
+}
+
+/* 1回戦から2回戦への接続線 */
+.bracket-round-1 .bracket-match-box::after {
+    content: '';
+    position: absolute;
+    right: -30px;
+    width: 30px;
+    background: #555;
+    z-index: 1;
+}
+
+/* 奇数対戦ボックス(M1, M3)から下へ伸びる縦線 */
+.bracket-round-1 .bracket-match-box:nth-child(odd)::after {
+    height: 80px;
+    border-right: 2px solid #555;
+    border-bottom: 2px solid #555;
+    background: transparent;
+    border-top: none;
+    top: 50%;
+}
+/* 偶数対戦ボックス(M2, M4)から上へ伸びる縦線 */
+.bracket-round-1 .bracket-match-box:nth-child(even)::after {
+    height: 80px;
+    border-right: 2px solid #555;
+    border-top: 2px solid #555;
+    background: transparent;
+    border-bottom: none;
+    top: calc(50% - 80px);
+}
+
+/* 1回戦勝敗決定時の赤い太線 */
+.bracket-round-1 .bracket-match-box.winner-p1:nth-child(odd)::after,
+.bracket-round-1 .bracket-match-box.winner-p2:nth-child(odd)::after {
+    border-right: 4px solid #ff3333;
+    border-bottom: 4px solid #ff3333;
+}
+.bracket-round-1 .bracket-match-box.winner-p1:nth-child(even)::after,
+.bracket-round-1 .bracket-match-box.winner-p2:nth-child(even)::after {
+    border-right: 4px solid #ff3333;
+    border-top: 4px solid #ff3333;
+}
+
+/* 2回戦の受け取り線（左に伸ばす） */
+.bracket-round-2 .bracket-match-box::before {
+    content: '';
+    position: absolute;
+    left: -30px;
+    width: 30px;
+    height: 2px;
+    background: #555;
+    top: 50%;
+    z-index: 1;
+}
+.bracket-round-2 .bracket-match-box.winner-p1::before,
+.bracket-round-2 .bracket-match-box.winner-p2::before {
+    height: 4px;
+    background: #ff3333;
+}
+
+/* 2回戦から決勝への接続線 */
+.bracket-round-2 .bracket-match-box::after {
+    content: '';
+    position: absolute;
+    right: -30px;
+    background: #555;
+    z-index: 1;
+}
+.bracket-round-2 .bracket-match-box:nth-child(odd)::after {
+    height: 160px;
+    border-right: 2px solid #555;
+    border-bottom: 2px solid #555;
+    background: transparent;
+    top: 50%;
+}
+.bracket-round-2 .bracket-match-box:nth-child(even)::after {
+    height: 160px;
+    border-right: 2px solid #555;
+    border-top: 2px solid #555;
+    background: transparent;
+    top: calc(50% - 160px);
+}
+
+/* 2回戦勝敗決定時の赤い太線 */
+.bracket-round-2 .bracket-match-box.winner-p1:nth-child(odd)::after,
+.bracket-round-2 .bracket-match-box.winner-p2:nth-child(odd)::after {
+    border-right: 4px solid #ff3333;
+    border-bottom: 4px solid #ff3333;
+}
+.bracket-round-2 .bracket-match-box.winner-p1:nth-child(even)::after,
+.bracket-round-2 .bracket-match-box.winner-p2:nth-child(even)::after {
+    border-right: 4px solid #ff3333;
+    border-top: 4px solid #ff3333;
+}
+
+/* 決勝戦の受け取り線 */
+.bracket-round-3 .bracket-match-box::before {
+    content: '';
+    position: absolute;
+    left: -30px;
+    width: 30px;
+    height: 2px;
+    background: #555;
+    top: 50%;
+    z-index: 1;
+}
+.bracket-round-3 .bracket-match-box.winner-p1::before,
+.bracket-round-3 .bracket-match-box.winner-p2::before {
+    height: 4px;
+    background: #ff3333;
+}
+
+/* 決勝戦の勝者からさらに右へ伸ばす優勝線 */
+.bracket-round-3 .bracket-match-box::after {
+    content: '';
+    position: absolute;
+    right: -40px;
+    width: 40px;
+    height: 2px;
+    background: #555;
+    top: 50%;
+    z-index: 1;
+}
+.bracket-round-3 .bracket-match-box.winner-p1::after,
+.bracket-round-3 .bracket-match-box.winner-p2::after {
+    height: 4px;
+    background: #ff3333;
+}
+
+/* ==========================================
+   📸 スクショ（白背景・印刷）用スタイル
+   ========================================== */
+.print-mode {
+    background-color: #ffffff !important;
+    background-image: none !important;
+    color: #000000 !important;
+    border-radius: 0 !important;
+    box-shadow: none !important;
+    padding: 30px !important;
+    border: none !important;
+}
+
+.print-mode .bracket-tree-container {
+    background-color: #ffffff !important;
+}
+
+.print-mode .bracket-match-box {
+    background: #ffffff !important;
+    border: 1px solid #000000 !important;
+    color: #000000 !important;
+    box-shadow: none !important;
+}
+
+.print-mode .bracket-match-box-final {
+    border: 2px solid #000000 !important;
+}
+
+.print-mode .bracket-player {
+    background: #ffffff !important;
+    color: #000000 !important;
+    border-color: #e0e0e0 !important;
+}
+
+.print-mode .bracket-player span {
+    color: #000000 !important;
+}
+
+.print-mode .bracket-player.winner {
+    background: #f5f5f5 !important;
+    border-left: 4px solid #ff3333 !important;
+    font-weight: bold;
+}
+
+.print-mode .match-number-badge {
+    background: #ffffff !important;
+    border: 1px solid #000000 !important;
+    color: #000000 !important;
+}
+
+/* 印刷モード時の接続線の色を黒に変更 */
+.print-mode .bracket-round-1 .bracket-match-box::after,
+.print-mode .bracket-round-2 .bracket-match-box::before,
+.print-mode .bracket-round-2 .bracket-match-box::after,
+.print-mode .bracket-round-3 .bracket-match-box::before,
+.print-mode .bracket-round-3 .bracket-match-box::after {
+    background: #000000 !important;
+}
+
+.print-mode .bracket-round-1 .bracket-match-box:nth-child(odd)::after,
+.print-mode .bracket-round-1 .bracket-match-box:nth-child(even)::after,
+.print-mode .bracket-round-2 .bracket-match-box:nth-child(odd)::after,
+.print-mode .bracket-round-2 .bracket-match-box:nth-child(even)::after {
+    border-color: #000000 !important;
+}
+
+/* 印刷モード時の勝利ラインの赤太線 */
+.print-mode .bracket-round-1 .bracket-match-box.winner-p1:nth-child(odd)::after,
+.print-mode .bracket-round-1 .bracket-match-box.winner-p2:nth-child(odd)::after,
+.print-mode .bracket-round-1 .bracket-match-box.winner-p1:nth-child(even)::after,
+.print-mode .bracket-round-1 .bracket-match-box.winner-p2:nth-child(even)::after,
+.print-mode .bracket-round-2 .bracket-match-box.winner-p1:nth-child(odd)::after,
+.print-mode .bracket-round-2 .bracket-match-box.winner-p2:nth-child(odd)::after,
+.print-mode .bracket-round-2 .bracket-match-box.winner-p1:nth-child(even)::after,
+.print-mode .bracket-round-2 .bracket-match-box.winner-p2:nth-child(even)::after {
+    border-color: #ff3333 !important;
+    border-width: 4px !important;
+}
+
+.print-mode .bracket-round-2 .bracket-match-box.winner-p1::before,
+.print-mode .bracket-round-2 .bracket-match-box.winner-p2::before,
+.print-mode .bracket-round-3 .bracket-match-box.winner-p1::before,
+.print-mode .bracket-round-3 .bracket-match-box.winner-p2::before,
+.print-mode .bracket-round-3 .bracket-match-box.winner-p1::after,
+.print-mode .bracket-round-3 .bracket-match-box.winner-p2::after {
+    background: #ff3333 !important;
+    height: 4px !important;
 }
 
 /* Improve form help text contrast for dark theme */
