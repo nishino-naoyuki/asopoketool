@@ -120,7 +120,10 @@
                             </a>
                         </div>
                         <div class="col-md-6">
-                            <a th:href="@{/admin/tournament/{id}/manual-entry(id=${tournament.id})}" class="btn btn-outline-light w-100 py-3 text-start px-4" th:disabled="${tournament.status != 'ENTRY'}">
+                            <a th:href="@{/admin/tournament/{id}/manual-entry(id=${tournament.id})}" 
+                               class="btn btn-outline-light w-100 py-3 text-start px-4" 
+                               th:classappend="${tournament.status != 'ENTRY' &amp;&amp; tournament.status != 'IN_PROGRESS' ? 'disabled' : ''}"
+                               th:disabled="${tournament.status != 'ENTRY' &amp;&amp; tournament.status != 'IN_PROGRESS'}">
                                 <i class="fa-solid fa-user-plus fa-lg text-secondary me-2"></i> <strong>手動選手登録</strong>
                                 <div class="small text-muted mt-1">飛び込み参加者の手動登録</div>
                             </a>

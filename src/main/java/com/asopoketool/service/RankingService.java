@@ -4,11 +4,13 @@ import com.asopoketool.mapper.EntryMapper;
 import com.asopoketool.mapper.MatchGameMapper;
 import com.asopoketool.mapper.MatchResultMapper;
 import com.asopoketool.mapper.TournamentMapper;
+import com.asopoketool.mapper.TournamentRoundMapper;
 import com.asopoketool.model.Entry;
 import com.asopoketool.model.MatchGame;
 import com.asopoketool.model.MatchResult;
 import com.asopoketool.model.RankingEntry;
 import com.asopoketool.model.Tournament;
+import com.asopoketool.model.TournamentRound;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import java.util.*;
@@ -28,6 +30,9 @@ public class RankingService {
 
     @Autowired
     private MatchResultMapper matchResultMapper;
+
+    @Autowired
+    private TournamentRoundMapper tournamentRoundMapper;
 
     public List<RankingEntry> getRanking(Long tournamentId) {
         Tournament tournament = tournamentMapper.findById(tournamentId);
@@ -95,14 +100,50 @@ public class RankingService {
             }
         }
 
+        // Fetch round numbers to map match_game to round numbers
+        List<TournamentRound> rounds = tournamentRoundMapper.findByTournamentId(tournamentId);
+        Map<Long, Integer> roundIdToNumberMap = rounds.stream()
+                .collect(Collectors.toMap(TournamentRound::getId, TournamentRound::getRoundNumber, (a, b) -> a));
+
+        // Tracks rounds each player actually participated in
+        Map<Long, Set<Integer>> playedRoundsMap = new HashMap<>();
+        for (Entry e : allEntries) {
+            playedRoundsMap.put(e.getId(), new HashSet<>());
+        }
+
+        for (MatchGame m : allMatches) {
+            Integer rNum = roundIdToNumberMap.get(m.getRoundId());
+            if (rNum != null) {
+                if (m.getPlayer1EntryId() != null) {
+                    playedRoundsMap.get(m.getPlayer1EntryId()).add(rNum);
+                }
+                if (m.getPlayer2EntryId() != null && !m.isBye()) {
+                    playedRoundsMap.get(m.getPlayer2EntryId()).add(rNum);
+                }
+            }
+        }
+
         // Build base DTO list
         List<RankingEntry> rankingList = new ArrayList<>();
         int winPointVal = tournament.getWinPoint();
+        int currentRound = tournament.getCurrentRound();
 
         for (Entry e : allEntries) {
             int wins = winsMap.get(e.getId());
-            int total = matchesPlayedMap.get(e.getId());
+            int actualPlayed = matchesPlayedMap.get(e.getId());
             int winPoints = wins * winPointVal;
+
+            // Count rounds prior to (and including) currentRound that this player did not play in
+            Set<Integer> playedRounds = playedRoundsMap.get(e.getId());
+            int unplayedRounds = 0;
+            for (int r = 1; r <= currentRound; r++) {
+                if (!playedRounds.contains(r)) {
+                    unplayedRounds++;
+                }
+            }
+
+            int losses = (actualPlayed - wins) + unplayedRounds;
+            int total = actualPlayed + unplayedRounds;
 
             RankingEntry re = RankingEntry.builder()
                     .entryId(e.getId())
@@ -110,7 +151,7 @@ public class RankingService {
                     .playerName(e.getPlayerName())
                     .accountId(e.getAccountId())
                     .wins(wins)
-                    .losses(total - wins)
+                    .losses(losses)
                     .totalMatches(total)
                     .winPoints(winPoints)
                     .isDropout(e.isDropoutFlg())

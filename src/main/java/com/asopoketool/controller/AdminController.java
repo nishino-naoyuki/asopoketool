@@ -383,6 +383,11 @@ public class AdminController {
             if (registeredList.isEmpty()) {
                 throw new IllegalArgumentException("登録できる有効な選手名がありませんでした。");
             }
+            
+            Tournament tournament = tournamentService.getTournamentById(id);
+            if (tournament != null && "IN_PROGRESS".equals(tournament.getStatus())) {
+                return "redirect:/admin/tournament/" + id;
+            }
             return "redirect:/admin/tournament/" + id + "/checkin";
         } catch (Exception e) {
             model.addAttribute("error", e.getMessage());
