@@ -62,6 +62,7 @@ public class MvcConfig implements WebMvcConfigurer {
         registry.addResourceHandler("/css/**").addResourceLocations("classpath:/static/css/");
         registry.addResourceHandler("/js/**").addResourceLocations("classpath:/static/js/");
         registry.addResourceHandler("/audio/**").addResourceLocations("classpath:/static/audio/");
+        registry.addResourceHandler("/images/**").addResourceLocations("classpath:/static/images/");
         // External BGM file location
         registry.addResourceHandler("/bgm-files/**").addResourceLocations("file:/opt/asopoketool/bgm/");
         // External Timer Background image location
