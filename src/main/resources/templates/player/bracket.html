@@ -254,28 +254,25 @@
                         drawMatchBadge(tableMap[m.matchNum], midX, pos.y);
 
                     } else if (m.round === 2) {
-                        const midX = lineEndX + 50;
+                        const rightMidX = lineEndX + 80; // (660)
+                        const targetY = (m.matchNum === 1) ? 255 : 305;
                         
-                        drawLine(lineEndX, y1, midX, y1, '#000000', 2);
-                        drawLine(lineEndX, y2, midX, y2, '#000000', 2);
-                        drawLine(midX, y1, midX, y2, '#000000', 2);
-                        
-                        drawLine(midX, pos.y, midX + 80, pos.y, '#000000', 2);
+                        drawLine(lineEndX, pos.y, rightMidX, pos.y, '#000000', 2);
+                        drawLine(rightMidX, pos.y, rightMidX, targetY, '#000000', 2);
+                        drawLine(rightMidX, targetY, rightMidX + 50, targetY, '#000000', 2);
 
                         if (m.winnerId !== null) {
-                            const isP1Winner = (m.winnerId === m.p1Id);
-                            const winY = isP1Winner ? y1 : y2;
-                            
-                            drawLine(lineEndX, winY, midX, winY, '#ff0000', 4);
-                            drawLine(midX, winY, midX, pos.y, '#ff0000', 4);
-                            drawLine(midX, pos.y, midX + 80, pos.y, '#ff0000', 4);
+                            drawLine(lineEndX, pos.y, rightMidX, pos.y, '#ff0000', 4);
+                            drawLine(rightMidX, pos.y, rightMidX, targetY, '#ff0000', 4);
+                            drawLine(rightMidX, targetY, rightMidX + 50, targetY, '#ff0000', 4);
                         }
 
+                        const badgeY = (pos.y + targetY) / 2;
                         const tableMap = { 1: '⑤', 2: '⑥' };
-                        drawMatchBadge(tableMap[m.matchNum], midX, pos.y);
+                        drawMatchBadge(tableMap[m.matchNum], rightMidX, badgeY);
 
                     } else if (m.round === 3 && m.matchNum === 1) {
-                        const midX = lineEndX + 50;
+                        const midX = lineEndX + 50; // (960)
                         drawLine(lineEndX, y1, midX, y1, '#000000', 2);
                         drawLine(lineEndX, y2, midX, y2, '#000000', 2);
                         drawLine(midX, y1, midX, y2, '#000000', 2);
