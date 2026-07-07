@@ -40,6 +40,12 @@ public class AdminController {
     private BracketService bracketService;
 
     @Autowired
+    private com.asopoketool.mapper.BracketMapper bracketMapper;
+
+    @Autowired
+    private EntryService entryService;
+
+    @Autowired
     private TimerService timerService;
 
     @Autowired
@@ -103,7 +109,7 @@ public class AdminController {
                 }
                 byte[] decodedBytes = java.util.Base64.getDecoder().decode(base64Data);
 
-                java.io.File dir = new java.io.File("/opt/asopoketool/images");
+                java.io.File dir = new java.io.File(System.getProperty("user.dir") + "/data/images");
                 if (!dir.exists()) {
                     dir.mkdirs();
                 }
@@ -317,8 +323,120 @@ public class AdminController {
     public String bracketManage(@PathVariable Long id, Model model) {
         Tournament tournament = tournamentService.getTournamentById(id);
         model.addAttribute("tournament", tournament);
-        model.addAttribute("brackets", bracketService.getBracketsByTournament(id));
+        List<BracketTournament> brackets = bracketService.getBracketsByTournament(id);
+        model.addAttribute("brackets", brackets);
+
+        // Find active bracket round (the first round that is not finished)
+        int activeRound = 0;
+        String activeRoundName = "";
+        Map<Integer, Boolean> isRoundFinishedMap = new HashMap<>();
+
+        if (brackets != null && !brackets.isEmpty()) {
+            int maxRound = brackets.get(0).getMatches().stream()
+                    .mapToInt(BracketMatch::getRoundNumber)
+                    .max()
+                    .orElse(1);
+
+            for (int r = 1; r <= maxRound; r++) {
+                TournamentRound tr = roundMapper.findByTournamentAndRound(id, 100 + r);
+                boolean isFinished = tr != null && "FINISHED".equals(tr.getStatus());
+                isRoundFinishedMap.put(r, isFinished);
+
+                if (activeRound == 0 && !isFinished) {
+                    activeRound = r;
+                    if (r == 1) {
+                        activeRoundName = "1回戦";
+                    } else if (r == maxRound - 1 && maxRound > 2) {
+                        activeRoundName = "準決勝";
+                    } else if (r == maxRound) {
+                        activeRoundName = "決勝戦";
+                    } else {
+                        activeRoundName = r + "回戦";
+                    }
+                }
+            }
+        }
+        model.addAttribute("activeRound", activeRound);
+        model.addAttribute("activeRoundName", activeRoundName);
+        model.addAttribute("isRoundFinishedMap", isRoundFinishedMap);
+
         return "admin/bracket-manage";
+    }
+
+    @PostMapping("/tournament/{id}/bracket/finish-round")
+    public String finishBracketRound(@PathVariable Long id, @RequestParam int roundNumber) {
+        TournamentRound tr = roundMapper.findByTournamentAndRound(id, 100 + roundNumber);
+        if (tr != null) {
+            roundMapper.finish(tr.getId(), LocalDateTime.now());
+        }
+        return "redirect:/admin/tournament/" + id + "/bracket";
+    }
+
+    @GetMapping("/tournament/{id}/bracket/matches")
+    public String showBracketMatches(@PathVariable Long id, Model model) {
+        Tournament tournament = tournamentService.getTournamentById(id);
+        if (tournament == null) {
+            return "redirect:/admin";
+        }
+        model.addAttribute("tournament", tournament);
+        model.addAttribute("isAdmin", true);
+
+        List<BracketTournament> brackets = bracketService.getBracketsByTournament(id);
+        
+        List<TournamentController.BracketMatchDisplay> round1Matches = new ArrayList<>();
+        List<TournamentController.BracketMatchDisplay> round2Matches = new ArrayList<>();
+        List<TournamentController.BracketMatchDisplay> round3Matches = new ArrayList<>();
+
+        int round1TableAcc = 1;
+        int round2TableAcc = 1;
+        int round3TableAcc = 1;
+
+        if (brackets != null) {
+            brackets.sort((b1, b2) -> b1.getGroupName().compareTo(b2.getGroupName()));
+
+            for (BracketTournament bt : brackets) {
+                List<BracketMatch> matches = bt.getMatches();
+                if (matches == null) continue;
+                
+                matches.sort((m1, m2) -> {
+                    if (m1.getRoundNumber() != m2.getRoundNumber()) {
+                        return Integer.compare(m1.getRoundNumber(), m2.getRoundNumber());
+                    }
+                    return Integer.compare(m1.getMatchNumber(), m2.getMatchNumber());
+                });
+
+                for (BracketMatch bm : matches) {
+                    if (bm.getRoundNumber() == 1) {
+                        int tableNum = round1TableAcc++;
+                        round1Matches.add(new TournamentController.BracketMatchDisplay(
+                            bt.getGroupName(), tableNum, bm.getPlayer1Name(), bm.getPlayer2Name(),
+                            bm.isBye(), bm.getWinnerEntryId(), bm.getPlayer1EntryId(), bm.getPlayer2EntryId(),
+                            bm.getRoundNumber(), bm.getMatchNumber()
+                        ));
+                    } else if (bm.getRoundNumber() == 2) {
+                        int tableNum = round2TableAcc++;
+                        round2Matches.add(new TournamentController.BracketMatchDisplay(
+                            bt.getGroupName(), tableNum, bm.getPlayer1Name(), bm.getPlayer2Name(),
+                            bm.isBye(), bm.getWinnerEntryId(), bm.getPlayer1EntryId(), bm.getPlayer2EntryId(),
+                            bm.getRoundNumber(), bm.getMatchNumber()
+                        ));
+                    } else if (bm.getRoundNumber() == 3) {
+                        int tableNum = round3TableAcc++;
+                        round3Matches.add(new TournamentController.BracketMatchDisplay(
+                            bt.getGroupName(), tableNum, bm.getPlayer1Name(), bm.getPlayer2Name(),
+                            bm.isBye(), bm.getWinnerEntryId(), bm.getPlayer1EntryId(), bm.getPlayer2EntryId(),
+                            bm.getRoundNumber(), bm.getMatchNumber()
+                        ));
+                    }
+                }
+            }
+        }
+
+        model.addAttribute("round1Matches", round1Matches);
+        model.addAttribute("round2Matches", round2Matches);
+        model.addAttribute("round3Matches", round3Matches);
+
+        return "player/bracket-matches";
     }
 
     @PostMapping("/tournament/{id}/bracket/generate")
@@ -332,6 +450,18 @@ public class AdminController {
     public Map<String, Object> registerBracketResult(@PathVariable Long matchId, @RequestParam Long winnerEntryId) {
         Map<String, Object> result = new HashMap<>();
         try {
+            BracketMatch match = bracketMapper.findMatchById(matchId);
+            if (match != null) {
+                BracketTournament bt = bracketMapper.findById(match.getBracketTournamentId());
+                if (bt != null) {
+                    TournamentRound tr = roundMapper.findByTournamentAndRound(bt.getTournamentId(), 100 + match.getRoundNumber());
+                    if (tr != null && "FINISHED".equals(tr.getStatus())) {
+                        result.put("success", false);
+                        result.put("message", "該当ラウンドの結果は既に確定しているため、変更できません。");
+                        return result;
+                    }
+                }
+            }
             bracketService.registerBracketResult(matchId, winnerEntryId);
             result.put("success", true);
         } catch (Exception e) {
@@ -387,27 +517,65 @@ public class AdminController {
     public String showManualEntryForm(@PathVariable Long id, Model model) {
         Tournament tournament = tournamentService.getTournamentById(id);
         model.addAttribute("tournament", tournament);
+
+        // Get all accounts
+        List<PlayerAccount> allAccounts = accountMapper.findAllAccounts();
+        
+        // Get already entered account IDs
+        List<Entry> entries = entryMapper.findByTournamentId(id);
+        Set<Long> enteredAccountIds = new HashSet<>();
+        for (Entry e : entries) {
+            if (e.getAccountId() != null) {
+                enteredAccountIds.add(e.getAccountId());
+            }
+        }
+
+        // Filter out already entered accounts
+        List<PlayerAccount> availableAccounts = new ArrayList<>();
+        for (PlayerAccount acc : allAccounts) {
+            if (!enteredAccountIds.contains(acc.getId())) {
+                availableAccounts.add(acc);
+            }
+        }
+        model.addAttribute("availableAccounts", availableAccounts);
+
         return "admin/manual-entry";
     }
 
     @PostMapping("/tournament/{id}/manual-entry")
     @org.springframework.transaction.annotation.Transactional
-    public String manualEntry(@PathVariable Long id, @RequestParam String playerNames, Model model) {
+    public String manualEntry(@PathVariable Long id,
+                              @RequestParam(required = false) String playerNames,
+                              @RequestParam(required = false) List<Long> selectedAccountIds,
+                              Model model) {
         try {
-            if (playerNames == null || playerNames.trim().isEmpty()) {
-                throw new IllegalArgumentException("登録する選手名を入力してください。");
-            }
-            String[] rawNames = playerNames.split("[\\r\\n,]+");
             List<String> registeredList = new ArrayList<>();
-            for (String raw : rawNames) {
-                String name = raw.trim();
-                if (!name.isEmpty()) {
-                    tournamentService.manualRegister(id, name);
-                    registeredList.add(name);
+
+            // 1. Process account selections
+            if (selectedAccountIds != null && !selectedAccountIds.isEmpty()) {
+                for (Long accountId : selectedAccountIds) {
+                    PlayerAccount acc = accountMapper.findById(accountId);
+                    if (acc != null) {
+                        entryService.enterTournament(id, acc.getDisplayName(), accountId, null);
+                        registeredList.add(acc.getDisplayName());
+                    }
                 }
             }
+
+            // 2. Process text inputs
+            if (playerNames != null && !playerNames.trim().isEmpty()) {
+                String[] rawNames = playerNames.split("[\\r\\n,]+");
+                for (String raw : rawNames) {
+                    String name = raw.trim();
+                    if (!name.isEmpty()) {
+                        tournamentService.manualRegister(id, name);
+                        registeredList.add(name);
+                    }
+                }
+            }
+
             if (registeredList.isEmpty()) {
-                throw new IllegalArgumentException("登録できる有効な選手名がありませんでした。");
+                throw new IllegalArgumentException("登録する選手を正しく選択するか、選手名を入力してください。");
             }
             
             Tournament tournament = tournamentService.getTournamentById(id);
@@ -510,5 +678,27 @@ public class AdminController {
             model.addAttribute("error", e.getMessage());
             return listPlayers(model);
         }
+    }
+
+    @GetMapping("/tournament/{id}/players")
+    public String showTournamentPlayers(@PathVariable Long id, Model model) {
+        Tournament tournament = tournamentService.getTournamentById(id);
+        if (tournament == null) {
+            return "redirect:/admin";
+        }
+        model.addAttribute("tournament", tournament);
+
+        List<Entry> entries = entryMapper.findByTournamentId(id);
+        Map<Long, Integer> cumulativePoints = new HashMap<>();
+        for (Entry entry : entries) {
+            if (entry.getAccountId() != null) {
+                PlayerCumulativePoint pt = pointMapper.findByAccountId(entry.getAccountId());
+                cumulativePoints.put(entry.getAccountId(), (pt != null) ? pt.getTotalPoint() : 0);
+            }
+        }
+        model.addAttribute("entries", entries);
+        model.addAttribute("cumulativePoints", cumulativePoints);
+
+        return "admin/players-manage-list";
     }
 }

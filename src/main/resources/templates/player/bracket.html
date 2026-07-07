@@ -12,12 +12,6 @@
                 <h2 class="fw-bold mb-1" th:text="${tournament.name} + ' - 決勝トーナメント'">決勝トーナメント</h2>
                 <p class="text-muted mb-0">スイスドローの結果をもとに編成された決勝トーナメントです。</p>
             </div>
-            <div class="d-flex gap-2" th:unless="${#lists.isEmpty(brackets)}">
-                <!-- Javascript to capture the active tab panel -->
-                <button class="btn btn-success btn-sm" onclick="captureActiveBracket()">
-                    <i class="fa-solid fa-camera"></i> 画像として保存
-                </button>
-            </div>
         </div>
 
         <div th:if="${#lists.isEmpty(brackets)}" class="card-glass p-5 text-center text-muted text-white">
@@ -41,15 +35,15 @@
             <div class="tab-content" id="bracketTabContent">
                 <div class="tab-pane fade" th:each="b, iter : ${brackets}" th:classappend="${iter.first ? 'show active' : ''}" 
                      th:id="'panel-' + ${b.id}" role="tabpanel" th:aria-labelledby="'tab-' + ${b.id}">
-                    
-                    <div class="card-glass p-4 overflow-auto" th:id="'bracketArea-' + ${b.id}" style="background-color: #0d0d1a; border-radius: 16px;">
-                        <div class="d-flex gap-5 py-3 align-items-center justify-content-between bracket-tree-container" style="min-width: 800px; background-color: #0d0d1a; position: relative;">
+                                        <div class="card-glass p-4 overflow-auto" th:id="'bracketArea-' + ${b.id}" style="border-radius: 16px;">
+                        <div class="d-flex gap-5 py-3 align-items-center justify-content-between bracket-tree-container" style="min-width: 800px; position: relative;">
                             
                             <!-- Round 1: Quarterfinals (QF) -->
                             <div class="bracket-round bracket-round-1 d-flex flex-column justify-content-around h-100" style="min-height: 500px; min-width: 220px;">
                                 <h5 class="text-center text-muted small border-bottom border-secondary pb-2 mb-4">1回戦 (準々決勝)</h5>
                                 <div th:each="m : ${b.matches}" th:if="${m.roundNumber == 1}" class="bracket-match-box"
-                                     th:classappend="${m.winnerEntryId != null} ? (${m.winnerEntryId == m.player1EntryId} ? 'winner-p1' : 'winner-p2') : ''"
+                                     th:classappend="(${m.winnerEntryId != null} ? (${m.winnerEntryId == m.player1EntryId} ? 'winner-p1' : 'winner-p2') : '') + ' ' + (${(myEntry != null && (myEntry.id == m.player1EntryId || myEntry.id == m.player2EntryId) && m.player1EntryId != null && m.player2EntryId != null && m.winnerEntryId == null && (isRoundFinishedMap != null && !isRoundFinishedMap.get(m.roundNumber))) ? 'clickable' : ''})"
+                                     th:data-match-id="${m.id}"
                                      th:data-round="1"
                                      th:data-match-num="${m.matchNumber}"
                                      th:data-p1-name="${m.player1Name != null ? m.player1Name : '（TBD）'}"
@@ -57,7 +51,8 @@
                                      th:data-winner-id="${m.winnerEntryId}"
                                      th:data-p1-id="${m.player1EntryId}"
                                      th:data-p2-id="${m.player2EntryId}"
-                                     th:data-is-bye="${m.isBye}">
+                                     th:data-is-bye="${m.isBye}"
+                                     onclick="handleBracketClick(this)">
                                     <div class="small text-muted mb-1 text-center font-monospace" th:text="'マッチ ' + ${m.matchNumber}">M1</div>
                                     <div class="bracket-player" th:classappend="${m.winnerEntryId != null && m.winnerEntryId == m.player1EntryId ? 'winner' : ''}">
                                         <span th:text="${m.player1Name != null ? m.player1Name : '（TBD）'}">選手A</span>
@@ -73,7 +68,8 @@
                             <div class="bracket-round bracket-round-2 d-flex flex-column justify-content-around h-100" style="min-height: 500px; min-width: 220px;">
                                 <h5 class="text-center text-muted small border-bottom border-secondary pb-2 mb-4">準決勝</h5>
                                 <div th:each="m : ${b.matches}" th:if="${m.roundNumber == 2}" class="bracket-match-box"
-                                     th:classappend="${m.winnerEntryId != null} ? (${m.winnerEntryId == m.player1EntryId} ? 'winner-p1' : 'winner-p2') : ''"
+                                     th:classappend="(${m.winnerEntryId != null} ? (${m.winnerEntryId == m.player1EntryId} ? 'winner-p1' : 'winner-p2') : '') + ' ' + (${(myEntry != null && (myEntry.id == m.player1EntryId || myEntry.id == m.player2EntryId) && m.player1EntryId != null && m.player2EntryId != null && m.winnerEntryId == null && (isRoundFinishedMap != null && !isRoundFinishedMap.get(m.roundNumber))) ? 'clickable' : ''})"
+                                     th:data-match-id="${m.id}"
                                      th:data-round="2"
                                      th:data-match-num="${m.matchNumber}"
                                      th:data-p1-name="${m.player1Name != null ? m.player1Name : '（待機中）'}"
@@ -81,7 +77,8 @@
                                      th:data-winner-id="${m.winnerEntryId}"
                                      th:data-p1-id="${m.player1EntryId}"
                                      th:data-p2-id="${m.player2EntryId}"
-                                     th:data-is-bye="${m.isBye}">
+                                     th:data-is-bye="${m.isBye}"
+                                     onclick="handleBracketClick(this)">
                                     <div class="small text-muted mb-1 text-center font-monospace" th:text="'準決勝 ' + ${m.matchNumber}">SF1</div>
                                     <div class="bracket-player" th:classappend="${m.winnerEntryId != null && m.winnerEntryId == m.player1EntryId ? 'winner' : ''}">
                                         <span th:text="${m.player1Name != null ? m.player1Name : '（1回戦の勝者）'}">選手A</span>
@@ -97,8 +94,9 @@
                             <div class="bracket-round bracket-round-3 d-flex flex-column justify-content-around h-100" style="min-height: 500px; min-width: 220px;">
                                 <h5 class="text-center text-muted small border-bottom border-secondary pb-2 mb-4">決勝戦</h5>
                                 <div th:each="m : ${b.matches}" th:if="${m.roundNumber == 3}" class="bracket-match-box bracket-match-box-final"
-                                     th:classappend="${m.winnerEntryId != null} ? (${m.winnerEntryId == m.player1EntryId} ? 'winner-p1' : 'winner-p2') : ''"
+                                     th:classappend="(${m.winnerEntryId != null} ? (${m.winnerEntryId == m.player1EntryId} ? 'winner-p1' : 'winner-p2') : '') + ' ' + (${(myEntry != null && (myEntry.id == m.player1EntryId || myEntry.id == m.player2EntryId) && m.player1EntryId != null && m.player2EntryId != null && m.winnerEntryId == null && (isRoundFinishedMap != null && !isRoundFinishedMap.get(m.roundNumber))) ? 'clickable' : ''})"
                                      style="border: 1px solid var(--accent); box-shadow: 0 0 15px rgba(255, 215, 0, 0.2);"
+                                     th:data-match-id="${m.id}"
                                      th:data-round="3"
                                      th:data-match-num="${m.matchNumber}"
                                      th:data-p1-name="${m.player1Name != null ? m.player1Name : '（待機中）'}"
@@ -106,7 +104,8 @@
                                      th:data-winner-id="${m.winnerEntryId}"
                                      th:data-p1-id="${m.player1EntryId}"
                                      th:data-p2-id="${m.player2EntryId}"
-                                     th:data-is-bye="${m.isBye}">
+                                     th:data-is-bye="${m.isBye}"
+                                     onclick="handleBracketClick(this)">
                                     <div class="small text-warning mb-1 text-center font-monospace"><i class="fa-solid fa-crown text-warning"></i> 決勝</div>
                                     <div class="bracket-player" th:classappend="${m.winnerEntryId != null && m.winnerEntryId == m.player1EntryId ? 'winner' : ''}">
                                         <span th:text="${m.player1Name != null ? m.player1Name : '（準決勝の勝者）'}">選手A</span>
@@ -342,7 +341,158 @@
                     }
                 });
             }
+
+            let bracketP1EntryIdVal = null;
+            let bracketP2EntryIdVal = null;
+
+            function handleBracketClick(element) {
+                if (!element.classList.contains('clickable')) {
+                    return;
+                }
+                const matchId = element.getAttribute('data-match-id');
+                const p1Id = element.getAttribute('data-p1-id');
+                const p1Name = element.getAttribute('data-p1-name');
+                const p2Id = element.getAttribute('data-p2-id');
+                const p2Name = element.getAttribute('data-p2-name');
+
+                document.getElementById('modalBracketMatchId').value = matchId;
+                bracketP1EntryIdVal = p1Id;
+                bracketP2EntryIdVal = p2Id;
+
+                document.getElementById('bracketP1Name').innerText = p1Name;
+                document.getElementById('bracketLabelP1Win').innerText = p1Name + " さんの勝ち";
+
+                document.getElementById('bracketP2Name').innerText = p2Name;
+                document.getElementById('bracketLabelP2Win').innerText = p2Name + " さんの勝ち";
+
+                // Reset radios
+                document.querySelectorAll('input[name="bracketResultOption"]').forEach(r => r.checked = false);
+
+                const myModal = new bootstrap.Modal(document.getElementById('bracketResultModal'));
+                myModal.show();
+            }
+
+            function selectBracketRadio(id) {
+                const radio = document.getElementById(id);
+                if (radio && !radio.disabled) {
+                    radio.checked = true;
+                }
+            }
+
+            function submitBracketResult() {
+                const matchId = document.getElementById('modalBracketMatchId').value;
+                const selectedOpt = document.querySelector('input[name="bracketResultOption"]:checked');
+
+                if (!selectedOpt) {
+                    alert("勝者を選択してください。");
+                    return;
+                }
+
+                let winnerEntryId = null;
+                if (selectedOpt.value === 'p1') {
+                    winnerEntryId = bracketP1EntryIdVal;
+                } else if (selectedOpt.value === 'p2') {
+                    winnerEntryId = bracketP2EntryIdVal;
+                }
+
+                if (!confirm("決勝の対戦結果を登録します。一度登録すると変更できません。よろしいですか？")) {
+                    return;
+                }
+
+                const url = '/asopoketool/tournament/' + '[[${tournament.id}]]' + '/bracket/match/' + matchId + '/ajax';
+
+                const formData = new URLSearchParams();
+                formData.append('winnerEntryId', winnerEntryId);
+
+                fetch(url, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/x-www-form-urlencoded'
+                    },
+                    body: formData.toString()
+                })
+                .then(res => res.json())
+                .then(data => {
+                    if (data.success) {
+                        alert("対戦結果を登録しました！");
+                        window.location.reload();
+                    } else {
+                        alert("登録に失敗しました: " + data.message);
+                    }
+                })
+                .catch(err => {
+                    alert("通信エラーが発生しました。");
+                    console.error(err);
+                });
+            }
         </script>
+
+        <style>
+            .bracket-match-box.clickable {
+                cursor: pointer;
+                border: 2px solid #FF6B35 !important;
+                background: #FFF5F5 !important;
+                box-shadow: 0 0 10px rgba(255, 107, 53, 0.25) !important;
+                transition: transform 0.2s ease, border-color 0.2s ease;
+            }
+            .bracket-match-box.clickable:hover {
+                transform: scale(1.03);
+                border-color: #FF8E53 !important;
+            }
+        </style>
+
+        <!-- Result Popup Modal for Bracket Match -->
+        <div class="modal fade" id="bracketResultModal" tabindex="-1" aria-labelledby="bracketResultModalLabel" aria-hidden="true">
+            <div class="modal-dialog modal-dialog-centered">
+                <div class="modal-content" style="border-radius: 20px; border: 3px solid #FFE4E1; background-color: #FFFDF0; color: #4A3E3D;">
+                    <div class="modal-header border-0 pb-0">
+                        <h5 class="modal-title fw-bold text-dark w-100 text-center" id="bracketResultModalLabel">決勝対戦結果の報告</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body py-4">
+                        <form id="bracketResultForm">
+                            <input type="hidden" id="modalBracketMatchId" name="matchId">
+                            
+                            <div class="d-flex justify-content-around align-items-center mb-4">
+                                <!-- Player 1 Card -->
+                                <div class="text-center p-3 rounded-3" style="width: 45%; background: rgba(255,107,53,0.05); border: 1px solid rgba(255,107,53,0.15);">
+                                    <img src="/asopoketool/images/pikachu.png" class="rounded-circle mb-2" style="width: 64px; height: 64px; object-fit: cover; border: 3px solid #ffffff; box-shadow: 0 4px 8px rgba(0,0,0,0.1);">
+                                    <div id="bracketP1Name" class="fw-bold text-truncate" style="color: #4A3E3D; font-size: 1.1rem;">-</div>
+                                </div>
+                                
+                                <div class="fw-bold text-muted font-monospace fs-4">VS</div>
+                                
+                                <!-- Player 2 Card -->
+                                <div class="text-center p-3 rounded-3" style="width: 45%; background: rgba(255,107,53,0.05); border: 1px solid rgba(255,107,53,0.15);">
+                                    <img src="/asopoketool/images/pikachu.png" class="rounded-circle mb-2" style="width: 64px; height: 64px; object-fit: cover; border: 3px solid #ffffff; box-shadow: 0 4px 8px rgba(0,0,0,0.1);">
+                                    <div id="bracketP2Name" class="fw-bold text-truncate" style="color: #4A3E3D; font-size: 1.1rem;">-</div>
+                                </div>
+                            </div>
+                            
+                            <div class="px-3">
+                                <label class="form-label fw-bold mb-3 d-block text-center" style="color: #FF7F50; font-size: 1.1rem;">勝者を選択してください</label>
+                                
+                                <!-- Radio P1 Win -->
+                                <div class="form-check p-3 mb-2 rounded-3 border align-items-center d-flex bg-white" style="cursor: pointer; transition: all 0.2s ease;" onclick="selectBracketRadio('bracketWinnerP1')">
+                                    <input class="form-check-input ms-0 me-3" type="radio" name="bracketResultOption" id="bracketWinnerP1" value="p1">
+                                    <label class="form-check-label fw-bold text-dark mb-0" for="bracketWinnerP1" id="bracketLabelP1Win" style="cursor: pointer;">- さんの勝ち</label>
+                                </div>
+                                
+                                <!-- Radio P2 Win -->
+                                <div class="form-check p-3 mb-4 rounded-3 border align-items-center d-flex bg-white" style="cursor: pointer; transition: all 0.2s ease;" onclick="selectBracketRadio('bracketWinnerP2')">
+                                    <input class="form-check-input ms-0 me-3" type="radio" name="bracketResultOption" id="bracketWinnerP2" value="p2">
+                                    <label class="form-check-label fw-bold text-dark mb-0" for="bracketWinnerP2" id="bracketLabelP2Win" style="cursor: pointer;">- さんの勝ち</label>
+                                </div>
+                                
+                                <button type="button" class="btn btn-primary-custom w-100 py-3" onclick="submitBracketResult()" style="border-radius: 12px; font-weight: bold; font-size: 1.1rem;">
+                                    <i class="fa-solid fa-circle-check"></i> 結果を登録する
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
     </div>
 </body>
 </html>

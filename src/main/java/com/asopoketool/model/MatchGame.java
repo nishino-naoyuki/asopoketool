@@ -21,4 +21,7 @@ public class MatchGame {
     private String player1Name;
     private String player2Name;
     private Long resultWinnerEntryId;
+    private String player1Icon;
+    private String player2Icon;
+    private boolean hasResult;
 }

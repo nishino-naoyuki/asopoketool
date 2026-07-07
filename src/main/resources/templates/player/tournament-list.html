@@ -13,37 +13,138 @@
 
         <div class="row">
             <div class="col-lg-8">
-                <h3 class="mb-4 text-white"><i class="fa-solid fa-calendar-days text-primary"></i> 開催予定の大会</h3>
-                
-                <div th:if="${#lists.isEmpty(tournaments)}" class="card-glass p-5 text-center text-muted">
-                    <i class="fa-regular fa-folder-open fa-3x mb-3"></i>
-                    <p class="mb-0">現在、募集中の大会はありません。</p>
-                </div>
+                <!-- Tabs -->
+                <ul class="nav nav-tabs mb-4 border-0" id="tournamentTab" role="tablist" style="background: rgba(255,255,255,0.05); padding: 5px; border-radius: 16px; border: 1px solid rgba(255,255,255,0.1) !important; width: fit-content;">
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link active px-4 py-2 border-0" id="active-tab" data-bs-toggle="tab" data-bs-target="#active-pane" type="button" role="tab" aria-controls="active-pane" aria-selected="true" style="border-radius: 12px; color: #4A3E3D; font-weight: bold; background: transparent; transition: all 0.2s ease;">
+                            開催予定の大会
+                        </button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link px-4 py-2 border-0" id="in-progress-tab" data-bs-toggle="tab" data-bs-target="#in-progress-pane" type="button" role="tab" aria-controls="in-progress-pane" aria-selected="false" style="border-radius: 12px; color: #4A3E3D; font-weight: bold; background: transparent; transition: all 0.2s ease;">
+                            開催中の大会
+                        </button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link px-4 py-2 border-0" id="finished-tab" data-bs-toggle="tab" data-bs-target="#finished-pane" type="button" role="tab" aria-controls="finished-pane" aria-selected="false" style="border-radius: 12px; color: #4A3E3D; font-weight: bold; background: transparent; transition: all 0.2s ease;">
+                            終了した大会
+                        </button>
+                    </li>
+                </ul>
 
-                <div class="row row-cols-1 row-cols-md-2 g-4" th:unless="${#lists.isEmpty(tournaments)}">
-                    <div class="col" th:each="t : ${tournaments}">
-                        <div class="card h-100 card-glass text-white overflow-hidden">
-                            <!-- Tournament Banner (10:4) -->
-                            <div style="width: 100%; aspect-ratio: 10/4; overflow: hidden; background: #ffe5d9; border-bottom: 2px solid var(--card-border);">
-                                <img th:src="${t.iconPath != null ? t.iconPath : '/asopoketool/images/pikachu.png'}" 
-                                     style="width: 100%; height: 100%; object-fit: cover;" 
-                                     alt="Tournament Banner">
-                            </div>
-                            <div class="card-body d-flex flex-column pt-3">
-                                <div class="d-flex justify-content-between align-items-start mb-3">
-                                    <h5 class="card-title fw-bold mb-0 text-white" th:text="${t.name}">大会名</h5>
-                                    <span class="badge-status" 
-                                          th:classappend="${t.status == 'ENTRY' ? 'badge-entry' : (t.status == 'IN_PROGRESS' ? 'badge-in-progress' : (t.status == 'BRACKET' ? 'badge-bracket' : 'badge-finished'))}"
-                                          th:text="${t.status == 'ENTRY' ? 'エントリー中' : (t.status == 'IN_PROGRESS' ? 'スイスドロー進行中' : (t.status == 'BRACKET' ? '決勝T進行中' : '大会終了'))}">
-                                        ステータス
-                                    </span>
+                <style>
+                    #tournamentTab .nav-link {
+                        color: #4A3E3D !important;
+                    }
+                    #tournamentTab .nav-link.active {
+                        background: linear-gradient(135deg, #FF6B35 0%, #FF8E53 100%) !important;
+                        color: #ffffff !important;
+                        box-shadow: 0 4px 10px rgba(255, 107, 53, 0.3);
+                    }
+                </style>
+
+                <div class="tab-content" id="tournamentTabContent">
+                    <!-- Active Tournaments Pane -->
+                    <div class="tab-pane fade show active" id="active-pane" role="tabpanel" aria-labelledby="active-tab">
+                        <div th:if="${#lists.isEmpty(activeTournaments)}" class="card-glass p-5 text-center text-muted">
+                            <i class="fa-regular fa-folder-open fa-3x mb-3"></i>
+                            <p class="mb-0" style="color: #4A3E3D !important;">現在、募集中の大会はありません。</p>
+                        </div>
+
+                        <div class="row row-cols-1 row-cols-md-2 g-4" th:unless="${#lists.isEmpty(activeTournaments)}">
+                            <div class="col" th:each="t : ${activeTournaments}">
+                                <div class="card h-100 card-glass text-white overflow-hidden">
+                                    <!-- Tournament Banner (10:4) -->
+                                    <div style="width: 100%; aspect-ratio: 10/4; overflow: hidden; background: #ffe5d9; border-bottom: 2px solid var(--card-border);">
+                                        <img th:src="${t.iconPath != null ? t.iconPath : '/asopoketool/images/pikachu.png'}" 
+                                             style="width: 100%; height: 100%; object-fit: cover;" 
+                                             alt="Tournament Banner">
+                                    </div>
+                                    <div class="card-body d-flex flex-column pt-3">
+                                        <div class="d-flex justify-content-between align-items-start mb-3">
+                                            <h5 class="card-title fw-bold mb-0 text-white" th:text="${t.name}">大会名</h5>
+                                            <span class="badge-status badge-entry">エントリー中</span>
+                                        </div>
+                                        <p class="card-text text-muted mb-2"><i class="fa-solid fa-location-dot text-primary"></i> <span th:text="${t.venue != null ? t.venue : '未定'}">会場</span></p>
+                                        <p class="card-text text-muted mb-2"><i class="fa-solid fa-clock text-primary"></i> 開催日: <span th:text="${t.heldDate}">2026-07-10</span></p>
+                                        <p class="card-text text-muted mb-3"><i class="fa-solid fa-user-group text-primary"></i> 定員: <span th:text="${t.capacity}">64</span>名</p>
+                                        
+                                        <div class="mt-auto">
+                                            <a th:href="@{/tournament/{id}(id=${t.id})}" class="btn btn-primary-custom w-100"><i class="fa-solid fa-circle-info"></i> 詳細・エントリー</a>
+                                        </div>
+                                    </div>
                                 </div>
-                                <p class="card-text text-muted mb-2"><i class="fa-solid fa-location-dot text-primary"></i> <span th:text="${t.venue != null ? t.venue : '未定'}">会場</span></p>
-                                <p class="card-text text-muted mb-2"><i class="fa-solid fa-clock text-primary"></i> 開催日: <span th:text="${t.heldDate}">2026-07-10</span></p>
-                                <p class="card-text text-muted mb-3"><i class="fa-solid fa-user-group text-primary"></i> 定員: <span th:text="${t.capacity}">64</span>名</p>
-                                
-                                <div class="mt-auto">
-                                    <a th:href="@{/tournament/{id}(id=${t.id})}" class="btn btn-primary-custom w-100"><i class="fa-solid fa-circle-info"></i> 詳細・エントリー</a>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- In-Progress Tournaments Pane -->
+                    <div class="tab-pane fade" id="in-progress-pane" role="tabpanel" aria-labelledby="in-progress-tab">
+                        <div th:if="${#lists.isEmpty(inProgressTournaments)}" class="card-glass p-5 text-center text-muted">
+                            <i class="fa-regular fa-folder-open fa-3x mb-3"></i>
+                            <p class="mb-0" style="color: #4A3E3D !important;">現在、進行中の大会はありません。</p>
+                        </div>
+
+                        <div class="row row-cols-1 row-cols-md-2 g-4" th:unless="${#lists.isEmpty(inProgressTournaments)}">
+                            <div class="col" th:each="t : ${inProgressTournaments}">
+                                <div class="card h-100 card-glass text-white overflow-hidden">
+                                    <!-- Tournament Banner (10:4) -->
+                                    <div style="width: 100%; aspect-ratio: 10/4; overflow: hidden; background: #ffe5d9; border-bottom: 2px solid var(--card-border);">
+                                        <img th:src="${t.iconPath != null ? t.iconPath : '/asopoketool/images/pikachu.png'}" 
+                                             style="width: 100%; height: 100%; object-fit: cover;" 
+                                             alt="Tournament Banner">
+                                    </div>
+                                    <div class="card-body d-flex flex-column pt-3">
+                                        <div class="d-flex justify-content-between align-items-start mb-3">
+                                            <h5 class="card-title fw-bold mb-0 text-white" th:text="${t.name}">大会名</h5>
+                                            <span class="badge-status" 
+                                                  th:classappend="${t.status == 'IN_PROGRESS' ? 'badge-in-progress' : 'badge-bracket'}"
+                                                  th:text="${t.status == 'IN_PROGRESS' ? 'スイスドロー進行中' : '決勝T進行中'}">
+                                                ステータス
+                                            </span>
+                                        </div>
+                                        <p class="card-text text-muted mb-2"><i class="fa-solid fa-location-dot text-primary"></i> <span th:text="${t.venue != null ? t.venue : '未定'}">会場</span></p>
+                                        <p class="card-text text-muted mb-2"><i class="fa-solid fa-clock text-primary"></i> 開催日: <span th:text="${t.heldDate}">2026-07-10</span></p>
+                                        <p class="card-text text-muted mb-3"><i class="fa-solid fa-user-group text-primary"></i> 定員: <span th:text="${t.capacity}">64</span>名</p>
+                                        
+                                        <div class="mt-auto">
+                                            <a th:href="@{/tournament/{id}(id=${t.id})}" class="btn btn-primary-custom w-100"><i class="fa-solid fa-circle-info"></i> 詳細・エントリー</a>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Finished Tournaments Pane -->
+                    <div class="tab-pane fade" id="finished-pane" role="tabpanel" aria-labelledby="finished-tab">
+                        <div th:if="${#lists.isEmpty(finishedTournaments)}" class="card-glass p-5 text-center text-muted">
+                            <i class="fa-regular fa-folder-open fa-3x mb-3"></i>
+                            <p class="mb-0" style="color: #4A3E3D !important;">終了した大会はありません。</p>
+                        </div>
+
+                        <div class="row row-cols-1 row-cols-md-2 g-4" th:unless="${#lists.isEmpty(finishedTournaments)}">
+                            <div class="col" th:each="t : ${finishedTournaments}">
+                                <div class="card h-100 card-glass text-white overflow-hidden">
+                                    <!-- Tournament Banner (10:4) -->
+                                    <div style="width: 100%; aspect-ratio: 10/4; overflow: hidden; background: #ffe5d9; border-bottom: 2px solid var(--card-border);">
+                                        <img th:src="${t.iconPath != null ? t.iconPath : '/asopoketool/images/pikachu.png'}" 
+                                             style="width: 100%; height: 100%; object-fit: cover;" 
+                                             alt="Tournament Banner">
+                                    </div>
+                                    <div class="card-body d-flex flex-column pt-3">
+                                        <div class="d-flex justify-content-between align-items-start mb-3">
+                                            <h5 class="card-title fw-bold mb-0 text-white" th:text="${t.name}">大会名</h5>
+                                            <span class="badge-status badge-finished">大会終了</span>
+                                        </div>
+                                        <p class="card-text text-muted mb-2"><i class="fa-solid fa-location-dot text-primary"></i> <span th:text="${t.venue != null ? t.venue : '未定'}">会場</span></p>
+                                        <p class="card-text text-muted mb-2"><i class="fa-solid fa-clock text-primary"></i> 開催日: <span th:text="${t.heldDate}">2026-07-10</span></p>
+                                        <p class="card-text text-muted mb-3"><i class="fa-solid fa-user-group text-primary"></i> 定員: <span th:text="${t.capacity}">64</span>名</p>
+                                        
+                                        <div class="mt-auto">
+                                            <a th:href="@{/tournament/{id}(id=${t.id})}" class="btn btn-primary-custom w-100"><i class="fa-solid fa-circle-info"></i> 詳細・エントリー</a>
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
                         </div>

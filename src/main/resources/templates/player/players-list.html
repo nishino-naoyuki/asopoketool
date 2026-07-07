@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" th:replace="~{layout/base :: layout(~{::div}, ~{::title})}">
+<head>
+    <title>エントリー選手一覧 | ASOPokeTool</title>
+</head>
+<body>
+    <div>
+        <div class="row justify-content-center">
+            <div class="col-lg-8">
+                <!-- Back Link -->
+                <div class="mb-3">
+                    <a th:href="@{/tournament/{id}(id=${tournament.id})}" class="btn btn-outline-light btn-sm text-primary">
+                        <i class="fa-solid fa-arrow-left"></i> 大会詳細へ戻る
+                    </a>
+                </div>
+
+                <div class="card card-glass text-white p-4">
+                    <div class="d-flex justify-content-between align-items-center mb-4">
+                        <div>
+                            <h2 class="fw-bold mb-1 text-white">👤 エントリー選手一覧</h2>
+                            <p class="text-muted mb-0" th:text="${tournament.name}">大会名</p>
+                        </div>
+                        <span class="badge bg-primary fs-6 px-3 py-2" th:text="${#lists.size(entries)} + ' 名が登録中'">0 名</span>
+                    </div>
+
+                    <div th:if="${#lists.isEmpty(entries)}" class="text-center p-5 text-muted">
+                        <i class="fa-solid fa-users fa-3x mb-3 text-secondary"></i>
+                        <p class="mb-0">現在エントリーしている選手はいません。</p>
+                    </div>
+
+                    <div th:unless="${#lists.isEmpty(entries)}" class="list-group list-group-flush rounded-4 overflow-hidden border border-secondary">
+                        <div th:each="e, iter : ${entries}" class="list-group-item bg-dark bg-opacity-70 text-white d-flex align-items-center justify-content-between p-3 border-secondary hover-bg-light-opacity">
+                            <div class="d-flex align-items-center gap-3">
+                                <!-- Order Badge -->
+                                <span class="badge bg-secondary font-monospace" style="width: 30px;" th:text="${iter.count}">1</span>
+                                
+                                <!-- User Icon -->
+                                <img th:src="${e.account?.iconPath != null ? e.account.iconPath : '/asopoketool/images/pikachu.png'}"
+                                     class="rounded-circle border border-warning"
+                                     style="width: 45px; height: 45px; object-fit: cover;"
+                                     alt="Icon">
+
+                                <div>
+                                    <!-- Player Name -->
+                                    <div class="fw-bold fs-5 text-white" th:text="${e.playerName}">たろう</div>
+                                    <!-- Account Name label (only if logged in and matched) -->
+                                    <div class="small text-muted" th:if="${e.account != null}">
+                                        <i class="fa-solid fa-user-check text-success small"></i> 会員アカウント連携済
+                                    </div>
+                                    <div class="small text-muted" th:if="${e.account == null}">
+                                        <i class="fa-regular fa-user small"></i> ゲスト枠エントリー
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div>
+                                <!-- Checkin Status -->
+                                <span th:if="${e.checkinFlg}" class="badge bg-success px-3 py-2">
+                                    <i class="fa-solid fa-circle-check"></i> チェックイン完了
+                                </span>
+                                <span th:unless="${e.checkinFlg}" class="badge bg-warning text-dark px-3 py-2">
+                                    <i class="fa-regular fa-clock"></i> エントリー済み
+                                </span>
+                                
+                                <!-- Dropout Status -->
+                                <span th:if="${e.dropoutFlg}" class="badge bg-danger ms-2 px-3 py-2">
+                                    ドロップアウト
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

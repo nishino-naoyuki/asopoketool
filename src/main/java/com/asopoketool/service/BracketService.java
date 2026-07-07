@@ -9,6 +9,9 @@ import com.asopoketool.model.Tournament;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import com.asopoketool.mapper.TournamentRoundMapper;
+import com.asopoketool.model.TournamentRound;
+import java.time.LocalDateTime;
 import java.util.*;
 
 @Service
@@ -23,6 +26,9 @@ public class BracketService {
     @Autowired
     private RankingService rankingService;
 
+    @Autowired
+    private TournamentRoundMapper roundMapper;
+
     @Transactional
     public void generateBrackets(Long tournamentId) {
         Tournament tournament = tournamentMapper.findById(tournamentId);
@@ -32,6 +38,7 @@ public class BracketService {
 
         // Clean up any existing brackets
         bracketMapper.deleteByTournamentId(tournamentId);
+        roundMapper.deleteBracketsRoundsByTournamentId(tournamentId);
 
         // Fetch standings
         List<RankingEntry> standings = rankingService.getRanking(tournamentId);
@@ -82,6 +89,15 @@ public class BracketService {
             
             int roundCount = (int) (Math.log(nextPowerOfTwo) / Math.log(2));
             for (int r = 1; r <= roundCount; r++) {
+                // Create TournamentRound for 100 + r (bracket rounds)
+                TournamentRound tr = TournamentRound.builder()
+                        .tournamentId(tournamentId)
+                        .roundNumber(100 + r)
+                        .status("IN_PROGRESS")
+                        .startedAt(LocalDateTime.now())
+                        .build();
+                roundMapper.insert(tr);
+
                 int matchesInRound = nextPowerOfTwo / (int) Math.pow(2, r);
                 for (int m = 1; m <= matchesInRound; m++) {
                     BracketMatch bm = BracketMatch.builder()

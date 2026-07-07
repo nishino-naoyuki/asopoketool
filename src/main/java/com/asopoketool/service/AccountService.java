@@ -20,7 +20,7 @@ public class AccountService {
     private org.springframework.security.crypto.password.PasswordEncoder passwordEncoder;
 
     @Transactional
-    public String register(String displayName, String password) {
+    public String register(String displayName, String password, String iconPath) {
         if (accountMapper.findByDisplayName(displayName) != null) {
             throw new IllegalArgumentException("この表示名はすでに使用されています。");
         }
@@ -28,10 +28,16 @@ public class AccountService {
         PlayerAccount account = PlayerAccount.builder()
                 .displayName(displayName)
                 .passwordHash(passwordEncoder.encode(password))
+                .iconPath(iconPath)
                 .build();
         accountMapper.insertAccount(account);
 
         return createAutoLoginToken(account.getId());
+    }
+
+    @Transactional
+    public String register(String displayName, String password) {
+        return register(displayName, password, null);
     }
 
     @Transactional
@@ -98,5 +104,10 @@ public class AccountService {
                 .build();
         accountMapper.insertToken(pat);
         return token;
+    }
+
+    @Transactional
+    public void updateIconPath(Long id, String iconPath) {
+        accountMapper.updateIconPath(id, iconPath);
     }
 }

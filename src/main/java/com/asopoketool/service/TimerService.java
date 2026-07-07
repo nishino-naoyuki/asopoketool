@@ -84,7 +84,7 @@ public class TimerService {
         return bgm;
     }
 
-    @Value("${app.timer.upload-dir:/opt/asopoketool/images}")
+    @Value("${app.timer.upload-dir:./data/images}")
     private String timerImageDir;
 
     @Transactional

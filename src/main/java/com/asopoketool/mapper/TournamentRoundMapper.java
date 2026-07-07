@@ -16,4 +16,7 @@ public interface TournamentRoundMapper {
 
     @org.apache.ibatis.annotations.Delete("DELETE FROM tournament_round WHERE tournament_id = #{tournamentId}")
     void deleteByTournamentId(Long tournamentId);
+
+    @org.apache.ibatis.annotations.Delete("DELETE FROM tournament_round WHERE tournament_id = #{tournamentId} AND round_number >= 101")
+    void deleteBracketsRoundsByTournamentId(Long tournamentId);
 }

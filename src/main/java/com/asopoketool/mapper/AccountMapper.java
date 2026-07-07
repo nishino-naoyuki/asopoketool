@@ -13,6 +13,7 @@ public interface AccountMapper {
     void insertAccount(PlayerAccount account);
     void updateDisplayName(@Param("id") Long id, @Param("displayName") String displayName);
     void updatePassword(@Param("id") Long id, @Param("passwordHash") String passwordHash);
+    void updateIconPath(@Param("id") Long id, @Param("iconPath") String iconPath);
 
     @org.apache.ibatis.annotations.Select("SELECT * FROM player_account ORDER BY created_at DESC")
     java.util.List<PlayerAccount> findAllAccounts();

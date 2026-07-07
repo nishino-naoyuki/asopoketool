@@ -50,17 +50,41 @@
                                 <p class="fw-bold"><span th:text="${checkedInCount}">0</span> 名</p>
                             </div>
                         </div>
+
+                        <hr class="border-secondary my-4">
+
+                        <!-- Prize Points Section -->
+                        <h4 class="mb-3 text-warning"><i class="fa-solid fa-award"></i> 獲得可能ポイント</h4>
+                        <p class="text-muted small mb-3">この大会に参加・上位入賞すると、以下の累計ポイントが獲得できます。</p>
+                        <div class="p-3 bg-light border border-secondary rounded-4 mb-3">
+                            <div class="d-flex justify-content-between align-items-center mb-2">
+                                <span class="fw-bold text-dark"><i class="fa-solid fa-circle-check text-success"></i> 参加ポイント:</span>
+                                <span class="fw-bold text-success font-monospace" th:text="'+' + ${tournament.participationPoint} + ' pt'">+10 pt</span>
+                            </div>
+                            <div th:unless="${#lists.isEmpty(prizePoints)}">
+                                <hr class="my-2 border-secondary-subtle">
+                                <div class="text-dark small fw-bold mb-2">上位入賞ポイント (順位ごと):</div>
+                                <div class="row row-cols-2 g-2">
+                                    <div class="col" th:each="p : ${prizePoints}">
+                                        <div class="d-flex justify-content-between bg-white border rounded px-2 py-1 small text-dark">
+                                            <span class="fw-bold" th:text="${p.rank} + '位'">1位</span>
+                                            <span class="fw-bold text-warning font-monospace" th:text="'+' + ${p.point} + ' pt'">+100 pt</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
                     </div>
                 </div>
 
-                <!-- Navigation menu after Swiss draw starts -->
-                <div class="card card-glass text-white p-4 mb-4" th:if="${tournament.status != 'ENTRY'}">
+                <!-- Navigation menu -->
+                <div class="card card-glass text-white p-4 mb-4">
                     <h4 class="mb-3 text-warning"><i class="fa-solid fa-compass"></i> 大会メニュー</h4>
                     <div class="d-flex flex-wrap gap-3">
-                        <a th:href="@{/tournament/{id}/matching(id=${tournament.id})}" class="btn btn-secondary-custom"><i class="fa-solid fa-gamepad"></i> 対戦表を見る</a>
-                        <a th:href="@{/tournament/{id}/ranking(id=${tournament.id})}" class="btn btn-outline-light"><i class="fa-solid fa-ranking-star"></i> ランキング</a>
+                        <a th:href="@{/tournament/{id}/players(id=${tournament.id})}" class="btn btn-primary-custom"><i class="fa-solid fa-users"></i> 登録選手一覧</a>
+                        <a th:href="@{/tournament/{id}/matching/rounds(id=${tournament.id})}" target="_blank" class="btn btn-secondary-custom" th:if="${tournament.status != 'ENTRY'}"><i class="fa-solid fa-table-list"></i> 予選ラウンド表示</a>
+                        <a th:href="@{/tournament/{id}/ranking(id=${tournament.id})}" class="btn btn-outline-light" th:if="${tournament.status != 'ENTRY'}"><i class="fa-solid fa-ranking-star"></i> ランキング</a>
                         <a th:href="@{/tournament/{id}/bracket(id=${tournament.id})}" class="btn btn-outline-light" th:if="${tournament.status == 'BRACKET' || tournament.status == 'FINISHED'}"><i class="fa-solid fa-sitemap"></i> 決勝トーナメント</a>
-                        <a th:href="@{/tournament/{id}/timer(id=${tournament.id})}" target="_blank" class="btn btn-outline-light"><i class="fa-solid fa-clock"></i> 対戦タイマー投影</a>
                     </div>
                 </div>
             </div>

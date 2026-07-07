@@ -19,11 +19,12 @@
         <association property="account" javaType="com.asopoketool.model.PlayerAccount">
             <id property="id" column="account_id"/>
             <result property="displayName" column="display_name"/>
+            <result property="iconPath" column="icon_path"/>
         </association>
     </resultMap>
 
     <select id="findByTournamentId" resultMap="EntryResultMap">
-        SELECT e.*, a.display_name
+        SELECT e.*, a.display_name, a.icon_path
         FROM entry e
         LEFT JOIN player_account a ON e.account_id = a.id
         WHERE e.tournament_id = #{tournamentId}
@@ -31,21 +32,21 @@
     </select>
 
     <select id="findActiveByTournamentId" resultMap="EntryResultMap">
-        SELECT e.*, a.display_name
+        SELECT e.*, a.display_name, a.icon_path
         FROM entry e
         LEFT JOIN player_account a ON e.account_id = a.id
         WHERE e.tournament_id = #{tournamentId} AND e.checkin_flg = 1 AND e.dropout_flg = 0
     </select>
 
     <select id="findById" resultMap="EntryResultMap">
-        SELECT e.*, a.display_name
+        SELECT e.*, a.display_name, a.icon_path
         FROM entry e
         LEFT JOIN player_account a ON e.account_id = a.id
         WHERE e.id = #{id}
     </select>
 
     <select id="findByTournamentAndSession" resultMap="EntryResultMap">
-        SELECT e.*, a.display_name
+        SELECT e.*, a.display_name, a.icon_path
         FROM entry e
         LEFT JOIN player_account a ON e.account_id = a.id
         WHERE e.tournament_id = #{tournamentId} AND e.session_token = #{sessionToken}
@@ -53,7 +54,7 @@
     </select>
 
     <select id="findByTournamentAndAccount" resultMap="EntryResultMap">
-        SELECT e.*, a.display_name
+        SELECT e.*, a.display_name, a.icon_path
         FROM entry e
         LEFT JOIN player_account a ON e.account_id = a.id
         WHERE e.tournament_id = #{tournamentId} AND e.account_id = #{accountId}
@@ -61,7 +62,7 @@
     </select>
 
     <select id="findByQrToken" resultMap="EntryResultMap">
-        SELECT e.*, a.display_name
+        SELECT e.*, a.display_name, a.icon_path
         FROM entry e
         LEFT JOIN player_account a ON e.account_id = a.id
         WHERE e.qr_token = #{qrToken}
@@ -99,7 +100,7 @@
     </delete>
 
     <select id="findByAccountId" resultMap="EntryResultMap">
-        SELECT e.*, a.display_name
+        SELECT e.*, a.display_name, a.icon_path
         FROM entry e
         LEFT JOIN player_account a ON e.account_id = a.id
         WHERE e.account_id = #{accountId}

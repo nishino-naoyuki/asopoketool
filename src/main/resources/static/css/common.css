@@ -276,30 +276,32 @@ body {
 
 .bracket-match-box {
     position: relative;
-    background: rgba(255, 255, 255, 0.05);
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    border-radius: 8px;
+    background: rgba(255, 255, 255, 0.95);
+    border: 2px solid rgba(255, 107, 53, 0.2);
+    border-radius: 12px;
     padding: 10px;
     width: 220px;
     margin: 30px 0;
     z-index: 5;
+    box-shadow: 0 8px 24px rgba(255, 107, 53, 0.05);
 }
 
 .bracket-player {
     padding: 6px 12px;
-    border-radius: 4px;
+    border-radius: 6px;
     margin: 4px 0;
     display: flex;
     justify-content: space-between;
     font-size: 0.9rem;
-    background: rgba(255, 255, 255, 0.02);
+    background: rgba(0, 0, 0, 0.02);
     border-left: 3px solid transparent;
+    color: #495057;
 }
 
 .bracket-player.winner {
-    background: rgba(25, 135, 84, 0.15);
+    background: rgba(25, 135, 84, 0.12);
     border-left: 3px solid #198754;
-    color: #28a745;
+    color: #198754;
     font-weight: bold;
 }
 
@@ -314,8 +316,8 @@ body {
     top: calc(50% - 10px);
     width: 20px;
     height: 20px;
-    background: #0d0d1a;
-    border: 1px solid rgba(255, 255, 255, 0.4);
+    background: var(--primary);
+    border: 1px solid #fff;
     border-radius: 50%;
     color: #fff;
     font-size: 11px;
@@ -332,15 +334,15 @@ body {
     position: absolute;
     right: -30px;
     width: 30px;
-    background: #555;
+    background: rgba(255, 107, 53, 0.3);
     z-index: 1;
 }
 
 /* 奇数対戦ボックス(M1, M3)から下へ伸びる縦線 */
 .bracket-round-1 .bracket-match-box:nth-child(odd)::after {
     height: 80px;
-    border-right: 2px solid #555;
-    border-bottom: 2px solid #555;
+    border-right: 2px solid rgba(255, 107, 53, 0.3);
+    border-bottom: 2px solid rgba(255, 107, 53, 0.3);
     background: transparent;
     border-top: none;
     top: 50%;
@@ -348,23 +350,23 @@ body {
 /* 偶数対戦ボックス(M2, M4)から上へ伸びる縦線 */
 .bracket-round-1 .bracket-match-box:nth-child(even)::after {
     height: 80px;
-    border-right: 2px solid #555;
-    border-top: 2px solid #555;
+    border-right: 2px solid rgba(255, 107, 53, 0.3);
+    border-top: 2px solid rgba(255, 107, 53, 0.3);
     background: transparent;
     border-bottom: none;
     top: calc(50% - 80px);
 }
 
-/* 1回戦勝敗決定時の赤い太線 */
+/* 1回戦勝敗決定時の太線 */
 .bracket-round-1 .bracket-match-box.winner-p1:nth-child(odd)::after,
 .bracket-round-1 .bracket-match-box.winner-p2:nth-child(odd)::after {
-    border-right: 4px solid #ff3333;
-    border-bottom: 4px solid #ff3333;
+    border-right: 4px solid var(--primary);
+    border-bottom: 4px solid var(--primary);
 }
 .bracket-round-1 .bracket-match-box.winner-p1:nth-child(even)::after,
 .bracket-round-1 .bracket-match-box.winner-p2:nth-child(even)::after {
-    border-right: 4px solid #ff3333;
-    border-top: 4px solid #ff3333;
+    border-right: 4px solid var(--primary);
+    border-top: 4px solid var(--primary);
 }
 
 /* 2回戦の受け取り線（左に伸ばす） */
@@ -374,14 +376,14 @@ body {
     left: -30px;
     width: 30px;
     height: 2px;
-    background: #555;
+    background: rgba(255, 107, 53, 0.3);
     top: 50%;
     z-index: 1;
 }
 .bracket-round-2 .bracket-match-box.winner-p1::before,
 .bracket-round-2 .bracket-match-box.winner-p2::before {
     height: 4px;
-    background: #ff3333;
+    background: var(--primary);
 }
 
 /* 2回戦から決勝への接続線 */
@@ -389,34 +391,34 @@ body {
     content: '';
     position: absolute;
     right: -30px;
-    background: #555;
+    background: rgba(255, 107, 53, 0.3);
     z-index: 1;
 }
 .bracket-round-2 .bracket-match-box:nth-child(odd)::after {
     height: 160px;
-    border-right: 2px solid #555;
-    border-bottom: 2px solid #555;
+    border-right: 2px solid rgba(255, 107, 53, 0.3);
+    border-bottom: 2px solid rgba(255, 107, 53, 0.3);
     background: transparent;
     top: 50%;
 }
 .bracket-round-2 .bracket-match-box:nth-child(even)::after {
     height: 160px;
-    border-right: 2px solid #555;
-    border-top: 2px solid #555;
+    border-right: 2px solid rgba(255, 107, 53, 0.3);
+    border-top: 2px solid rgba(255, 107, 53, 0.3);
     background: transparent;
     top: calc(50% - 160px);
 }
 
-/* 2回戦勝敗決定時の赤い太線 */
+/* 2回戦勝敗決定時の太線 */
 .bracket-round-2 .bracket-match-box.winner-p1:nth-child(odd)::after,
 .bracket-round-2 .bracket-match-box.winner-p2:nth-child(odd)::after {
-    border-right: 4px solid #ff3333;
-    border-bottom: 4px solid #ff3333;
+    border-right: 4px solid var(--primary);
+    border-bottom: 4px solid var(--primary);
 }
 .bracket-round-2 .bracket-match-box.winner-p1:nth-child(even)::after,
 .bracket-round-2 .bracket-match-box.winner-p2:nth-child(even)::after {
-    border-right: 4px solid #ff3333;
-    border-top: 4px solid #ff3333;
+    border-right: 4px solid var(--primary);
+    border-top: 4px solid var(--primary);
 }
 
 /* 決勝戦の受け取り線 */
@@ -426,14 +428,14 @@ body {
     left: -30px;
     width: 30px;
     height: 2px;
-    background: #555;
+    background: rgba(255, 107, 53, 0.3);
     top: 50%;
     z-index: 1;
 }
 .bracket-round-3 .bracket-match-box.winner-p1::before,
 .bracket-round-3 .bracket-match-box.winner-p2::before {
     height: 4px;
-    background: #ff3333;
+    background: var(--primary);
 }
 
 /* 決勝戦の勝者からさらに右へ伸ばす優勝線 */
@@ -443,14 +445,14 @@ body {
     right: -40px;
     width: 40px;
     height: 2px;
-    background: #555;
+    background: rgba(255, 107, 53, 0.3);
     top: 50%;
     z-index: 1;
 }
 .bracket-round-3 .bracket-match-box.winner-p1::after,
 .bracket-round-3 .bracket-match-box.winner-p2::after {
     height: 4px;
-    background: #ff3333;
+    background: var(--primary);
 }
 
 /* ==========================================
@@ -632,3 +634,18 @@ body {
     color: var(--light) !important;
     border-radius: 12px !important;
 }
+
+/* Cropper.js 丸型トリミングカスタマイズ (Teams風UI - ユーザーアイコン限定) */
+.cropper-round .cropper-view-box,
+.cropper-round .cropper-face {
+    border-radius: 50% !important;
+}
+.cropper-round .cropper-view-box {
+    outline: 2px dashed var(--primary) !important;
+    outline-color: var(--primary) !important;
+}
+.cropper-round .cropper-line,
+.cropper-round .cropper-point {
+    background-color: var(--primary) !important;
+}
+

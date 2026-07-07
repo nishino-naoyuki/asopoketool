@@ -46,6 +46,7 @@
                     <thead>
                         <tr>
                             <th>アカウントID</th>
+                            <th style="width: 70px;">アイコン</th>
                             <th>表示名</th>
                             <th class="text-center">参加大会数</th>
                             <th class="text-center">累計獲得ポイント</th>
@@ -56,6 +57,12 @@
                     <tbody>
                         <tr th:each="p : ${players}">
                             <td class="align-middle font-monospace" th:text="${p.id}">1</td>
+                            <td class="align-middle">
+                                <img th:src="${p.iconPath != null ? p.iconPath : '/asopoketool/images/pikachu.png'}"
+                                     class="rounded-circle border border-warning"
+                                     style="width: 35px; height: 35px; object-fit: cover;"
+                                     alt="Avatar">
+                            </td>
                             <td class="align-middle fw-bold text-warning" th:text="${p.displayName}">たろう</td>
                             <td class="text-center align-middle font-monospace" th:text="${entryCounts.get(p.id)}">3 回</td>
                             <td class="text-center align-middle fw-bold text-accent font-monospace" th:text="${cumulativePoints.get(p.id)} + ' pt'">150 pt</td>

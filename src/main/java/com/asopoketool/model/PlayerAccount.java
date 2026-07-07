@@ -14,6 +14,7 @@ public class PlayerAccount {
     private Long id;
     private String displayName;
     private String passwordHash;
+    private String iconPath;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
 }

@@ -63,9 +63,20 @@ public class MvcConfig implements WebMvcConfigurer {
         registry.addResourceHandler("/js/**").addResourceLocations("classpath:/static/js/");
         registry.addResourceHandler("/audio/**").addResourceLocations("classpath:/static/audio/");
         registry.addResourceHandler("/images/**").addResourceLocations("classpath:/static/images/");
+        
+        // Windows/Linux compatibility portable path translator
+        String userDir = System.getProperty("user.dir");
+        String bgmLocation = getFileResourceLocation(userDir + "/data/bgm/");
+        String imgLocation = getFileResourceLocation(userDir + "/data/images/");
+
         // External BGM file location
-        registry.addResourceHandler("/bgm-files/**").addResourceLocations("file:/opt/asopoketool/bgm/");
+        registry.addResourceHandler("/bgm-files/**").addResourceLocations(bgmLocation);
         // External Timer Background image location
-        registry.addResourceHandler("/timer-bg-files/**").addResourceLocations("file:/opt/asopoketool/images/");
+        registry.addResourceHandler("/timer-bg-files/**").addResourceLocations(imgLocation);
+    }
+
+    private String getFileResourceLocation(String path) {
+        java.io.File file = new java.io.File(path);
+        return "file:///" + file.getAbsolutePath().replace("\\", "/").replaceAll("/+", "/") + "/";
     }
 }

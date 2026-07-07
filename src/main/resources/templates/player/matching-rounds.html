@@ -1,0 +1,459 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>予選ラウンド対戦表 | ASOPokeTool</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
+    <link th:href="@{/css/common.css}" rel="stylesheet">
+    <style>
+        body {
+            background-color: #FFFDF0; /* パステルイエロー背景 */
+            color: #4A3E3D; /* 優しいダークブラウン */
+            font-family: 'Noto Sans JP', sans-serif;
+            min-height: 100vh;
+            margin: 0;
+            padding: 40px;
+            position: relative;
+            overflow-x: hidden;
+        }
+        .project-header {
+            border-bottom: 4px dashed #FFB6C1; /* パステルピンクの点線 */
+            padding-bottom: 20px;
+            margin-bottom: 25px;
+            text-align: center;
+            padding-left: 160px;
+            padding-right: 160px;
+        }
+        .project-title {
+            color: #FF7F50; /* コーラルオレンジ */
+            font-weight: 800;
+        }
+        .matching-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(380px, 1fr));
+            gap: 20px;
+            padding-bottom: 60px;
+        }
+        .project-match-card {
+            background: #ffffff;
+            border: 3px solid #FFE4E1; /* かわいいピンクの太枠 */
+            border-radius: 20px;
+            padding: 20px;
+            box-shadow: 0 8px 16px rgba(255, 182, 193, 0.2);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            transition: transform 0.2s ease;
+            position: relative;
+        }
+        .project-match-card.clickable {
+            cursor: pointer;
+        }
+        .project-match-card.clickable:hover {
+            transform: scale(1.02);
+            border-color: #FFB6C1;
+        }
+        .project-match-card.my-match {
+            background: #FFF5F5;
+            border-color: #FF6B6B;
+            box-shadow: 0 8px 20px rgba(255, 107, 107, 0.25);
+        }
+        .table-num {
+            font-size: 2.2rem;
+            font-weight: 800;
+            color: #FF6B6B; /* パステルレッド */
+            border-right: 3px dashed #FFE4E1;
+            padding-right: 15px;
+            min-width: 80px;
+            text-align: center;
+        }
+        .players-area {
+            flex-grow: 1;
+            padding-left: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+        .player-row {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .player-icon {
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            object-fit: cover;
+            border: 2px solid #FFE4E1;
+            background: #ffffff;
+        }
+        .player-name-project {
+            font-size: 1.2rem;
+            font-weight: 700;
+            color: #4A3E3D;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            max-width: 180px;
+        }
+        
+        /* 🌸 四隅のデコレーションポケモン 🌸 */
+        .pokemon-corner {
+            position: fixed;
+            width: 140px;
+            height: 140px;
+            z-index: 99;
+            pointer-events: none;
+            filter: drop-shadow(0 6px 8px rgba(0,0,0,0.1));
+        }
+        .pokemon-top-left { top: 10px; left: 10px; transform: rotate(-10deg); }
+        .pokemon-top-right { top: 10px; right: 10px; transform: rotate(10deg); }
+        .pokemon-bottom-left { bottom: 10px; left: 10px; transform: rotate(10deg); }
+        .pokemon-bottom-right { bottom: 10px; right: 10px; transform: rotate(-10deg); }
+
+        .project-container {
+            padding: 0 100px;
+        }
+
+        .status-badge {
+            font-size: 0.8rem;
+            padding: 3px 10px;
+            border-radius: 20px;
+            font-weight: bold;
+            display: inline-block;
+        }
+        .status-ongoing { background-color: #FFF3CD; color: #856404; }
+        .status-won { background-color: #D4EDDA; color: #155724; }
+        .status-draw { background-color: #E2E3E5; color: #383D41; }
+    </style>
+</head>
+<body>
+
+    <!-- 🌸 ポケモン画像配置 🌸 -->
+    <img th:src="@{/images/bulbasaur.png}" class="pokemon-corner pokemon-top-left" alt="フシギダネ">
+    <img th:src="@{/images/charmander.png}" class="pokemon-corner pokemon-top-right" alt="ヒトカゲ">
+    <img th:src="@{/images/squirtle.png}" class="pokemon-corner pokemon-bottom-left" alt="ゼニガメ">
+    <img th:src="@{/images/pikachu.png}" class="pokemon-corner pokemon-bottom-right" alt="ピカチュウ">
+
+    <div class="container-fluid project-container">
+        <div class="project-header">
+            <h1 class="display-5 fw-bold project-title mb-1" th:text="${tournament.name}">大会名</h1>
+            <p class="text-muted mb-2 fs-5">予選スイスドロー対戦表（ラウンド結果・報告）</p>
+            <div class="text-muted small">
+                <span><i class="fa-solid fa-arrows-rotate text-success"></i> 30秒ごとに自動更新</span> | 
+                <span id="last-updated" class="font-monospace fw-bold">最終更新: --:--:--</span>
+            </div>
+        </div>
+
+        <!-- 1. まだ大会前の場合 -->
+        <div th:if="${isBeforeTournament}" class="p-5 text-center text-muted card-glass" style="background: white; border: 3px dashed #FFE4E1; border-radius: 20px; max-width: 600px; margin: 40px auto;">
+            <i class="fa-solid fa-hourglass-start fa-4x mb-3 text-warning"></i>
+            <h2 class="fw-bold" style="color: #4A3E3D;">まだ大会前です</h2>
+            <p class="fs-5 mb-0">予選ラウンドが開始されるまでしばらくお待ちください。</p>
+        </div>
+
+        <!-- 2. 大会開始後の場合 -->
+        <div th:unless="${isBeforeTournament}">
+            <!-- Round Tabs -->
+            <ul class="nav nav-pills mb-4 justify-content-center" id="roundTab" role="tablist" style="background: rgba(255,255,255,0.6); padding: 6px; border-radius: 16px; border: 1px solid rgba(255,107,53,0.1); width: fit-content; margin: 0 auto;">
+                <li class="nav-item" role="presentation" th:each="rDisp : ${roundsList}">
+                    <button class="nav-link px-4 py-2" 
+                            th:id="'round-' + ${rDisp.roundNumber} + '-tab'" 
+                            data-bs-toggle="tab" 
+                            th:data-bs-target="'#round-' + ${rDisp.roundNumber}" 
+                            type="button" 
+                            role="tab" 
+                            th:classappend="${rDisp.roundNumber == currentRoundNum} ? 'active' : ''"
+                            th:text="'ラウンド ' + ${rDisp.roundNumber}"
+                            style="border-radius: 12px; font-weight: bold; transition: all 0.2s ease;">
+                        ラウンド 1
+                    </button>
+                </li>
+            </ul>
+
+            <style>
+                #roundTab .nav-link.active {
+                    background: linear-gradient(135deg, #FF6B35 0%, #FF8E53 100%) !important;
+                    color: #ffffff !important;
+                    box-shadow: 0 4px 10px rgba(255, 107, 53, 0.3);
+                }
+            </style>
+
+            <div class="tab-content mt-4" id="roundTabContent">
+                <div th:each="rDisp : ${roundsList}" 
+                     class="tab-pane fade" 
+                     th:id="'round-' + ${rDisp.roundNumber}" 
+                     role="tabpanel" 
+                     th:classappend="${rDisp.roundNumber == currentRoundNum} ? 'show active' : ''">
+                     
+                    <div class="matching-grid">
+                        <div th:each="m : ${rDisp.matches}" 
+                             class="project-match-card"
+                             th:classappend="${(myEntry != null && (myEntry.id == m.player1EntryId || myEntry.id == m.player2EntryId)) ? 'my-match' : ''} + ' ' + ${(!m.hasResult && myEntry != null && (myEntry.id == m.player1EntryId || myEntry.id == m.player2EntryId)) ? 'clickable' : ''}"
+                             th:data-match-id="${m.id}"
+                             th:data-p1-id="${m.player1EntryId}"
+                             th:data-p1-name="${m.player1Name}"
+                             th:data-p1-icon="${m.player1Icon != null ? m.player1Icon : '/asopoketool/images/pikachu.png'}"
+                             th:data-p2-id="${m.player2EntryId != null ? m.player2EntryId : ''}"
+                             th:data-p2-name="${m.player2Name != null ? m.player2Name : '不戦勝'}"
+                             th:data-p2-icon="${m.player2Icon != null ? m.player2Icon : '/asopoketool/images/pikachu.png'}"
+                             onclick="handleCardClick(this)">
+                            
+                            <div class="table-num text-center">
+                                <span th:text="${m.tableNumber}">1</span>
+                                <span class="d-block fs-6 text-muted">番卓</span>
+                            </div>
+                            
+                            <div class="players-area">
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <div class="d-flex flex-column gap-2">
+                                        <!-- Player 1 -->
+                                        <div class="player-row">
+                                            <img th:src="${m.player1Icon != null ? m.player1Icon : '/asopoketool/images/pikachu.png'}" class="player-icon" alt="icon">
+                                            <span class="player-name-project" th:text="${m.player1Name}">プレイヤー1</span>
+                                        </div>
+                                        
+                                        <!-- Player 2 -->
+                                        <div class="player-row">
+                                            <img th:src="${m.isBye ? '/asopoketool/images/pikachu.png' : (m.player2Icon != null ? m.player2Icon : '/asopoketool/images/pikachu.png')}" class="player-icon" alt="icon" th:style="${m.isBye} ? 'opacity: 0.4;' : ''">
+                                            <span class="player-name-project text-muted" th:if="${m.isBye}">不戦勝 (BYE)</span>
+                                            <span class="player-name-project" th:unless="${m.isBye}" th:text="${m.player2Name}">プレイヤー2</span>
+                                        </div>
+                                    </div>
+                                    
+                                    <!-- Status / Winner display -->
+                                    <div class="text-end pe-2">
+                                        <!-- 1. Ongoing -->
+                                        <div class="status-badge status-ongoing" th:if="${!m.hasResult}">対戦中</div>
+                                        
+                                        <!-- 2. Result exists -->
+                                        <div th:if="${m.hasResult}">
+                                            <!-- Draw -->
+                                            <div class="status-badge status-draw" th:if="${m.resultWinnerEntryId == null}">引き分け</div>
+                                            <!-- Winner P1 -->
+                                            <div th:if="${m.resultWinnerEntryId != null}">
+                                                <div class="status-badge status-won" th:text="${m.resultWinnerEntryId == m.player1EntryId ? m.player1Name + ' の勝ち' : (m.player2Name != null ? m.player2Name + ' の勝ち' : '勝者決定')}"></div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Result Popup Modal -->
+    <div class="modal fade" id="resultModal" tabindex="-1" aria-labelledby="resultModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content" style="border-radius: 20px; border: 3px solid #FFE4E1;">
+                <div class="modal-header border-0 pb-0">
+                    <h5 class="modal-title fw-bold text-dark w-100 text-center" id="resultModalLabel">対戦結果の報告</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body py-4">
+                    <form id="resultForm">
+                        <input type="hidden" id="modalMatchId" name="matchId">
+                        
+                        <div class="d-flex justify-content-around align-items-center mb-4">
+                            <!-- Player 1 Card -->
+                            <div class="text-center p-3 rounded-3" style="width: 45%; background: rgba(255,107,53,0.05); border: 1px solid rgba(255,107,53,0.15);">
+                                <img id="p1Icon" src="" class="rounded-circle mb-2" style="width: 64px; height: 64px; object-fit: cover; border: 3px solid #ffffff; box-shadow: 0 4px 8px rgba(0,0,0,0.1);">
+                                <div id="p1Name" class="fw-bold text-truncate" style="color: #4A3E3D; font-size: 1.1rem;">-</div>
+                            </div>
+                            
+                            <div class="fw-bold text-muted font-monospace fs-4">VS</div>
+                            
+                            <!-- Player 2 Card -->
+                            <div class="text-center p-3 rounded-3" style="width: 45%; background: rgba(255,107,53,0.05); border: 1px solid rgba(255,107,53,0.15);">
+                                <img id="p2Icon" src="" class="rounded-circle mb-2" style="width: 64px; height: 64px; object-fit: cover; border: 3px solid #ffffff; box-shadow: 0 4px 8px rgba(0,0,0,0.1);">
+                                <div id="p2Name" class="fw-bold text-truncate" style="color: #4A3E3D; font-size: 1.1rem;">-</div>
+                            </div>
+                        </div>
+                        
+                        <div class="px-3">
+                            <label class="form-label fw-bold mb-3 d-block text-center" style="color: #FF7F50; font-size: 1.1rem;">結果を選択してください</label>
+                            
+                            <!-- Radio P1 Win -->
+                            <div class="form-check p-3 mb-2 rounded-3 border align-items-center d-flex" style="cursor: pointer; transition: all 0.2s ease;" onclick="selectRadio('winnerP1')">
+                                <input class="form-check-input ms-0 me-3" type="radio" name="resultOption" id="winnerP1" value="p1">
+                                <label class="form-check-label fw-bold text-dark mb-0" for="winnerP1" id="labelP1Win" style="cursor: pointer;">- さんの勝ち</label>
+                            </div>
+                            
+                            <!-- Radio P2 Win -->
+                            <div class="form-check p-3 mb-2 rounded-3 border align-items-center d-flex" style="cursor: pointer; transition: all 0.2s ease;" onclick="selectRadio('winnerP2')">
+                                <input class="form-check-input ms-0 me-3" type="radio" name="resultOption" id="winnerP2" value="p2">
+                                <label class="form-check-label fw-bold text-dark mb-0" for="winnerP2" id="labelP2Win" style="cursor: pointer;">- さんの勝ち</label>
+                            </div>
+                            
+                            <!-- Radio Draw -->
+                            <div class="form-check p-3 mb-4 rounded-3 border align-items-center d-flex" style="cursor: pointer; transition: all 0.2s ease;" onclick="selectRadio('draw')">
+                                <input class="form-check-input ms-0 me-3" type="radio" name="resultOption" id="draw" value="draw">
+                                <label class="form-check-label fw-bold text-dark mb-0" for="draw" style="cursor: pointer;">引き分け</label>
+                            </div>
+                            
+                            <button type="button" class="btn btn-primary-custom w-100 py-3" onclick="submitResult()" style="border-radius: 12px; font-weight: bold; font-size: 1.1rem;">
+                                <i class="fa-solid fa-circle-check"></i> 結果を登録する
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // 30秒ごとに自動で画面リロード (モーダルが開いていないときのみ)
+        let modalOpen = false;
+        setTimeout(function() {
+            if (!modalOpen) {
+                window.location.reload();
+            }
+        }, 30000);
+        
+        // 最後にアクティブだったタブをローカルストレージで復元
+        document.addEventListener("DOMContentLoaded", function() {
+            const activeTabId = localStorage.getItem("activeMatchingRoundTabId");
+            if (activeTabId) {
+                const tabBtn = document.getElementById(activeTabId);
+                if (tabBtn) {
+                    const triggerEl = new bootstrap.Tab(tabBtn);
+                    triggerEl.show();
+                }
+            }
+
+            const tabButtons = document.querySelectorAll('#roundTab button');
+            tabButtons.forEach(button => {
+                button.addEventListener('shown.bs.tab', function (event) {
+                    localStorage.setItem("activeMatchingRoundTabId", event.target.id);
+                });
+            });
+            
+            const resultModalEl = document.getElementById('resultModal');
+            resultModalEl.addEventListener('show.bs.modal', function () {
+                modalOpen = true;
+            });
+            resultModalEl.addEventListener('hide.bs.modal', function () {
+                modalOpen = false;
+            });
+        });
+
+        // 最終更新時刻の表示
+        const now = new Date();
+        const timeStr = String(now.getHours()).padStart(2, '0') + ':' + 
+                        String(now.getMinutes()).padStart(2, '0') + ':' + 
+                        String(now.getSeconds()).padStart(2, '0');
+        document.getElementById('last-updated').innerText = '最終更新: ' + timeStr;
+
+        let selectedWinnerId = null;
+        let p1EntryIdVal = null;
+        let p2EntryIdVal = null;
+
+        function handleCardClick(element) {
+            if (!element.classList.contains('clickable')) {
+                return;
+            }
+            const matchId = element.getAttribute('data-match-id');
+            const p1Id = element.getAttribute('data-p1-id');
+            const p1Name = element.getAttribute('data-p1-name');
+            const p1Icon = element.getAttribute('data-p1-icon');
+            const p2Id = element.getAttribute('data-p2-id');
+            const p2Name = element.getAttribute('data-p2-name');
+            const p2Icon = element.getAttribute('data-p2-icon');
+
+            openResultModal(matchId, p1Id, p1Name, p1Icon, p2Id ? p2Id : null, p2Name, p2Icon);
+        }
+
+        function openResultModal(matchId, p1Id, p1Name, p1Icon, p2Id, p2Name, p2Icon) {
+            document.getElementById('modalMatchId').value = matchId;
+            p1EntryIdVal = p1Id;
+            p2EntryIdVal = p2Id;
+
+            document.getElementById('p1Name').innerText = p1Name;
+            document.getElementById('p1Icon').src = p1Icon;
+            document.getElementById('labelP1Win').innerText = p1Name + " さんの勝ち";
+
+            document.getElementById('p2Name').innerText = p2Name;
+            document.getElementById('p2Icon').src = p2Icon;
+            if (p2Id) {
+                document.getElementById('p2Icon').style.opacity = "1";
+                document.getElementById('labelP2Win').innerText = p2Name + " さんの勝ち";
+                document.getElementById('winnerP2').disabled = false;
+            } else {
+                document.getElementById('p2Icon').style.opacity = "0.4";
+                document.getElementById('labelP2Win').innerText = "不戦勝";
+                document.getElementById('winnerP2').disabled = true;
+            }
+
+            // Reset radio options
+            document.querySelectorAll('input[name="resultOption"]').forEach(r => r.checked = false);
+            
+            const myModal = new bootstrap.Modal(document.getElementById('resultModal'));
+            myModal.show();
+        }
+
+        function selectRadio(id) {
+            const radio = document.getElementById(id);
+            if (radio && !radio.disabled) {
+                radio.checked = true;
+            }
+        }
+
+        function submitResult() {
+            const matchId = document.getElementById('modalMatchId').value;
+            const selectedOpt = document.querySelector('input[name="resultOption"]:checked');
+            
+            if (!selectedOpt) {
+                alert("結果を選択してください。");
+                return;
+            }
+
+            let winnerEntryId = null;
+            if (selectedOpt.value === 'p1') {
+                winnerEntryId = p1EntryIdVal;
+            } else if (selectedOpt.value === 'p2') {
+                winnerEntryId = p2EntryIdVal;
+            } else if (selectedOpt.value === 'draw') {
+                winnerEntryId = ''; // 引き分け時はパラメータを送信しないか空にする (null扱いにする)
+            }
+
+            if (!confirm("結果を登録します。一度登録すると変更できません。よろしいですか？")) {
+                return;
+            }
+
+            const url = '/asopoketool/tournament/' + '[[${tournament.id}]]' + '/result/' + matchId + '/ajax';
+            
+            const formData = new URLSearchParams();
+            if (winnerEntryId !== '') {
+                formData.append('winnerEntryId', winnerEntryId);
+            }
+
+            fetch(url, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded'
+                },
+                body: formData.toString()
+            })
+            .then(res => res.json())
+            .then(data => {
+                if (data.success) {
+                    alert("対戦結果を登録しました！");
+                    window.location.reload();
+                } else {
+                    alert("登録に失敗しました: " + data.message);
+                }
+            })
+            .catch(err => {
+                alert("通信エラーが発生しました。");
+                console.error(err);
+            });
+        }
+    </script>
+</body>
+</html>

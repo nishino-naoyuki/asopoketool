@@ -6,10 +6,15 @@
         SELECT m.*, 
                e1.player_name AS player1_name, 
                e2.player_name AS player2_name,
-               r.winner_entry_id AS result_winner_entry_id
+               r.winner_entry_id AS result_winner_entry_id,
+               a1.icon_path AS player1_icon,
+               a2.icon_path AS player2_icon,
+               CASE WHEN r.match_id IS NOT NULL THEN 1 ELSE 0 END AS has_result
         FROM match_game m
         JOIN entry e1 ON m.player1_entry_id = e1.id
         LEFT JOIN entry e2 ON m.player2_entry_id = e2.id
+        LEFT JOIN player_account a1 ON e1.account_id = a1.id
+        LEFT JOIN player_account a2 ON e2.account_id = a2.id
         LEFT JOIN match_result r ON m.id = r.match_id
         WHERE m.round_id = #{roundId}
         ORDER BY m.table_number ASC
@@ -19,10 +24,15 @@
         SELECT m.*, 
                e1.player_name AS player1_name, 
                e2.player_name AS player2_name,
-               r.winner_entry_id AS result_winner_entry_id
+               r.winner_entry_id AS result_winner_entry_id,
+               a1.icon_path AS player1_icon,
+               a2.icon_path AS player2_icon,
+               CASE WHEN r.match_id IS NOT NULL THEN 1 ELSE 0 END AS has_result
         FROM match_game m
         JOIN entry e1 ON m.player1_entry_id = e1.id
         LEFT JOIN entry e2 ON m.player2_entry_id = e2.id
+        LEFT JOIN player_account a1 ON e1.account_id = a1.id
+        LEFT JOIN player_account a2 ON e2.account_id = a2.id
         LEFT JOIN match_result r ON m.id = r.match_id
         WHERE m.id = #{id}
     </select>
@@ -31,10 +41,15 @@
         SELECT m.*, 
                e1.player_name AS player1_name, 
                e2.player_name AS player2_name,
-               r.winner_entry_id AS result_winner_entry_id
+               r.winner_entry_id AS result_winner_entry_id,
+               a1.icon_path AS player1_icon,
+               a2.icon_path AS player2_icon,
+               CASE WHEN r.match_id IS NOT NULL THEN 1 ELSE 0 END AS has_result
         FROM match_game m
         JOIN entry e1 ON m.player1_entry_id = e1.id
         LEFT JOIN entry e2 ON m.player2_entry_id = e2.id
+        LEFT JOIN player_account a1 ON e1.account_id = a1.id
+        LEFT JOIN player_account a2 ON e2.account_id = a2.id
         LEFT JOIN match_result r ON m.id = r.match_id
         WHERE m.player1_entry_id = #{entryId} OR m.player2_entry_id = #{entryId}
     </select>

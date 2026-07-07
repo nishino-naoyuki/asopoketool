@@ -5,6 +5,17 @@
 </head>
 <body>
     <div>
+        <!-- Cropper.js (Loaded inside content div so it is not stripped by Thymeleaf Layout) -->
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.css">
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.js"></script>
+        <style>
+            /* Make the cropper overlay circular */
+            .cropper-view-box,
+            .cropper-face {
+                border-radius: 50% !important;
+            }
+        </style>
+
         <div class="row">
             <!-- Left Side: Profile info & Password change -->
             <div class="col-lg-4 mb-4">
@@ -14,9 +25,38 @@
                     <div th:if="${param.success != null}" class="alert alert-success py-2 text-center small" role="alert">
                         <span th:if="${param.success[0] == 'name'}">表示名を変更しました。</span>
                         <span th:if="${param.success[0] == 'password'}">パスワードを変更しました。</span>
+                        <span th:if="${param.success[0] == 'icon'}">プロフィール画像を更新しました。</span>
                     </div>
 
                     <div th:if="${error}" class="alert alert-danger py-2 text-center small" role="alert" th:text="${error}">エラー</div>
+
+                    <!-- Current Profile Icon -->
+                    <div class="text-center mb-4">
+                        <img th:src="${account.iconPath != null ? account.iconPath : '/asopoketool/images/pikachu.png'}" 
+                             class="rounded-circle border border-warning shadow" 
+                             style="width: 100px; height: 100px; object-fit: cover;" 
+                             alt="User Avatar">
+                        
+                        <!-- Upload Form -->
+                        <form th:action="@{/account/update-icon}" method="POST" id="iconSelectForm" class="mt-3 text-start">
+                            <label class="form-label text-muted small"><i class="fa-solid fa-camera"></i> 新しいアイコン画像を選択</label>
+                            <input type="file" class="form-control bg-white text-dark border-secondary form-control-sm" id="iconFile" accept="image/*">
+                            <input type="hidden" id="iconBase64" name="iconBase64">
+                            
+                            <!-- クロッププレビュー用コンテナ -->
+                            <div class="mt-3 d-none cropper-round" id="cropContainer" style="max-height: 200px; overflow: hidden; background: #222; border-radius: 12px; padding: 5px;">
+                                <img id="imageToCrop" style="max-width: 100%; display: block; margin: 0 auto;">
+                            </div>
+                            <div class="mt-3 d-none text-center" id="cropResultContainer">
+                                <div class="text-warning small mb-1">丸型トリミングプレビュー:</div>
+                                <img id="croppedPreview" class="rounded-circle border border-warning mb-3" style="width: 80px; height: 80px; object-fit: cover; box-shadow: 0 4px 10px rgba(0,0,0,0.3);">
+                                <div>
+                                    <button type="submit" class="btn btn-warning text-dark fw-bold w-100 py-2"><i class="fa-solid fa-cloud-arrow-up"></i> 画像変更保存</button>
+                                    <div class="text-muted small mt-2" style="font-size: 0.7rem;">※クリックすると画像が確定保存され、即座に反映されます。</div>
+                                </div>
+                            </div>
+                        </form>
+                    </div>
 
                     <!-- Update Name Form -->
                     <form th:action="@{/account/update-name}" method="POST" class="mb-4">
@@ -94,6 +134,98 @@
                 </div>
             </div>
         </div>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const iconFileInput = document.getElementById('iconFile');
+            const cropContainer = document.getElementById('cropContainer');
+            const imageToCrop = document.getElementById('imageToCrop');
+            const cropResultContainer = document.getElementById('cropResultContainer');
+            const croppedPreview = document.getElementById('croppedPreview');
+            const iconBase64Input = document.getElementById('iconBase64');
+            const form = document.getElementById('iconSelectForm');
+
+            let cropper = null;
+
+            if (iconFileInput) {
+                iconFileInput.addEventListener('change', function(e) {
+                    const files = e.target.files;
+                    if (files && files.length > 0) {
+                        const file = files[0];
+                        const reader = new FileReader();
+                        reader.onload = function(event) {
+                             imageToCrop.onload = function() {
+                                 if (cropper) {
+                                     cropper.destroy();
+                                 }
+                                 cropContainer.classList.remove('d-none');
+                                 
+                                 cropper = new Cropper(imageToCrop, {
+                                     aspectRatio: 1,
+                                     viewMode: 0,
+                                     dragMode: 'move',
+                                     autoCropArea: 0.8,
+                                     restore: false,
+                                     modal: true,
+                                     guides: false,
+                                     highlight: false,
+                                     cropBoxMovable: false,
+                                     cropBoxResizable: false,
+                                     toggleDragModeOnDblclick: false,
+                                     ready: function() {
+                                         updatePreview();
+                                     },
+                                     crop: function() {
+                                         updatePreview();
+                                     }
+                                 });
+                             };
+                             imageToCrop.src = event.target.result;
+                        };
+                        reader.readAsDataURL(file);
+                    }
+                });
+            }
+
+            function getCircularCanvas(sourceCanvas) {
+                const canvas = document.createElement('canvas');
+                const context = canvas.getContext('2d');
+                const width = sourceCanvas.width;
+                const height = sourceCanvas.height;
+
+                canvas.width = width;
+                canvas.height = height;
+                context.imageSmoothingEnabled = true;
+                context.drawImage(sourceCanvas, 0, 0, width, height);
+                context.globalCompositeOperation = 'destination-in';
+                context.beginPath();
+                context.arc(width / 2, height / 2, Math.min(width, height) / 2, 0, 2 * Math.PI, true);
+                context.fill();
+                return canvas;
+            }
+
+            function updatePreview() {
+                if (!cropper) return;
+                const canvas = cropper.getCroppedCanvas({
+                    width: 300,
+                    height: 300
+                });
+                if (canvas) {
+                    const circularCanvas = getCircularCanvas(canvas);
+                    croppedPreview.src = circularCanvas.toDataURL('image/png');
+                    iconBase64Input.value = circularCanvas.toDataURL('image/png');
+                    cropResultContainer.classList.remove('d-none');
+                }
+            }
+
+            if (form) {
+                form.addEventListener('submit', function(e) {
+                    if (cropper) {
+                        updatePreview();
+                    }
+                });
+            }
+        });
+    </script>
     </div>
 </body>
 </html>

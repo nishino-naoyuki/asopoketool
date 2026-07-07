@@ -120,6 +120,12 @@
                             </a>
                         </div>
                         <div class="col-md-6">
+                            <a th:href="@{/admin/tournament/{id}/bracket/matches(id=${tournament.id})}" target="_blank" class="btn btn-outline-light w-100 py-3 text-start px-4">
+                                <i class="fa-solid fa-table-list fa-lg text-primary me-2"></i> <strong>決勝対戦表 (投影用)</strong>
+                                <div class="small text-muted mt-1">卓番号付きの投影用対戦カード一覧</div>
+                            </a>
+                        </div>
+                        <div class="col-md-6">
                             <a th:href="@{/admin/tournament/{id}/manual-entry(id=${tournament.id})}" 
                                class="btn btn-outline-light w-100 py-3 text-start px-4" 
                                th:classappend="${tournament.status != 'ENTRY' &amp;&amp; tournament.status != 'IN_PROGRESS' ? 'disabled' : ''}"
@@ -132,6 +138,12 @@
                             <a th:href="@{/admin/tournament/{id}/ranking(id=${tournament.id})}" class="btn btn-outline-light w-100 py-3 text-start px-4">
                                 <i class="fa-solid fa-ranking-star fa-lg text-warning me-2"></i> <strong>中間/最終ランキング</strong>
                                 <div class="small text-muted mt-1">大会の現在の成績・順位表</div>
+                            </a>
+                        </div>
+                        <div class="col-md-6">
+                            <a th:href="@{/admin/tournament/{id}/players(id=${tournament.id})}" class="btn btn-outline-light w-100 py-3 text-start px-4">
+                                <i class="fa-solid fa-users fa-lg text-primary me-2"></i> <strong>登録選手一覧</strong>
+                                <div class="small text-muted mt-1">大会参加者の詳細（アイコン・累計pt）</div>
                             </a>
                         </div>
                         <div class="col-md-6">
@@ -177,12 +189,15 @@
                         </form>
                     </div>
 
-                    <!-- 3. BRACKET PHASE -->
                     <div th:if="${tournament.status == 'BRACKET'}">
                         <div class="alert alert-info py-3 text-center" role="alert">
                             <i class="fa-solid fa-sitemap fa-2x mb-2 text-info"></i>
                             <h5 class="fw-bold">決勝トーナメント中</h5>
                         </div>
+                        
+                        <a th:href="@{/admin/tournament/{id}/bracket/matches(id=${tournament.id})}" target="_blank" class="btn btn-primary-custom w-100 py-3 mb-3">
+                            <i class="fa-solid fa-table-list fa-lg me-2"></i> <strong>📽️ 決勝対戦表を投影する</strong>
+                        </a>
 
                         <p class="small text-muted">全グループの決勝戦が終了したら大会を終了し、ポイントを計算します。</p>
 

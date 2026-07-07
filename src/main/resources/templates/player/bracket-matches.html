@@ -1,0 +1,322 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>決勝対戦表 | ASOPokeTool</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
+    <link th:href="@{/css/common.css}" rel="stylesheet">
+    <style>
+        body {
+            background-color: #FFFDF0; /* パステルイエロー背景 */
+            color: #4A3E3D; /* 優しいダークブラウン */
+            font-family: 'Noto Sans JP', sans-serif;
+            min-height: 100vh;
+            margin: 0;
+            padding: 40px;
+            position: relative;
+            overflow-x: hidden;
+        }
+        /* 🌸 四隅のデコレーションポケモン 🌸 */
+        .pokemon-corner {
+            position: fixed;
+            width: 140px;
+            height: 140px;
+            z-index: 99;
+            pointer-events: none; /* クリックを邪魔しない */
+            filter: drop-shadow(0 6px 8px rgba(0,0,0,0.1));
+        }
+        .pokemon-top-left {
+            top: 10px;
+            left: 10px;
+            transform: rotate(-10deg);
+        }
+        .pokemon-top-right {
+            top: 10px;
+            right: 10px;
+            transform: rotate(10deg);
+        }
+        .pokemon-bottom-left {
+            bottom: 10px;
+            left: 10px;
+            transform: rotate(10deg);
+        }
+        .pokemon-bottom-right {
+            bottom: 10px;
+            right: 10px;
+            transform: rotate(-10deg);
+        }
+        /* コンテナのパディング調整 (ポケモンと被らないように) */
+        .project-container {
+            padding: 0 100px;
+        }
+    </style>
+</head>
+<body>
+    <!-- 🌸 ポケモン画像配置 🌸 -->
+    <img th:src="@{/images/bulbasaur.png}" class="pokemon-corner pokemon-top-left" alt="フシギダネ">
+    <img th:src="@{/images/charmander.png}" class="pokemon-corner pokemon-top-right" alt="ヒトカゲ">
+    <img th:src="@{/images/squirtle.png}" class="pokemon-corner pokemon-bottom-left" alt="ゼニガメ">
+    <img th:src="@{/images/pikachu.png}" class="pokemon-corner pokemon-bottom-right" alt="ピカチュウ">
+
+    <div class="container-fluid project-container">
+        <div class="d-flex justify-content-between align-items-center mb-4 text-dark" style="border-bottom: 4px dashed #FFB6C1; padding-bottom: 20px;">
+            <div>
+                <a th:if="${isAdmin == null || !isAdmin}" th:href="@{/tournament/{id}(id=${tournament.id})}" class="btn btn-outline-secondary btn-sm mb-3">
+                    <i class="fa-solid fa-arrow-left"></i> 大会詳細に戻る
+                </a>
+                <h2 class="fw-bold mb-1 th-theme-text" th:text="${tournament.name} + ' - 決勝対戦表'">大会名 - 決勝対戦表</h2>
+                <p class="text-muted mb-0">スクリーン投影用の対戦卓一覧です。30秒ごとに自動更新されます。</p>
+            </div>
+            <div th:if="${isAdmin == null || !isAdmin}">
+                <a th:href="@{/tournament/{id}/bracket(id=${tournament.id})}" class="btn btn-outline-primary btn-sm px-3 shadow-sm" style="border-radius: 12px;">
+                    <i class="fa-solid fa-sitemap"></i> トーナメント表を表示
+                </a>
+            </div>
+        </div>
+
+        <div th:if="${#lists.isEmpty(round1Matches) && #lists.isEmpty(round2Matches) && #lists.isEmpty(round3Matches)}" class="card card-glass p-5 text-center my-5">
+            <i class="fa-solid fa-table-list fa-3x mb-3 text-warning"></i>
+            <h4 class="fw-bold text-dark">対戦カードがまだ組まれていません</h4>
+            <p class="text-muted mb-0">決勝トーナメントが生成されるまでしばらくお待ちください。</p>
+        </div>
+
+        <div th:unless="${#lists.isEmpty(round1Matches) && #lists.isEmpty(round2Matches) && #lists.isEmpty(round3Matches)}">
+            <!-- Round Pills -->
+            <ul class="nav nav-pills mb-4 justify-content-center" id="roundTab" role="tablist" style="background: rgba(255,255,255,0.5); padding: 6px; border-radius: 16px; border: 1px solid rgba(255,107,53,0.1); width: fit-content; margin: 0 auto;">
+                <li class="nav-item" role="presentation" th:unless="${#lists.isEmpty(round1Matches)}">
+                    <button class="nav-link active px-4 py-2" id="round1-tab" data-bs-toggle="tab" data-bs-target="#round1" type="button" role="tab" aria-controls="round1" aria-selected="true" style="border-radius: 12px;">
+                        1回戦 (準々決勝)
+                    </button>
+                </li>
+                <li class="nav-item" role="presentation" th:unless="${#lists.isEmpty(round2Matches)}">
+                    <button class="nav-link px-4 py-2" id="round2-tab" data-bs-toggle="tab" data-bs-target="#round2" type="button" role="tab" aria-controls="round2" aria-selected="false" style="border-radius: 12px;">
+                        準決勝
+                    </button>
+                </li>
+                <li class="nav-item" role="presentation" th:unless="${#lists.isEmpty(round3Matches)}">
+                    <button class="nav-link px-4 py-2" id="round3-tab" data-bs-toggle="tab" data-bs-target="#round3" type="button" role="tab" aria-controls="round3" aria-selected="false" style="border-radius: 12px;">
+                        決勝戦
+                    </button>
+                </li>
+            </ul>
+
+            <div class="tab-content mt-4" id="roundTabContent">
+                <!-- Round 1 Pane -->
+                <div class="tab-pane fade show active" id="round1" role="tabpanel" aria-labelledby="round1-tab" th:unless="${#lists.isEmpty(round1Matches)}">
+                    <div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-4">
+                        <div class="col" th:each="m : ${round1Matches}">
+                            <div class="card h-100 shadow-sm border-0 position-relative text-center overflow-hidden" 
+                                 th:style="'border-radius: 20px; background: ' + 
+                                 (${m.groupName.contains('グループA') || m.groupName.contains('Aパート')} ? 'linear-gradient(135deg, #FFF0E6 0%, #FFF6F0 100%)' : 
+                                 (${m.groupName.contains('グループB') || m.groupName.contains('Bパート')} ? 'linear-gradient(135deg, #EBF3FF 0%, #F5F9FF 100%)' : 
+                                 (${m.groupName.contains('グループC') || m.groupName.contains('Cパート')} ? 'linear-gradient(135deg, #EDFFF2 0%, #F5FFF8 100%)' : 
+                                 'linear-gradient(135deg, #FAF0FF 0%, #FDF7FF 100%)'))) + '; border: 2px solid ' +
+                                 (${m.groupName.contains('グループA') || m.groupName.contains('Aパート')} ? '#FFD0B3' : 
+                                 (${m.groupName.contains('グループB') || m.groupName.contains('Bパート')} ? '#C2DBFF' : 
+                                 (${m.groupName.contains('グループC') || m.groupName.contains('Cパート')} ? '#C2FFD4' : 
+                                 '#EBC2FF'))) + ';'">
+                                
+                                <div class="card-body py-4">
+                                    <div class="badge px-3 py-1 mb-3 rounded-pill text-white shadow-sm" style="color: #ffffff !important;"
+                                         th:classappend="${m.groupName.contains('グループA') || m.groupName.contains('Aパート')} ? 'bg-primary' : 
+                                                         (${m.groupName.contains('グループB') || m.groupName.contains('Bパート')} ? 'bg-info' : 
+                                                         (${m.groupName.contains('グループC') || m.groupName.contains('Cパート')} ? 'bg-success' : 'bg-secondary'))"
+                                         th:text="${m.groupName}">Aパート</div>
+                                         
+                                    <div class="d-flex align-items-center justify-content-center mb-3">
+                                        <div class="bg-white rounded-circle shadow-sm border d-flex align-items-center justify-content-center font-monospace fw-bold" 
+                                             th:style="'width: 60px; height: 60px; font-size: 1.8rem; color: ' + 
+                                             (${m.groupName.contains('グループA') || m.groupName.contains('Aパート')} ? '#FF6B35' : 
+                                             (${m.groupName.contains('グループB') || m.groupName.contains('Bパート')} ? '#4A90E2' : 
+                                             (${m.groupName.contains('グループC') || m.groupName.contains('Cパート')} ? '#28a745' : '#6f42c1'))) + ';'"
+                                             th:text="${m.tableNumber}">1</div>
+                                        <span class="ms-2 fw-bold text-muted" style="font-size: 1.2rem;">番卓</span>
+                                    </div>
+                                    
+                                    <div class="d-flex align-items-center justify-content-around mt-3">
+                                        <!-- Player 1 -->
+                                        <div class="px-2 w-45">
+                                            <div class="fs-5 fw-bold" 
+                                                 th:classappend="${m.winnerEntryId != null && m.winnerEntryId == m.player1EntryId} ? 'text-success fw-extrabold' : 'text-dark'"
+                                                 th:text="${m.player1Name != null ? m.player1Name : '（TBD）'}">選手A</div>
+                                            <div class="badge bg-success-subtle text-success small mt-1 rounded-pill" th:if="${m.winnerEntryId != null && m.winnerEntryId == m.player1EntryId}">
+                                                <i class="fa-solid fa-crown text-warning"></i> 勝者
+                                            </div>
+                                        </div>
+                                        
+                                        <!-- VS Divider -->
+                                        <div class="text-muted fw-bold font-monospace px-1" style="font-size: 1.1rem;">VS</div>
+                                        
+                                        <!-- Player 2 -->
+                                        <div class="px-2 w-45">
+                                            <div class="fs-5 fw-bold" 
+                                                 th:classappend="${m.winnerEntryId != null && m.winnerEntryId == m.player2EntryId} ? 'text-success fw-extrabold' : 'text-dark'"
+                                                 th:text="${m.isBye ? '（不戦勝）' : (m.player2Name != null ? m.player2Name : '（TBD）')}">選手B</div>
+                                            <div class="badge bg-success-subtle text-success small mt-1 rounded-pill" th:if="${m.winnerEntryId != null && m.winnerEntryId == m.player2EntryId}">
+                                                <i class="fa-solid fa-crown text-warning"></i> 勝者
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Round 2 Pane -->
+                <div class="tab-pane fade" id="round2" role="tabpanel" aria-labelledby="round2-tab" th:unless="${#lists.isEmpty(round2Matches)}">
+                    <div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-4">
+                        <div class="col" th:each="m : ${round2Matches}">
+                            <div class="card h-100 shadow-sm border-0 position-relative text-center overflow-hidden" 
+                                 th:style="'border-radius: 20px; background: ' + 
+                                 (${m.groupName.contains('グループA') || m.groupName.contains('Aパート')} ? 'linear-gradient(135deg, #FFF0E6 0%, #FFF6F0 100%)' : 
+                                 (${m.groupName.contains('グループB') || m.groupName.contains('Bパート')} ? 'linear-gradient(135deg, #EBF3FF 0%, #F5F9FF 100%)' : 
+                                 (${m.groupName.contains('グループC') || m.groupName.contains('Cパート')} ? 'linear-gradient(135deg, #EDFFF2 0%, #F5FFF8 100%)' : 
+                                 'linear-gradient(135deg, #FAF0FF 0%, #FDF7FF 100%)'))) + '; border: 2px solid ' +
+                                 (${m.groupName.contains('グループA') || m.groupName.contains('Aパート')} ? '#FFD0B3' : 
+                                 (${m.groupName.contains('グループB') || m.groupName.contains('Bパート')} ? '#C2DBFF' : 
+                                 (${m.groupName.contains('グループC') || m.groupName.contains('Cパート')} ? '#C2FFD4' : 
+                                 '#EBC2FF'))) + ';'">
+                                
+                                <div class="card-body py-4">
+                                    <div class="badge px-3 py-1 mb-3 rounded-pill text-white shadow-sm" style="color: #ffffff !important;"
+                                         th:classappend="${m.groupName.contains('グループA') || m.groupName.contains('Aパート')} ? 'bg-primary' : 
+                                                         (${m.groupName.contains('グループB') || m.groupName.contains('Bパート')} ? 'bg-info' : 
+                                                         (${m.groupName.contains('グループC') || m.groupName.contains('Cパート')} ? 'bg-success' : 'bg-secondary'))"
+                                         th:text="${m.groupName}">Aパート</div>
+                                         
+                                    <div class="d-flex align-items-center justify-content-center mb-3">
+                                        <div class="bg-white rounded-circle shadow-sm border d-flex align-items-center justify-content-center font-monospace fw-bold" 
+                                             th:style="'width: 60px; height: 60px; font-size: 1.8rem; color: ' + 
+                                             (${m.groupName.contains('グループA') || m.groupName.contains('Aパート')} ? '#FF6B35' : 
+                                             (${m.groupName.contains('グループB') || m.groupName.contains('Bパート')} ? '#4A90E2' : 
+                                             (${m.groupName.contains('グループC') || m.groupName.contains('Cパート')} ? '#28a745' : '#6f42c1'))) + ';'"
+                                             th:text="${m.tableNumber}">1</div>
+                                        <span class="ms-2 fw-bold text-muted" style="font-size: 1.2rem;">番卓</span>
+                                    </div>
+                                    
+                                    <div class="d-flex align-items-center justify-content-around mt-3">
+                                        <!-- Player 1 -->
+                                        <div class="px-2 w-45">
+                                            <div class="fs-5 fw-bold" 
+                                                 th:classappend="${m.winnerEntryId != null && m.winnerEntryId == m.player1EntryId} ? 'text-success fw-extrabold' : 'text-dark'"
+                                                 th:text="${m.player1Name != null ? m.player1Name : '（待機中）'}">選手A</div>
+                                            <div class="badge bg-success-subtle text-success small mt-1 rounded-pill" th:if="${m.winnerEntryId != null && m.winnerEntryId == m.player1EntryId}">
+                                                <i class="fa-solid fa-crown text-warning"></i> 勝者
+                                            </div>
+                                        </div>
+                                        
+                                        <!-- VS Divider -->
+                                        <div class="text-muted fw-bold font-monospace px-1" style="font-size: 1.1rem;">VS</div>
+                                        
+                                        <!-- Player 2 -->
+                                        <div class="px-2 w-45">
+                                            <div class="fs-5 fw-bold" 
+                                                 th:classappend="${m.winnerEntryId != null && m.winnerEntryId == m.player2EntryId} ? 'text-success fw-extrabold' : 'text-dark'"
+                                                 th:text="${m.isBye ? '（不戦勝）' : (m.player2Name != null ? m.player2Name : '（待機中）')}">選手B</div>
+                                            <div class="badge bg-success-subtle text-success small mt-1 rounded-pill" th:if="${m.winnerEntryId != null && m.winnerEntryId == m.player2EntryId}">
+                                                <i class="fa-solid fa-crown text-warning"></i> 勝者
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Round 3 Pane -->
+                <div class="tab-pane fade" id="round3" role="tabpanel" aria-labelledby="round3-tab" th:unless="${#lists.isEmpty(round3Matches)}">
+                    <div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-4 justify-content-center">
+                        <div class="col" th:each="m : ${round3Matches}">
+                            <div class="card h-100 shadow-sm border-0 position-relative text-center overflow-hidden" 
+                                 th:style="'border-radius: 20px; background: ' + 
+                                 (${m.groupName.contains('グループA') || m.groupName.contains('Aパート')} ? 'linear-gradient(135deg, #FFF0E6 0%, #FFF6F0 100%)' : 
+                                 (${m.groupName.contains('グループB') || m.groupName.contains('Bパート')} ? 'linear-gradient(135deg, #EBF3FF 0%, #F5F9FF 100%)' : 
+                                 (${m.groupName.contains('グループC') || m.groupName.contains('Cパート')} ? 'linear-gradient(135deg, #EDFFF2 0%, #F5FFF8 100%)' : 
+                                 'linear-gradient(135deg, #FAF0FF 0%, #FDF7FF 100%)'))) + '; border: 2px solid ' +
+                                 (${m.groupName.contains('グループA') || m.groupName.contains('Aパート')} ? '#FFD0B3' : 
+                                 (${m.groupName.contains('グループB') || m.groupName.contains('Bパート')} ? '#C2DBFF' : 
+                                 (${m.groupName.contains('グループC') || m.groupName.contains('Cパート')} ? '#C2FFD4' : 
+                                 '#EBC2FF'))) + ';'">
+                                
+                                <div class="card-body py-4">
+                                    <div class="badge px-3 py-1 mb-3 rounded-pill text-white shadow-sm" style="color: #ffffff !important;"
+                                         th:classappend="${m.groupName.contains('グループA') || m.groupName.contains('Aパート')} ? 'bg-primary' : 
+                                                         (${m.groupName.contains('グループB') || m.groupName.contains('Bパート')} ? 'bg-info' : 
+                                                         (${m.groupName.contains('グループC') || m.groupName.contains('Cパート')} ? 'bg-success' : 'bg-secondary'))"
+                                         th:text="${m.groupName}">Aパート</div>
+                                         
+                                    <div class="d-flex align-items-center justify-content-center mb-3">
+                                        <div class="bg-white rounded-circle shadow-sm border d-flex align-items-center justify-content-center font-monospace fw-bold" 
+                                             th:style="'width: 60px; height: 60px; font-size: 1.8rem; color: ' + 
+                                             (${m.groupName.contains('グループA') || m.groupName.contains('Aパート')} ? '#FF6B35' : 
+                                             (${m.groupName.contains('グループB') || m.groupName.contains('Bパート')} ? '#4A90E2' : 
+                                             (${m.groupName.contains('グループC') || m.groupName.contains('Cパート')} ? '#28a745' : '#6f42c1'))) + ';'"
+                                             th:text="${m.tableNumber}">1</div>
+                                        <span class="ms-2 fw-bold text-muted" style="font-size: 1.2rem;">番卓</span>
+                                    </div>
+                                    
+                                    <div class="d-flex align-items-center justify-content-around mt-3">
+                                        <!-- Player 1 -->
+                                        <div class="px-2 w-45">
+                                            <div class="fs-5 fw-bold" 
+                                                 th:classappend="${m.winnerEntryId != null && m.winnerEntryId == m.player1EntryId} ? 'text-success fw-extrabold' : 'text-dark'"
+                                                 th:text="${m.player1Name != null ? m.player1Name : '（待機中）'}">選手A</div>
+                                            <div class="badge bg-success-subtle text-success small mt-1 rounded-pill" th:if="${m.winnerEntryId != null && m.winnerEntryId == m.player1EntryId}">
+                                                <i class="fa-solid fa-crown text-warning"></i> 勝者
+                                            </div>
+                                        </div>
+                                        
+                                        <!-- VS Divider -->
+                                        <div class="text-muted fw-bold font-monospace px-1" style="font-size: 1.1rem;">VS</div>
+                                        
+                                        <!-- Player 2 -->
+                                        <div class="px-2 w-45">
+                                            <div class="fs-5 fw-bold" 
+                                                 th:classappend="${m.winnerEntryId != null && m.winnerEntryId == m.player2EntryId} ? 'text-success fw-extrabold' : 'text-dark'"
+                                                 th:text="${m.isBye ? '（不戦勝）' : (m.player2Name != null ? m.player2Name : '（待機中）')}">選手B</div>
+                                            <div class="badge bg-success-subtle text-success small mt-1 rounded-pill" th:if="${m.winnerEntryId != null && m.winnerEntryId == m.player2EntryId}">
+                                                <i class="fa-solid fa-crown text-warning"></i> 勝者
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </div>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // 30秒ごとに自動で画面リロード
+        setTimeout(function() {
+            window.location.reload();
+        }, 30000);
+        
+        // 最後にアクティブだったタブをローカルストレージで復元
+        document.addEventListener("DOMContentLoaded", function() {
+            const activeTabId = localStorage.getItem("activeRoundTabId");
+            if (activeTabId) {
+                const tabBtn = document.getElementById(activeTabId);
+                if (tabBtn) {
+                    const triggerEl = new bootstrap.Tab(tabBtn);
+                    triggerEl.show();
+                }
+            }
+
+            const tabButtons = document.querySelectorAll('#roundTab button');
+            tabButtons.forEach(button => {
+                button.addEventListener('shown.bs.tab', function (event) {
+                    localStorage.setItem("activeRoundTabId", event.target.id);
+                });
+            });
+        });
+    </script>
+</body>
+</html>

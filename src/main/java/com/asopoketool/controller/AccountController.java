@@ -36,6 +36,7 @@ public class AccountController {
     public String processRegister(@RequestParam String displayName,
                                   @RequestParam String password,
                                   @RequestParam String passwordConfirm,
+                                  @RequestParam(required = false) String iconBase64,
                                   HttpServletResponse response,
                                   Model model) {
         if (!password.equals(passwordConfirm)) {
@@ -44,7 +45,31 @@ public class AccountController {
         }
 
         try {
-            String token = accountService.register(displayName, password);
+            String iconPath = null;
+            if (iconBase64 != null && !iconBase64.trim().isEmpty()) {
+                try {
+                    String base64Data = iconBase64;
+                    if (base64Data.contains(",")) {
+                        base64Data = base64Data.substring(base64Data.indexOf(",") + 1);
+                    }
+                    byte[] decodedBytes = java.util.Base64.getDecoder().decode(base64Data);
+
+                    java.io.File dir = new java.io.File(System.getProperty("user.dir") + "/data/images");
+                    if (!dir.exists()) {
+                        dir.mkdirs();
+                    }
+                    String filename = "user_icon_" + System.currentTimeMillis() + ".png";
+                    java.io.File dest = new java.io.File(dir, filename);
+                    try (java.io.FileOutputStream fos = new java.io.FileOutputStream(dest)) {
+                        fos.write(decodedBytes);
+                    }
+                    iconPath = "/asopoketool/timer-bg-files/" + filename;
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+            }
+
+            String token = accountService.register(displayName, password, iconPath);
             setAuthCookie(response, token);
             return "redirect:/";
         } catch (Exception e) {
@@ -169,5 +194,47 @@ public class AccountController {
         cookie.setHttpOnly(true);
         // cookie.setSecure(true); // Uncomment if deploying on HTTPS
         response.addCookie(cookie);
+    }
+
+    @PostMapping("/update-icon")
+    public String updateIconPath(HttpServletRequest request,
+                                 @RequestParam(required = false) String iconBase64,
+                                 Model model) {
+        if (!Boolean.TRUE.equals(request.getAttribute("isLoggedIn"))) {
+            return "redirect:/account/login";
+        }
+
+        PlayerAccount current = (PlayerAccount) request.getAttribute("currentAccount");
+        String iconPath = null;
+        if (iconBase64 != null && !iconBase64.trim().isEmpty()) {
+            try {
+                String base64Data = iconBase64;
+                if (base64Data.contains(",")) {
+                    base64Data = base64Data.substring(base64Data.indexOf(",") + 1);
+                }
+                byte[] decodedBytes = java.util.Base64.getDecoder().decode(base64Data);
+
+                java.io.File dir = new java.io.File(System.getProperty("user.dir") + "/data/images");
+                if (!dir.exists()) {
+                    dir.mkdirs();
+                }
+                String filename = "user_icon_" + System.currentTimeMillis() + ".png";
+                java.io.File dest = new java.io.File(dir, filename);
+                try (java.io.FileOutputStream fos = new java.io.FileOutputStream(dest)) {
+                    fos.write(decodedBytes);
+                }
+                iconPath = "/asopoketool/timer-bg-files/" + filename;
+                accountService.updateIconPath(current.getId(), iconPath);
+                current.setIconPath(iconPath);
+                return "redirect:/account/mypage?success=icon";
+            } catch (Exception e) {
+                model.addAttribute("error", "アイコンの更新に失敗しました: " + e.getMessage());
+            }
+        }
+        
+        model.addAttribute("account", current);
+        model.addAttribute("points", pointMapper.findByAccountId(current.getId()));
+        model.addAttribute("histories", pointMapper.findHistoryByAccountId(current.getId()));
+        return "account/mypage";
     }
 }

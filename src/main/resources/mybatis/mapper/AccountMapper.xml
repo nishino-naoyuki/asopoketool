@@ -11,8 +11,8 @@
     </select>
 
     <insert id="insertAccount" useGeneratedKeys="true" keyProperty="id">
-        INSERT INTO player_account (display_name, password_hash, created_at, updated_at)
-        VALUES (#{displayName}, #{passwordHash}, NOW(), NOW())
+        INSERT INTO player_account (display_name, password_hash, icon_path, created_at, updated_at)
+        VALUES (#{displayName}, #{passwordHash}, #{iconPath}, NOW(), NOW())
     </insert>
 
     <update id="updateDisplayName">
@@ -21,6 +21,10 @@
 
     <update id="updatePassword">
         UPDATE player_account SET password_hash = #{passwordHash}, updated_at = NOW() WHERE id = #{id}
+    </update>
+
+    <update id="updateIconPath">
+        UPDATE player_account SET icon_path = #{iconPath}, updated_at = NOW() WHERE id = #{id}
     </update>
 
     <select id="findTokenByToken" resultType="com.asopoketool.model.PlayerAccountToken">

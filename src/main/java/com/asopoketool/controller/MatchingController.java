@@ -15,6 +15,7 @@ import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 import javax.servlet.http.HttpServletRequest;
 import java.util.List;
+import java.util.ArrayList;
 
 @Controller
 @RequestMapping("/tournament")
@@ -95,5 +96,59 @@ public class MatchingController {
         model.addAttribute("matches", matches);
 
         return "player/matching-project";
+    }
+
+    @GetMapping("/{id}/matching/rounds")
+    public String showMatchingRounds(@PathVariable Long id, HttpServletRequest request, Model model) {
+        Tournament tournament = tournamentService.getTournamentById(id);
+        if (tournament == null) {
+            return "redirect:/";
+        }
+        model.addAttribute("tournament", tournament);
+
+        int currentRoundNum = tournament.getCurrentRound();
+        if (currentRoundNum == 0) {
+            model.addAttribute("isBeforeTournament", true);
+            return "player/matching-rounds";
+        }
+
+        // Fetch user's entry info
+        String sessionToken = (String) request.getAttribute("sessionToken");
+        PlayerAccount account = (PlayerAccount) request.getAttribute("currentAccount");
+        Long accountId = (account != null) ? account.getId() : null;
+        Entry myEntry = entryService.getEntryForCurrentUser(id, sessionToken, accountId);
+        model.addAttribute("myEntry", myEntry);
+
+        // Build RoundDisplay objects for all rounds up to currentRound
+        List<RoundDisplay> roundsList = new ArrayList<>();
+        for (int r = 1; r <= currentRoundNum; r++) {
+            TournamentRound roundObj = roundMapper.findByTournamentAndRound(id, r);
+            if (roundObj != null) {
+                List<MatchGame> matches = matchGameMapper.findByRoundId(roundObj.getId());
+                roundsList.add(new RoundDisplay(r, matches));
+            }
+        }
+        model.addAttribute("roundsList", roundsList);
+        model.addAttribute("currentRoundNum", currentRoundNum);
+
+        return "player/matching-rounds";
+    }
+
+    public static class RoundDisplay {
+        private int roundNumber;
+        private List<MatchGame> matches;
+
+        public RoundDisplay(int roundNumber, List<MatchGame> matches) {
+            this.roundNumber = roundNumber;
+            this.matches = matches;
+        }
+
+        public int getRoundNumber() {
+            return roundNumber;
+        }
+
+        public List<MatchGame> getMatches() {
+            return matches;
+        }
     }
 }

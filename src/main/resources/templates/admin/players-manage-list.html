@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>大会登録選手一覧 | ASOPokeTool 管理</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
+    <link th:href="@{/css/common.css}" rel="stylesheet">
+</head>
+<body>
+
+    <nav class="navbar navbar-expand-lg navbar-dark navbar-custom sticky-top">
+        <div class="container">
+            <a class="navbar-brand navbar-brand-custom text-warning" th:href="@{/admin}">
+                <i class="fa-solid fa-screwdriver-wrench"></i> ASOPokeTool 管理画面
+            </a>
+            <div class="collapse navbar-collapse" id="adminNavbar">
+                <ul class="navbar-nav ms-auto align-items-center gap-3">
+                    <li class="nav-item">
+                        <a class="nav-link text-light opacity-75" th:href="@{/admin/users}"><i class="fa-solid fa-users-gear"></i> 管理者管理</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link text-light opacity-75" th:href="@{/admin/players}"><i class="fa-solid fa-users"></i> 全ユーザー一覧</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="btn btn-outline-danger btn-sm px-3" th:href="@{/admin/logout}"><i class="fa-solid fa-right-from-bracket"></i> ログアウト</a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container my-4">
+        <!-- Back Link -->
+        <div class="mb-3">
+            <a th:href="@{/admin/tournament/{id}(id=${tournament.id})}" class="btn btn-outline-light btn-sm text-primary">
+                <i class="fa-solid fa-arrow-left"></i> 大会管理へ戻る
+            </a>
+        </div>
+
+        <div class="card card-glass text-white p-4">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <div>
+                    <h2 class="fw-bold mb-1 text-white">👤 大会登録選手一覧</h2>
+                    <p class="text-muted mb-0" th:text="${tournament.name}">大会名</p>
+                </div>
+                <span class="badge bg-primary fs-6 px-3 py-2" th:text="${#lists.size(entries)} + ' 名登録中'">0 名</span>
+            </div>
+
+            <div th:if="${#lists.isEmpty(entries)}" class="text-center p-5 text-muted">
+                <i class="fa-solid fa-users fa-3x mb-3 text-secondary"></i>
+                <p class="mb-0">現在登録されている選手はいません。</p>
+            </div>
+
+            <div th:unless="${#lists.isEmpty(entries)}" class="table-responsive">
+                <table class="table table-custom text-white align-middle w-100">
+                    <thead>
+                        <tr>
+                            <th style="width: 60px;">No.</th>
+                            <th style="width: 80px;">アイコン</th>
+                            <th>大会登録名</th>
+                            <th>アカウント名</th>
+                            <th>ステータス</th>
+                            <th class="text-end">累計ポイント</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr th:each="e, iter : ${entries}">
+                            <td class="font-monospace text-muted" th:text="${iter.count}">1</td>
+                            <td>
+                                <img th:src="${e.account?.iconPath != null ? e.account.iconPath : '/asopoketool/images/pikachu.png'}"
+                                     class="rounded-circle border border-warning"
+                                     style="width: 40px; height: 40px; object-fit: cover;"
+                                     alt="Avatar">
+                            </td>
+                            <td>
+                                <strong class="fs-5" th:text="${e.playerName}">たろう</strong>
+                            </td>
+                            <td>
+                                <span th:if="${e.account != null}" th:text="${e.account?.displayName}">アカウント名</span>
+                                <span th:unless="${e.account != null}" class="text-muted small">（ゲスト）</span>
+                            </td>
+                            <td>
+                                <!-- Checkin Status -->
+                                <span th:if="${e.checkinFlg}" class="badge bg-success">
+                                    <i class="fa-solid fa-circle-check"></i> チェックイン済
+                                </span>
+                                <span th:unless="${e.checkinFlg}" class="badge bg-warning text-dark">
+                                    エントリーのみ
+                                </span>
+                                
+                                <!-- Dropout Status -->
+                                <span th:if="${e.dropoutFlg}" class="badge bg-danger ms-1">
+                                    棄権
+                                </span>
+                            </td>
+                            <td class="text-end font-monospace fw-bold text-warning fs-5">
+                                <span th:if="${e.accountId != null}" th:text="${cumulativePoints[e.accountId] != null ? cumulativePoints[e.accountId] + ' pt' : '0 pt'}">120 pt</span>
+                                <span th:unless="${e.accountId != null}" class="text-muted small">─</span>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>
