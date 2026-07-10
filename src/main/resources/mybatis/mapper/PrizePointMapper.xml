@@ -2,20 +2,27 @@
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="com.asopoketool.mapper.PrizePointMapper">
 
-    <select id="findByTournamentId" resultType="com.asopoketool.model.PrizePointSetting">
-        SELECT * FROM prize_point_setting WHERE tournament_id = #{tournamentId} ORDER BY rank ASC
+    <resultMap id="prizePointResultMap" type="com.asopoketool.model.PrizePointSetting">
+        <id property="id" column="id"/>
+        <result property="tournamentId" column="tournament_id"/>
+        <result property="prizeRank" column="prize_rank"/>
+        <result property="point" column="point"/>
+    </resultMap>
+
+    <select id="findByTournamentId" resultMap="prizePointResultMap">
+        SELECT * FROM prize_point_setting WHERE tournament_id = #{tournamentId} ORDER BY prize_rank ASC
     </select>
 
-    <select id="findByTournamentAndRank" resultType="com.asopoketool.model.PrizePointSetting">
-        SELECT * FROM prize_point_setting WHERE tournament_id = #{tournamentId} AND rank = #{rank}
+    <select id="findByTournamentAndRank" resultMap="prizePointResultMap">
+        SELECT * FROM prize_point_setting WHERE tournament_id = #{tournamentId} AND prize_rank = #{rank}
         LIMIT 1
     </select>
 
     <insert id="insertBatch">
-        INSERT INTO prize_point_setting (tournament_id, rank, point)
+        INSERT INTO prize_point_setting (tournament_id, prize_rank, point)
         VALUES 
         <foreach collection="list" item="item" separator=",">
-            (#{item.tournamentId}, #{item.rank}, #{item.point})
+            (#{item.tournamentId}, #{item.prizeRank}, #{item.point})
         </foreach>
     </insert>
 

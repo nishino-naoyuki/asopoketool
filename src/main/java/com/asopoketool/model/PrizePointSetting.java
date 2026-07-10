@@ -12,6 +12,6 @@ import lombok.NoArgsConstructor;
 public class PrizePointSetting {
     private Long id;
     private Long tournamentId;
-    private int rank;
+    private int prizeRank;
     private int point;
 }

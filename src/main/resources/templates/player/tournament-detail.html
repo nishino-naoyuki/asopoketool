@@ -67,7 +67,7 @@
                                 <div class="row row-cols-2 g-2">
                                     <div class="col" th:each="p : ${prizePoints}">
                                         <div class="d-flex justify-content-between bg-white border rounded px-2 py-1 small text-dark">
-                                            <span class="fw-bold" th:text="${p.rank} + '位'">1位</span>
+                                            <span class="fw-bold" th:text="${p.prizeRank} + '位'">1位</span>
                                             <span class="fw-bold text-warning font-monospace" th:text="'+' + ${p.point} + ' pt'">+100 pt</span>
                                         </div>
                                     </div>

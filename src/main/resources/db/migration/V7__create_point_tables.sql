@@ -4,10 +4,10 @@
 CREATE TABLE IF NOT EXISTS prize_point_setting (
     id              BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
     tournament_id   BIGINT UNSIGNED NOT NULL,
-    `rank`            INT NOT NULL COMMENT '順位（1〜16）',
+    prize_rank        INT NOT NULL COMMENT '順位（1〜16）',
     point           INT NOT NULL DEFAULT 0,
     FOREIGN KEY (tournament_id) REFERENCES tournament(id) ON DELETE CASCADE,
-    UNIQUE KEY uk_tournament_rank (tournament_id, `rank`)
+    UNIQUE KEY uk_tournament_rank (tournament_id, prize_rank)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='入賞ポイント設定';
 
 CREATE TABLE IF NOT EXISTS player_cumulative_point (

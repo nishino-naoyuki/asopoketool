@@ -146,7 +146,7 @@ public class AdminController {
             int ptVal = (paramVal != null && !paramVal.trim().isEmpty()) ? Integer.parseInt(paramVal) : 0;
             prizeSettings.add(PrizePointSetting.builder()
                     .tournamentId(tournament.getId())
-                    .rank(i)
+                    .prizeRank(i)
                     .point(ptVal)
                     .build());
         }
