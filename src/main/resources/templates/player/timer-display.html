@@ -28,6 +28,23 @@
             border-radius: 50px;
             border: 1px solid rgba(255,255,255,0.1);
         }
+        /* 強制的にタイマー画面の文字を白（または明るいオレンジ/赤）にする */
+        .container.text-white h1, 
+        .container.text-white span,
+        .container.text-white i {
+            color: #ffffff !important;
+        }
+        .container.text-white h2 {
+            color: #FFC107 !important; /* 明るいイエロー */
+        }
+        .timer-number {
+            color: #ffffff !important;
+            text-shadow: 0 0 30px rgba(255, 255, 255, 0.4) !important;
+        }
+        .timer-number.text-danger {
+            color: #ff4d6d !important;
+            text-shadow: 0 0 30px rgba(255, 77, 109, 0.6) !important;
+        }
     </style>
 </head>
 <body th:style="${timerSetting.bgImagePath != null} ? 'background-image: linear-gradient(rgba(8, 8, 17, 0.75), rgba(8, 8, 17, 0.75)), url(' + ${timerSetting.bgImagePath} + ');' : ''">

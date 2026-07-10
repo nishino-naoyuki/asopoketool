@@ -90,13 +90,15 @@ public class BracketService {
             int roundCount = (int) (Math.log(nextPowerOfTwo) / Math.log(2));
             for (int r = 1; r <= roundCount; r++) {
                 // Create TournamentRound for 100 + r (bracket rounds)
-                TournamentRound tr = TournamentRound.builder()
-                        .tournamentId(tournamentId)
-                        .roundNumber(100 + r)
-                        .status("IN_PROGRESS")
-                        .startedAt(LocalDateTime.now())
-                        .build();
-                roundMapper.insert(tr);
+                if (roundMapper.findByTournamentAndRound(tournamentId, 100 + r) == null) {
+                    TournamentRound tr = TournamentRound.builder()
+                            .tournamentId(tournamentId)
+                            .roundNumber(100 + r)
+                            .status("IN_PROGRESS")
+                            .startedAt(LocalDateTime.now())
+                            .build();
+                    roundMapper.insert(tr);
+                }
 
                 int matchesInRound = nextPowerOfTwo / (int) Math.pow(2, r);
                 for (int m = 1; m <= matchesInRound; m++) {
