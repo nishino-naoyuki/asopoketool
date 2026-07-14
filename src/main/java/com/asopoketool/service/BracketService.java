@@ -180,9 +180,15 @@ public class BracketService {
         while (list.size() < size) {
             List<Integer> nextList = new ArrayList<>();
             int target = list.size() * 2 + 1;
-            for (int seed : list) {
-                nextList.add(seed);
-                nextList.add(target - seed);
+            for (int i = 0; i < list.size(); i++) {
+                int seed = list.get(i);
+                if (i % 2 == 0) {
+                    nextList.add(seed);
+                    nextList.add(target - seed);
+                } else {
+                    nextList.add(target - seed);
+                    nextList.add(seed);
+                }
             }
             list = nextList;
         }
