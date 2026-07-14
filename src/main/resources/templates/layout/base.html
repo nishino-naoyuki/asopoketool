@@ -19,6 +19,30 @@
             <a class="navbar-brand navbar-brand-custom" th:href="@{/}">
                 <i class="fa-solid fa-gamepad"></i> ASOPokeTool
             </a>
+
+            <!-- アカウント情報：スマホでも常に表示（ハンバーガーボタンの左） -->
+            <div class="d-flex align-items-center gap-2 ms-auto me-2 d-lg-none">
+                <!-- ログイン済み：アイコン＋名前 -->
+                <div class="dropdown" th:if="${isLoggedIn}">
+                    <a class="btn btn-outline-light btn-sm px-2 py-1 text-white dropdown-toggle"
+                       href="#" id="userDropdownMobile" role="button"
+                       data-bs-toggle="dropdown" aria-expanded="false">
+                        <i class="fa-solid fa-user"></i>
+                        <span class="ms-1" th:text="${currentAccount.displayName}" style="max-width:80px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; display:inline-block; vertical-align:middle;"></span>
+                    </a>
+                    <ul class="dropdown-menu dropdown-menu-end dropdown-menu-dark" aria-labelledby="userDropdownMobile">
+                        <li><a class="dropdown-item" th:href="@{/account/mypage}"><i class="fa-solid fa-id-card-clip"></i> マイページ</a></li>
+                        <li><hr class="dropdown-divider"></li>
+                        <li><a class="dropdown-item text-danger" th:href="@{/account/logout}"><i class="fa-solid fa-right-from-bracket"></i> ログアウト</a></li>
+                    </ul>
+                </div>
+                <!-- 未ログイン：ログイン・会員登録ボタン -->
+                <div class="d-flex gap-1" th:unless="${isLoggedIn}">
+                    <a class="btn btn-outline-light btn-sm px-2" th:href="@{/account/login}"><i class="fa-solid fa-right-to-bracket"></i> ログイン</a>
+                    <a class="btn btn-primary-custom btn-sm px-2" th:href="@{/account/register}"><i class="fa-solid fa-user-plus"></i> 登録</a>
+                </div>
+            </div>
+
             <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
                 <span class="navbar-toggler-icon"></span>
             </button>
@@ -31,7 +55,8 @@
                         <a class="nav-link" th:href="@{/ranking}"><i class="fa-solid fa-ranking-star"></i> ランキング</a>
                     </li>
                 </ul>
-                <ul class="navbar-nav ms-auto align-items-center">
+                <!-- PC表示時のアカウント情報（d-none d-lg-flex で PC のみ表示） -->
+                <ul class="navbar-nav ms-auto align-items-center d-none d-lg-flex">
                     <!-- If Logged In -->
                     <li class="nav-item dropdown" th:if="${isLoggedIn}">
                         <a class="nav-link dropdown-toggle btn btn-outline-light btn-sm text-white px-3 py-1" href="#" id="userDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
@@ -52,6 +77,7 @@
             </div>
         </div>
     </nav>
+
 
     <!-- Main Content Inserted Here -->
     <main class="container my-4">
