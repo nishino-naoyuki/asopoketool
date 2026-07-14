@@ -45,6 +45,68 @@
             color: #ff4d6d !important;
             text-shadow: 0 0 30px rgba(255, 77, 109, 0.6) !important;
         }
+
+        /* Colorful pop-up style */
+        .modal-end {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background: rgba(8, 8, 26, 0.85);
+            z-index: 10000;
+            align-items: center;
+            justify-content: center;
+            backdrop-filter: blur(10px);
+        }
+        .modal-end-content {
+            background: linear-gradient(135deg, rgba(26,26,46,0.95) 0%, rgba(13,13,26,0.98) 100%);
+            border: 4px solid;
+            border-image: linear-gradient(to right, #ff007f, #ffaa00, #00ffcc, #9900ff) 1;
+            border-radius: 24px;
+            padding: 40px;
+            text-align: center;
+            box-shadow: 0 20px 80px rgba(0,0,0,0.8), 0 0 40px rgba(255, 0, 127, 0.3);
+            max-width: 600px;
+            width: 90%;
+            animation: bounceIn 0.8s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+        }
+        .rainbow-text {
+            font-size: 5rem;
+            font-weight: 900;
+            background: linear-gradient(to right, #ff3366, #ff9933, #33ccff, #33ff99, #9933ff);
+            background-size: 400% 400%;
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            animation: rainbowFlow 4s ease infinite, pulseGlow 1.5s ease-in-out infinite alternate;
+            margin: 0;
+            letter-spacing: 2px;
+        }
+        .end-sub {
+            color: #FFD700 !important;
+            font-size: 1.8rem;
+            font-weight: 800;
+            text-shadow: 0 0 10px rgba(255,215,0,0.5);
+            margin-top: 15px;
+            margin-bottom: 30px;
+        }
+        
+        @keyframes bounceIn {
+            0% { transform: scale(0.3); opacity: 0; }
+            50% { transform: scale(1.05); }
+            70% { transform: scale(0.9); }
+            100% { transform: scale(1); opacity: 1; }
+        }
+        @keyframes rainbowFlow {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+        @keyframes pulseGlow {
+            from { filter: drop-shadow(0 0 10px rgba(255, 51, 102, 0.5)); }
+            to { filter: drop-shadow(0 0 25px rgba(51, 204, 255, 0.8)); }
+        }
     </style>
 </head>
 <body th:style="${timerSetting.bgImagePath != null} ? 'background-image: linear-gradient(rgba(8, 8, 17, 0.75), rgba(8, 8, 17, 0.75)), url(' + ${timerSetting.bgImagePath} + ');' : ''">
@@ -56,6 +118,22 @@
             <h3 class="fw-bold text-white mb-3">タイマー画面の有効化</h3>
             <p class="text-light opacity-75 mb-4 small">ブラウザの自動再生ポリシーを解除し、BGMや効果音を正しく鳴らすために、画面を一度クリックして有効化してください。</p>
             <button class="btn btn-primary-custom px-4 py-2 fw-bold"><i class="fa-solid fa-check"></i> 有効化してタイマーを表示</button>
+        </div>
+    </div>
+
+    <!-- Match End Popup -->
+    <div id="matchEndModal" class="modal-end">
+        <div class="modal-end-content">
+            <div class="mb-4">
+                <i class="fa-solid fa-flag-checkered fa-4x text-white" style="filter: drop-shadow(0 0 15px rgba(255,255,255,0.6));"></i>
+            </div>
+            <h1 class="rainbow-text">対戦終了！</h1>
+            <p class="end-sub" th:text="${tournament.name}">大会名</p>
+            <div class="mt-4">
+                <button class="btn btn-primary-custom px-5 py-3 fw-bold" onclick="closeEndModal()">
+                    <i class="fa-solid fa-rotate-left"></i> タイマーに戻る
+                </button>
+            </div>
         </div>
     </div>
 
@@ -90,7 +168,7 @@
         const tournamentId = /*[[${tournament.id}]]*/ 0;
         const initialMinutes = /*[[${timerSetting.durationMinutes}]]*/ 30;
         const bgmFilePath = /*[[${timerSetting.bgmFilePath}]]*/ '';
-        const bgmDisplayName = /*[[${timerSetting.bgmDisplayName}]]*/ '';
+        const bgmDisplayName = /*[[${tournamentId}]]*/ '';
         /*]]>*/
 
         const audio = document.getElementById('bgmPlayer');
@@ -102,6 +180,55 @@
 
         // Shared timer state via localStorage
         const storageKey = 'apt_timer_' + tournamentId;
+
+        // Sound synthesizer for Poke-style cute alert sound
+        let audioCtx = null;
+        function getAudioContext() {
+            if (!audioCtx) {
+                audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            }
+            return audioCtx;
+        }
+
+        function playAlarm() {
+            try {
+                const ctx = getAudioContext();
+                const now = ctx.currentTime;
+                
+                // Sequence of bells/chimes
+                const notes = [523.25, 659.25, 783.99, 1046.50, 783.99, 1046.50, 1318.51]; // C5, E5, G5, C6, G5, C6, E6
+                const durations = [0.15, 0.15, 0.15, 0.2, 0.15, 0.2, 0.5];
+                let currentStart = now;
+
+                notes.forEach((freq, idx) => {
+                    const osc = ctx.createOscillator();
+                    const gainNode = ctx.createGain();
+
+                    osc.type = 'triangle'; // Smooth retro chip-tune sound
+                    osc.frequency.setValueAtTime(freq, currentStart);
+
+                    gainNode.gain.setValueAtTime(0.3, currentStart);
+                    gainNode.gain.exponentialRampToValueAtTime(0.01, currentStart + durations[idx]);
+
+                    osc.connect(gainNode);
+                    gainNode.connect(ctx.destination);
+
+                    osc.start(currentStart);
+                    osc.stop(currentStart + durations[idx]);
+
+                    currentStart += durations[idx] - 0.03; // slightly overlapping
+                });
+            } catch (err) {
+                console.error("Synthesizer error:", err);
+            }
+        }
+
+        let isModalOpen = false;
+
+        function closeEndModal() {
+            document.getElementById('matchEndModal').style.display = 'none';
+            isModalOpen = false;
+        }
 
         function updateUI(minutes, seconds, percent) {
             const minStr = String(minutes).padStart(2, '0');
@@ -115,6 +242,15 @@
             } else {
                 document.getElementById('progressBar').className = "progress-bar bg-warning progress-bar-striped progress-bar-animated";
                 document.getElementById('countdown').className = "timer-number text-white timer-glow";
+            }
+
+            // 0:00 check
+            if (minutes === 0 && seconds === 0 && percent <= 0) {
+                if (!isModalOpen) {
+                    isModalOpen = true;
+                    document.getElementById('matchEndModal').style.display = 'flex';
+                    playAlarm();
+                }
             }
         }
 
@@ -132,6 +268,7 @@
 
                 if (state.isReset) {
                     audio.currentTime = 0;
+                    closeEndModal();
                 }
             }
         });
@@ -140,6 +277,8 @@
         const overlay = document.getElementById('audioActivationOverlay');
         overlay.addEventListener('click', () => {
             overlay.style.display = 'none';
+            // Trigger audio context creation on click to unlock it
+            getAudioContext();
             if (audio.src) {
                 audio.play().then(() => {
                     audio.pause();
