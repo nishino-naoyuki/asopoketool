@@ -230,6 +230,32 @@
             isModalOpen = false;
         }
 
+        let localInterval = null;
+        let isRunningLocal = false;
+        let targetTimestamp = null;
+        let remainingSeconds = initialMinutes * 60;
+        let totalDuration = initialMinutes * 60;
+
+        function refreshTimer() {
+            if (isRunningLocal && targetTimestamp) {
+                const now = Date.now();
+                const diff = Math.max(0, Math.floor((targetTimestamp - now) / 1000));
+                remainingSeconds = diff;
+                
+                const minutes = Math.floor(remainingSeconds / 60);
+                const seconds = remainingSeconds % 60;
+                const percent = (remainingSeconds / totalDuration) * 100;
+
+                updateUI(minutes, seconds, percent);
+
+                if (remainingSeconds <= 0) {
+                    isRunningLocal = false;
+                    clearInterval(localInterval);
+                    audio.pause();
+                }
+            }
+        }
+
         function updateUI(minutes, seconds, percent) {
             const minStr = String(minutes).padStart(2, '0');
             const secStr = String(seconds).padStart(2, '0');
@@ -257,11 +283,22 @@
         window.addEventListener('storage', function(e) {
             if (e.key === storageKey && e.newValue) {
                 const state = JSON.parse(e.newValue);
-                updateUI(state.minutes, state.seconds, state.percent);
                 
-                // Play / Pause music based on remote state
-                if (state.isRunning && audio.src) {
-                    audio.play().catch(err => console.log("BGM play failed due to browser interaction requirement"));
+                isRunningLocal = state.isRunning;
+                targetTimestamp = state.targetTimestamp;
+                remainingSeconds = state.remaining;
+                totalDuration = state.duration;
+
+                // Sync UI immediately
+                updateUI(state.minutes, state.seconds, state.percent);
+
+                // Start local self-ticking to ensure smooth updates and background resilience
+                clearInterval(localInterval);
+                if (isRunningLocal) {
+                    localInterval = setInterval(refreshTimer, 200); // Snap every 200ms
+                    if (audio.src) {
+                        audio.play().catch(err => console.log("BGM play failed due to browser interaction requirement"));
+                    }
                 } else {
                     audio.pause();
                 }

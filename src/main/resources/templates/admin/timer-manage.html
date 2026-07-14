@@ -152,24 +152,35 @@
         /*]]>*/
 
         const storageKey = 'apt_timer_' + tournamentId;
+        const storageTimeKey = 'apt_timer_target_' + tournamentId;
 
         const timerCtrl = {
             duration: initialMinutes * 60,
             remaining: initialMinutes * 60,
             isRunning: false,
             interval: null,
+            startTime: null,          // System time when start was clicked
+            timeAtPause: null,        // Remaining seconds when pause was clicked
 
             start: function() {
                 if (this.isRunning) return;
                 this.isRunning = true;
+                
+                // Track start time using absolute date to avoid background drift
+                this.startTime = Date.now();
+                this.timeAtPause = this.remaining;
+
                 this.interval = setInterval(() => {
-                    this.remaining--;
+                    const elapsed = Math.floor((Date.now() - this.startTime) / 1000);
+                    this.remaining = this.timeAtPause - elapsed;
+
                     if (this.remaining <= 0) {
                         this.remaining = 0;
                         this.pause();
                     }
                     this.broadcast();
-                }, 1000);
+                }, 200); // Poll more frequently to keep UI perfectly snapped
+                
                 this.broadcast();
             },
 
@@ -191,12 +202,18 @@
                 const seconds = this.remaining % 60;
                 const percent = (this.remaining / this.duration) * 100;
                 
+                // Calculate absolute end timestamp for projection screen to sync with
+                const targetTimestamp = this.isRunning ? (Date.now() + (this.remaining * 1000)) : null;
+
                 const state = {
                     minutes: minutes,
                     seconds: seconds,
                     percent: percent,
                     isRunning: this.isRunning,
-                    isReset: isReset
+                    isReset: isReset,
+                    targetTimestamp: targetTimestamp,
+                    remaining: this.remaining,
+                    duration: this.duration
                 };
 
                 localStorage.setItem(storageKey, JSON.stringify(state));
