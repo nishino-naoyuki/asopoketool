@@ -135,13 +135,37 @@ public class SwissDrawService {
             }
         }
 
-        // 6. Pairing algorithm (Dutch/Greedy back-tracking logic)
+        // 6. Pairing algorithm: Global optimal matching using backtracking on sorted player pool
+        // Players in 'pool' are already sorted by win points (descending), so adjacent players
+        // in the pool have closest win scores. The backtracking will naturally prefer
+        // same-wingroup pairs as the first candidate, but will try all combinations to
+        // find the globally optimal (no rematches) solution.
         List<MatchGame> generatedMatches = new ArrayList<>();
-        boolean success = generatePairs(pool, pastPairs, generatedMatches);
-        if (!success) {
-            // If failed to find a valid pairing due to rematch constraints, try a relaxed match (allows duplicate matches if absolutely necessary)
+        List<Entry> bestUnmatched = new ArrayList<>(pool);
+        List<MatchGame> bestMatches = new ArrayList<>();
+        globalOptimalPairing(pool, pastPairs, new ArrayList<>(), bestUnmatched, bestMatches);
+        generatedMatches.addAll(bestMatches);
+
+        // Handle any remaining unmatched players (due to rematch constraints)
+        List<Entry> unmatched = new ArrayList<>(bestUnmatched);
+        if (!unmatched.isEmpty()) {
+            if (unmatched.size() >= 2) {
+                // Last resort: pair remaining players ignoring rematch constraints
+                generateRelaxedPairs(unmatched, generatedMatches);
+            } else {
+                // 1 player unmatched in an even-total scenario → give BYE (edge case)
+                if (byePlayer == null) {
+                    byePlayer = unmatched.get(0);
+                }
+            }
+        }
+
+        // Sanity guard: even player count must never have a BYE
+        boolean isOdd = (activeEntries.size() % 2 != 0);
+        if (!isOdd && (byePlayer != null)) {
             generatedMatches.clear();
-            generateRelaxedPairs(pool, generatedMatches);
+            byePlayer = null;
+            generateRelaxedPairs(activeEntries, generatedMatches);
         }
 
         // 7. Create/Reuse Round record
@@ -195,53 +219,90 @@ public class SwissDrawService {
     @Autowired
     private MatchResultMapper matchResultMapper;
 
-    private boolean generatePairs(List<Entry> pool, Set<String> pastPairs, List<MatchGame> result) {
-        if (pool.isEmpty()) {
-            return true;
+    /**
+     * Global optimal pairing via backtracking with pruning.
+     * The pool is pre-sorted by win points descending, so adjacent players are the
+     * "best" (closest win-score) candidates.  The first player in the pool (highest
+     * win points) tries all possible partners in order; for each successful pair the
+     * rest of the pool is recursively solved.  If no partner is found, the player
+     * is left as the last floater.  We track the globally best (fewest unmatched)
+     * solution seen so far and prune branches that cannot improve it.
+     *
+     * Time complexity: O(N!) worst case, but with pruning effectively O(N^2) for
+     * typical Swiss draws (N ≤ 45) because rematches are rare in early rounds and
+     * the sorted order means the first candidate is almost always accepted.
+     */
+    private void globalOptimalPairing(List<Entry> pool,
+                                       Set<String> pastPairs,
+                                       List<MatchGame> currentMatches,
+                                       List<Entry> bestUnmatched,
+                                       List<MatchGame> bestMatches) {
+        // Pruning: even if every remaining player can be paired, we can't improve
+        if (currentMatches.size() + pool.size() / 2 <= bestMatches.size()) {
+            return;
+        }
+
+        // Base case: 0 or 1 player left
+        if (pool.size() < 2) {
+            if (pool.size() < bestUnmatched.size()) {
+                bestUnmatched.clear();
+                bestUnmatched.addAll(pool);
+                bestMatches.clear();
+                bestMatches.addAll(currentMatches);
+            }
+            return;
         }
 
         Entry p1 = pool.get(0);
+        boolean matchedAtLeastOnce = false;
+
+        // Try to pair p1 with each other player in pool order
         for (int i = 1; i < pool.size(); i++) {
             Entry p2 = pool.get(i);
-            long id1 = Math.min(p1.getId(), p2.getId());
-            long id2 = Math.max(p1.getId(), p2.getId());
-            String pairKey = id1 + "_" + id2;
+            long lo = Math.min(p1.getId(), p2.getId());
+            long hi = Math.max(p1.getId(), p2.getId());
+            String key = lo + "_" + hi;
 
-            if (!pastPairs.contains(pairKey)) {
-                // Potential match found
+            if (!pastPairs.contains(key)) {
+                matchedAtLeastOnce = true;
                 MatchGame match = MatchGame.builder()
                         .player1EntryId(p1.getId())
                         .player2EntryId(p2.getId())
                         .isBye(false)
                         .build();
-                result.add(match);
+                currentMatches.add(match);
 
-                // Backtracking
-                List<Entry> nextPool = new ArrayList<>(pool);
-                nextPool.remove(p1);
-                nextPool.remove(p2);
-
-                if (generatePairs(nextPool, pastPairs, result)) {
-                    return true;
+                // Build next pool without p1 and p2
+                List<Entry> next = new ArrayList<>();
+                for (Entry e : pool) {
+                    if (!e.getId().equals(p1.getId()) && !e.getId().equals(p2.getId())) {
+                        next.add(e);
+                    }
                 }
-
-                // If failed, backtrack
-                result.remove(match);
+                globalOptimalPairing(next, pastPairs, currentMatches, bestUnmatched, bestMatches);
+                currentMatches.remove(match);
             }
         }
-        return false;
+
+        // If p1 could not be matched with anyone (all pairs are rematches),
+        // skip p1 (it will become a floater) and try to pair the rest.
+        if (!matchedAtLeastOnce) {
+            List<Entry> next = new ArrayList<>();
+            for (Entry e : pool) {
+                if (!e.getId().equals(p1.getId())) next.add(e);
+            }
+            globalOptimalPairing(next, pastPairs, currentMatches, bestUnmatched, bestMatches);
+        }
     }
 
     private void generateRelaxedPairs(List<Entry> pool, List<MatchGame> result) {
-        // Just pair them up sequentially ignoring rematch constraints
-        for (int i = 0; i < pool.size(); i += 2) {
-            if (i + 1 < pool.size()) {
-                result.add(MatchGame.builder()
-                        .player1EntryId(pool.get(i).getId())
-                        .player2EntryId(pool.get(i + 1).getId())
-                        .isBye(false)
-                        .build());
-            }
+        // Pair them up sequentially, ignoring rematch constraints (last-resort fallback)
+        for (int i = 0; i + 1 < pool.size(); i += 2) {
+            result.add(MatchGame.builder()
+                    .player1EntryId(pool.get(i).getId())
+                    .player2EntryId(pool.get(i + 1).getId())
+                    .isBye(false)
+                    .build());
         }
     }
 
