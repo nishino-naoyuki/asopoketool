@@ -566,12 +566,29 @@ public class AdminController {
                                    @RequestParam int durationMinutes,
                                    @RequestParam(required = false) Long bgmFileId) {
         Tournament t = tournamentService.getTournamentById(id);
-        TimerSetting setting = TimerSetting.builder()
-                .tournamentId(id)
-                .roundNumber(t.getCurrentRound())
-                .durationMinutes(durationMinutes)
-                .bgmFileId(bgmFileId)
-                .build();
+        
+        // 新規オブジェクトをゼロからビルドせず、既存のレコード（画像パス等を含む）を取得して上書きする
+        TimerSetting setting = timerService.getTimerSetting(id, t.getCurrentRound());
+        
+        // 取得したレコードがデフォルトのフォールバックだった場合、ラウンド番号が一致しない可能性があるので明示的にセット
+        setting.setTournamentId(id);
+        setting.setRoundNumber(t.getCurrentRound());
+        
+        setting.setDurationMinutes(durationMinutes);
+        setting.setBgmFileId(bgmFileId);
+        
+        // BGMファイルのパスと名前を即座に反映させるため transient フィールドを補完
+        if (bgmFileId != null) {
+            BgmFile bgm = timerService.getBgmById(bgmFileId);
+            if (bgm != null) {
+                setting.setBgmDisplayName(bgm.getDisplayName());
+                setting.setBgmFilePath(bgm.getFilePath());
+            }
+        } else {
+            setting.setBgmDisplayName(null);
+            setting.setBgmFilePath(null);
+        }
+
         timerService.saveTimerSetting(setting);
         return "redirect:/admin/tournament/" + id + "/timer?success=true";
     }
