@@ -556,7 +556,7 @@ public class AdminController {
                 for (Long accountId : selectedAccountIds) {
                     PlayerAccount acc = accountMapper.findById(accountId);
                     if (acc != null) {
-                        entryService.enterTournament(id, acc.getDisplayName(), accountId, null);
+                        entryService.enterTournament(id, acc.getDisplayName(), accountId, null, true);
                         registeredList.add(acc.getDisplayName());
                     }
                 }

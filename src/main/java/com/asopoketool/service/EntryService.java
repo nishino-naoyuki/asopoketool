@@ -26,7 +26,7 @@ public class EntryService {
     private String hmacSecret;
 
     @Transactional
-    public Entry enterTournament(Long tournamentId, String playerName, Long accountId, String sessionToken) {
+    public Entry enterTournament(Long tournamentId, String playerName, Long accountId, String sessionToken, boolean manualEntry) {
         Tournament tournament = tournamentMapper.findById(tournamentId);
         if (tournament == null) {
             throw new IllegalArgumentException("指定された大会が見つかりません。");
@@ -56,16 +56,17 @@ public class EntryService {
 
         // Setup entry info
         String qrToken = TokenUtil.generateToken(); // temporary unique code
+        String tokenToInsert = (sessionToken != null) ? sessionToken : "";
 
         Entry entry = Entry.builder()
                 .tournamentId(tournamentId)
                 .playerName(playerName)
                 .accountId(accountId)
-                .sessionToken(sessionToken)
+                .sessionToken(tokenToInsert)
                 .qrToken(qrToken)
                 .checkinFlg(false)
                 .dropoutFlg(false)
-                .manualEntryFlg(false)
+                .manualEntryFlg(manualEntry)
                 .build();
         entryMapper.insert(entry);
 

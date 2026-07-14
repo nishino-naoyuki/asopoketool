@@ -100,7 +100,7 @@ public class TournamentController {
                              Model model) {
         String sessionToken = (String) request.getAttribute("sessionToken");
         try {
-            entryService.enterTournament(id, playerName, null, sessionToken);
+            entryService.enterTournament(id, playerName, null, sessionToken, false);
             return "redirect:/tournament/" + id;
         } catch (Exception e) {
             model.addAttribute("error", e.getMessage());
@@ -119,7 +119,7 @@ public class TournamentController {
         PlayerAccount account = (PlayerAccount) request.getAttribute("currentAccount");
         String sessionToken = (String) request.getAttribute("sessionToken");
         try {
-            entryService.enterTournament(id, account.getDisplayName(), account.getId(), sessionToken);
+            entryService.enterTournament(id, account.getDisplayName(), account.getId(), sessionToken, false);
             return "redirect:/tournament/" + id;
         } catch (Exception e) {
             model.addAttribute("error", e.getMessage());
@@ -155,7 +155,7 @@ public class TournamentController {
         PlayerAccount account = (PlayerAccount) request.getAttribute("currentAccount");
         String sessionToken = (String) request.getAttribute("sessionToken");
         try {
-            entryService.enterTournament(id, playerName, account.getId(), sessionToken);
+            entryService.enterTournament(id, playerName, account.getId(), sessionToken, false);
             return "redirect:/tournament/" + id;
         } catch (Exception e) {
             model.addAttribute("error", e.getMessage());
