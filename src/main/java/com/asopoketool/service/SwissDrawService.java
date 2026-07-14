@@ -36,6 +36,41 @@ public class SwissDrawService {
             throw new IllegalStateException("設定された最大ラウンド数に達しています。");
         }
 
+        return generateMatchingForRound(tournament, nextRoundNumber, null);
+    }
+
+    @Transactional
+    public List<MatchGame> rematchRound(Long tournamentId, int roundNumber) {
+        Tournament tournament = tournamentMapper.findById(tournamentId);
+        if (tournament == null) {
+            throw new IllegalArgumentException("大会が見つかりません。");
+        }
+
+        TournamentRound round = roundMapper.findByTournamentAndRound(tournamentId, roundNumber);
+        if (round == null) {
+            throw new IllegalArgumentException("指定されたラウンドが見つかりません。");
+        }
+
+        // Check if there are any results registered (excluding BYE)
+        List<MatchGame> existingMatches = matchGameMapper.findByRoundId(round.getId());
+        for (MatchGame m : existingMatches) {
+            if (!m.isBye()) {
+                MatchResult r = matchResultMapper.findByMatchId(m.getId());
+                if (r != null) {
+                    throw new IllegalStateException("すでに登録されている試合結果があるため、リマッチできません。");
+                }
+            }
+        }
+
+        // Delete existing matches (cascade deletes bye results)
+        matchGameMapper.deleteByRoundId(round.getId());
+
+        return generateMatchingForRound(tournament, roundNumber, round);
+    }
+
+    private List<MatchGame> generateMatchingForRound(Tournament tournament, int roundNumber, TournamentRound existingRound) {
+        Long tournamentId = tournament.getId();
+
         // 1. Get all active checked-in players (checkin=1, dropout=0)
         List<Entry> activeEntries = entryMapper.findActiveByTournamentId(tournamentId);
         if (activeEntries.size() < 2) {
@@ -109,14 +144,17 @@ public class SwissDrawService {
             generateRelaxedPairs(pool, generatedMatches);
         }
 
-        // 7. Create Round record
-        TournamentRound round = TournamentRound.builder()
-                .tournamentId(tournamentId)
-                .roundNumber(nextRoundNumber)
-                .status("IN_PROGRESS")
-                .startedAt(LocalDateTime.now())
-                .build();
-        roundMapper.insert(round);
+        // 7. Create/Reuse Round record
+        TournamentRound round = existingRound;
+        if (round == null) {
+            round = TournamentRound.builder()
+                    .tournamentId(tournamentId)
+                    .roundNumber(roundNumber)
+                    .status("IN_PROGRESS")
+                    .startedAt(LocalDateTime.now())
+                    .build();
+            roundMapper.insert(round);
+        }
 
         // 8. Assign tables and Insert matches into DB
         int tableNumber = 1;
@@ -143,13 +181,13 @@ public class SwissDrawService {
                     .winnerEntryId(byePlayer.getId())
                     .registeredBy("ADMIN")
                     .build();
-            // We need a mapper here or handle it in service, let's inject MatchResultMapper
-            // we will need to inject it, so we'll autowire it at class level
             matchResultMapper.insert(byeResult);
         }
 
-        // Update current round in tournament
-        tournamentMapper.updateCurrentRound(tournamentId, nextRoundNumber);
+        // Update current round in tournament (only if it's a new round)
+        if (existingRound == null) {
+            tournamentMapper.updateCurrentRound(tournamentId, roundNumber);
+        }
 
         return matchGameMapper.findByRoundId(round.getId());
     }

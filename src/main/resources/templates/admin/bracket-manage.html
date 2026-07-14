@@ -7,6 +7,26 @@
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
     <link th:href="@{/css/common.css}" rel="stylesheet">
+    <style>
+        /* Custom styling for bracket tab buttons */
+        #bracketTab .nav-link {
+            color: #ffffff !important;
+            background: transparent;
+            border: 1px solid rgba(255, 255, 255, 0.12) !important;
+            transition: all 0.3s ease;
+            border-radius: 12px;
+        }
+        #bracketTab .nav-link.active {
+            background: linear-gradient(135deg, #FF6B35 0%, #FF8C42 100%) !important;
+            border-color: transparent !important;
+            box-shadow: 0 4px 15px rgba(255, 107, 53, 0.4);
+            color: #ffffff !important;
+        }
+        #bracketTab .nav-link:hover:not(.active) {
+            background: rgba(255, 255, 255, 0.08);
+            border-color: rgba(255, 255, 255, 0.25) !important;
+        }
+    </style>
 </head>
 <body>
 
@@ -64,10 +84,10 @@
         <div th:unless="${#lists.isEmpty(brackets)}">
             <ul class="nav nav-pills mb-4" id="bracketTab" role="tablist">
                 <li class="nav-item" th:each="b, iter : ${brackets}" role="presentation">
-                    <button class="nav-link px-4 py-2 me-2" th:classappend="${iter.first ? 'active btn-primary-custom' : 'btn-outline-light text-white'}" 
+                    <button class="nav-link px-4 py-2 me-2" th:classappend="${iter.first ? 'active' : ''}" 
                             th:id="'tab-' + ${b.id}" data-bs-toggle="tab" th:data-bs-target="'#panel-' + ${b.id}" 
                             type="button" role="tab" th:aria-controls="'panel-' + ${b.id}" th:aria-selected="${iter.first}" 
-                            th:text="${b.groupName}" style="border-radius: 12px; border: 1px solid rgba(255,255,255,0.12);">グループA</button>
+                            th:text="${b.groupName}">グループA</button>
                 </li>
             </ul>
 

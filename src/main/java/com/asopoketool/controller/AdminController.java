@@ -166,6 +166,25 @@ public class AdminController {
         model.addAttribute("checkedInCount", tournamentService.countCheckedIn(id));
         model.addAttribute("dropoutCount", tournamentService.countDropout(id));
 
+        // Check if there are registered results for current round to disable/enable rematch button
+        boolean hasRegisteredResults = false;
+        if ("IN_PROGRESS".equals(tournament.getStatus())) {
+            TournamentRound currentRoundObj = roundMapper.findByTournamentAndRound(id, tournament.getCurrentRound());
+            if (currentRoundObj != null) {
+                List<MatchGame> matches = matchGameMapper.findByRoundId(currentRoundObj.getId());
+                for (MatchGame match : matches) {
+                    if (!match.isBye()) {
+                        MatchResult r = matchResultMapper.findByMatchId(match.getId());
+                        if (r != null) {
+                            hasRegisteredResults = true;
+                            break;
+                        }
+                    }
+                }
+            }
+        }
+        model.addAttribute("hasRegisteredResults", hasRegisteredResults);
+
         return "admin/tournament-manage";
     }
 
@@ -201,6 +220,18 @@ public class AdminController {
     public String nextRound(@PathVariable Long id, Model model) {
         try {
             Tournament tournament = tournamentService.getTournamentById(id);
+            
+            // Check if all matches in the current round have results registered
+            TournamentRound currentRoundObj = roundMapper.findByTournamentAndRound(id, tournament.getCurrentRound());
+            if (currentRoundObj != null) {
+                List<MatchGame> matches = matchGameMapper.findByRoundId(currentRoundObj.getId());
+                for (MatchGame match : matches) {
+                    if (!match.isBye() && match.getResultWinnerEntryId() == null) {
+                        throw new IllegalStateException("未登録の対戦結果があります。すべての試合結果を登録してください。");
+                    }
+                }
+            }
+
             boolean onlyOneUndefeated = swissDrawService.isOnlyOneUndefeated(id);
             if (tournament.getCurrentRound() >= tournament.getTotalRounds() || onlyOneUndefeated) {
                 // If final round finished or only one undefeated player remains, proceed to Bracket phase
@@ -210,6 +241,25 @@ public class AdminController {
                 swissDrawService.generateMatching(id);
             }
             return "redirect:/admin/tournament/" + id;
+        } catch (Exception e) {
+            model.addAttribute("error", e.getMessage());
+            return manageTournament(id, model);
+        }
+    }
+
+    @PostMapping("/tournament/{id}/rematch")
+    @org.springframework.transaction.annotation.Transactional
+    public String rematch(@PathVariable Long id, Model model) {
+        try {
+            Tournament tournament = tournamentService.getTournamentById(id);
+            if (tournament == null) {
+                throw new IllegalArgumentException("大会が見つかりません。");
+            }
+            if (!"IN_PROGRESS".equals(tournament.getStatus())) {
+                throw new IllegalStateException("進行中以外の大会はリマッチできません。");
+            }
+            swissDrawService.rematchRound(id, tournament.getCurrentRound());
+            return "redirect:/admin/tournament/" + id + "?success=rematch";
         } catch (Exception e) {
             model.addAttribute("error", e.getMessage());
             return manageTournament(id, model);

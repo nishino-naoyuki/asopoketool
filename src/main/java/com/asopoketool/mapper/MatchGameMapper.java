@@ -14,6 +14,9 @@ public interface MatchGameMapper {
     void insert(MatchGame matchGame);
     void batchInsert(List<MatchGame> matchGames);
 
+    @org.apache.ibatis.annotations.Delete("DELETE FROM match_game WHERE round_id = #{roundId}")
+    void deleteByRoundId(Long roundId);
+
     @org.apache.ibatis.annotations.Delete("DELETE FROM match_game WHERE round_id IN (SELECT id FROM tournament_round WHERE tournament_id = #{tournamentId})")
     void deleteByTournamentId(Long tournamentId);
 }

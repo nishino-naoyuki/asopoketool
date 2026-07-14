@@ -187,6 +187,12 @@
                                 <i class="fa-solid fa-forward-step"></i> <span th:text="${tournament.currentRound == tournament.totalRounds ? '決勝トーナメントへ進む' : '次のラウンドへ'}">次のラウンドへ</span>
                             </button>
                         </form>
+
+                        <form th:action="@{/admin/tournament/{id}/rematch(id=${tournament.id})}" method="POST" onsubmit="return confirm('このラウンドの組み合わせをやり直しますか？\n（勝敗結果がすでに登録されている場合はやり直せません）');">
+                            <button type="submit" class="btn btn-outline-warning w-100 py-2" th:disabled="${hasRegisteredResults}">
+                                <i class="fa-solid fa-rotate"></i> <strong>組み合わせをやり直す</strong>
+                            </button>
+                        </form>
                     </div>
 
                     <div th:if="${tournament.status == 'BRACKET'}">
