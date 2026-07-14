@@ -193,6 +193,36 @@
                                 <i class="fa-solid fa-rotate"></i> <strong>組み合わせをやり直す</strong>
                             </button>
                         </form>
+
+                        <!-- 緊急操作：折りたたみ（通常は使用しない） -->
+                        <div class="mt-3">
+                            <button class="btn btn-outline-secondary btn-sm w-100 py-1"
+                                    type="button"
+                                    data-bs-toggle="collapse"
+                                    data-bs-target="#emergencyOps"
+                                    aria-expanded="false">
+                                <i class="fa-solid fa-triangle-exclamation text-warning me-1"></i>
+                                緊急操作（通常はここを開かないでください）
+                                <i class="fa-solid fa-chevron-down ms-1 small"></i>
+                            </button>
+                            <div class="collapse mt-2" id="emergencyOps">
+                                <div class="border border-danger rounded-3 p-3" style="background: rgba(220,53,69,0.08);">
+                                    <p class="small text-warning mb-2">
+                                        <i class="fa-solid fa-circle-exclamation me-1"></i>
+                                        <strong>現在の予選順位のまま決勝トーナメントへ強制移行します。</strong><br>
+                                        ※ 規定ラウンド数が終了していなくても移行できます。<br>
+                                        ※ 現ラウンドに未登録の結果がある場合は実行できません。
+                                    </p>
+                                    <form th:action="@{/admin/tournament/{id}/force-bracket(id=${tournament.id})}" method="POST"
+                                          onsubmit="return confirm('⚠️ 予選を途中で打ち切り、現在の順位で決勝トーナメントへ強制移行します。\n\nこの操作は取り消せません。本当によろしいですか？') && confirm('最終確認：本当に強制移行しますか？');">
+                                        <button type="submit" class="btn btn-danger btn-sm w-100">
+                                            <i class="fa-solid fa-forward-fast me-1"></i>
+                                            強制的に決勝トーナメントへ移行する
+                                        </button>
+                                    </form>
+                                </div>
+                            </div>
+                        </div>
                     </div>
 
                     <div th:if="${tournament.status == 'BRACKET'}">

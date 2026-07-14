@@ -247,6 +247,37 @@ public class AdminController {
         }
     }
 
+    @PostMapping("/tournament/{id}/force-bracket")
+    @org.springframework.transaction.annotation.Transactional
+    public String forceBracket(@PathVariable Long id, Model model) {
+        try {
+            Tournament tournament = tournamentService.getTournamentById(id);
+            if (!"IN_PROGRESS".equals(tournament.getStatus())) {
+                throw new IllegalStateException("予選進行中の大会のみ操作できます。");
+            }
+
+            // 現ラウンドに未入力の試合がある場合は強制移行不可（通常の「次のラウンドへ」と同じ制約）
+            TournamentRound currentRoundObj = roundMapper.findByTournamentAndRound(id, tournament.getCurrentRound());
+            if (currentRoundObj != null) {
+                List<MatchGame> matches = matchGameMapper.findByRoundId(currentRoundObj.getId());
+                for (MatchGame match : matches) {
+                    if (!match.isBye() && match.getResultWinnerEntryId() == null) {
+                        throw new IllegalStateException("未登録の対戦結果があります。すべての試合結果を登録してから強制移行してください。");
+                    }
+                }
+            }
+
+            // 現在の予選順位のまま決勝トーナメントフェーズへ移行
+            tournamentService.startBracketPhase(id);
+            bracketService.generateBrackets(id);
+
+            return "redirect:/admin/tournament/" + id;
+        } catch (Exception e) {
+            model.addAttribute("error", e.getMessage());
+            return manageTournament(id, model);
+        }
+    }
+
     @PostMapping("/tournament/{id}/rematch")
     @org.springframework.transaction.annotation.Transactional
     public String rematch(@PathVariable Long id, Model model) {
