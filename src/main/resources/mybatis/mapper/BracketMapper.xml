@@ -68,4 +68,38 @@
         DELETE FROM bracket_match WHERE bracket_tournament_id IN (SELECT id FROM bracket_tournament WHERE tournament_id = #{tournamentId})
     </delete>
 
+    <!-- 対象アカウントが出場した全決勝T試合（勝者決定済みまたはBYE）を取得 -->
+    <select id="findByAccountId" resultType="com.asopoketool.model.BracketMatch">
+        SELECT m.*,
+               e1.player_name AS player1_name,
+               e2.player_name AS player2_name,
+               ew.player_name AS winner_name,
+               bt.tournament_id
+        FROM bracket_match m
+        JOIN bracket_tournament bt ON m.bracket_tournament_id = bt.id
+        LEFT JOIN entry e1 ON m.player1_entry_id = e1.id
+        LEFT JOIN entry e2 ON m.player2_entry_id = e2.id
+        LEFT JOIN entry ew ON m.winner_entry_id = ew.id
+        JOIN entry me ON (m.player1_entry_id = me.id OR m.player2_entry_id = me.id)
+        WHERE me.account_id = #{accountId}
+          AND (m.winner_entry_id IS NOT NULL OR m.is_bye = 1)
+        ORDER BY bt.tournament_id ASC, m.round_number ASC
+    </select>
+
+    <!-- 大会IDから全決勝T試合を取得（優勝・準優勝判定用） -->
+    <select id="findAllMatchesByTournamentId" resultType="com.asopoketool.model.BracketMatch">
+        SELECT m.*,
+               e1.player_name AS player1_name,
+               e2.player_name AS player2_name,
+               ew.player_name AS winner_name,
+               bt.tournament_id
+        FROM bracket_match m
+        JOIN bracket_tournament bt ON m.bracket_tournament_id = bt.id
+        LEFT JOIN entry e1 ON m.player1_entry_id = e1.id
+        LEFT JOIN entry e2 ON m.player2_entry_id = e2.id
+        LEFT JOIN entry ew ON m.winner_entry_id = ew.id
+        WHERE bt.tournament_id = #{tournamentId}
+        ORDER BY m.round_number DESC, m.match_number ASC
+    </select>
+
 </mapper>

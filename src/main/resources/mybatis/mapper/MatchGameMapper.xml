@@ -74,4 +74,25 @@
         </foreach>
     </insert>
 
+    <!-- 対象アカウントが出場した全スイス式試合（結果登録済みまたはBYE）を取得 -->
+    <select id="findByAccountId" resultType="com.asopoketool.model.MatchGame">
+        SELECT m.*,
+               e1.player_name AS player1_name,
+               e2.player_name AS player2_name,
+               e1.account_id AS player1_account_id,
+               e2.account_id AS player2_account_id,
+               r.winner_entry_id AS result_winner_entry_id,
+               tr.tournament_id,
+               CASE WHEN r.match_id IS NOT NULL THEN 1 ELSE 0 END AS has_result
+        FROM match_game m
+        JOIN entry e1 ON m.player1_entry_id = e1.id
+        LEFT JOIN entry e2 ON m.player2_entry_id = e2.id
+        LEFT JOIN match_result r ON m.id = r.match_id
+        JOIN tournament_round tr ON m.round_id = tr.id
+        JOIN entry me ON (m.player1_entry_id = me.id OR m.player2_entry_id = me.id)
+        WHERE me.account_id = #{accountId}
+          AND (r.match_id IS NOT NULL OR m.is_bye = 1)
+        ORDER BY tr.tournament_id ASC, tr.round_number ASC
+    </select>
+
 </mapper>

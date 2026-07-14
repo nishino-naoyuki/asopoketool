@@ -69,6 +69,9 @@ public class AdminController {
     @Autowired
     private org.springframework.security.crypto.password.PasswordEncoder passwordEncoder;
 
+    @Autowired
+    private AccountController accountController;
+
     @GetMapping("/login")
     public String login() {
         return "admin/login";
@@ -798,5 +801,19 @@ public class AdminController {
         model.addAttribute("cumulativePoints", cumulativePoints);
 
         return "admin/players-manage-list";
+    }
+
+    /** 管理者によるユーザー戦績閲覧（records.htmlを流用） */
+    @GetMapping("/players/{id}/records")
+    public String showPlayerRecords(@PathVariable Long id, Model model) {
+        PlayerAccount account = accountMapper.findById(id);
+        if (account == null) {
+            return "redirect:/admin/players";
+        }
+        // AccountControllerのbuildRecordsModelと同じロジックをこちらでも呼び出す
+        // AccountControllerはURLが違うので、モデルビルドに必要なMapperをここでも直接使う
+        accountController.buildRecordsModelPublic(id, account.getDisplayName(), model);
+        model.addAttribute("isAdminView", true);
+        return "account/records";
     }
 }

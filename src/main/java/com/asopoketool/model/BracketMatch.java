@@ -23,4 +23,5 @@ public class BracketMatch {
     private String player1Name;
     private String player2Name;
     private String winnerName;
+    private Long tournamentId; // populated by findByAccountId query
 }

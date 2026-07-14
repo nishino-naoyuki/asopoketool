@@ -63,7 +63,15 @@
                                      style="width: 35px; height: 35px; object-fit: cover;"
                                      alt="Avatar">
                             </td>
-                            <td class="align-middle fw-bold text-warning" th:text="${p.displayName}">たろう</td>
+                            <td class="align-middle fw-bold text-warning">
+                                <a th:href="@{/admin/players/{id}/records(id=${p.id})}"
+                                   target="_blank"
+                                   class="text-warning text-decoration-none"
+                                   th:title="'戦績を見る：' + ${p.displayName}">
+                                    <span th:text="${p.displayName}">たろう</span>
+                                    <i class="fa-solid fa-chart-bar ms-1 fa-xs opacity-60"></i>
+                                </a>
+                            </td>
                             <td class="text-center align-middle font-monospace" th:text="${entryCounts.get(p.id)}">3 回</td>
                             <td class="text-center align-middle fw-bold text-accent font-monospace" th:text="${cumulativePoints.get(p.id)} + ' pt'">150 pt</td>
                             <td class="align-middle text-muted small" th:text="${p.createdAt}">2026-07-01 12:00:00</td>

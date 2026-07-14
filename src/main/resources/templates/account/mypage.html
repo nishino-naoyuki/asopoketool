@@ -75,6 +75,14 @@
                         <h2 class="fw-bold text-warning mb-0 font-monospace" th:text="${points != null ? points.totalPoint : 0} + ' pt'">350 pt</h2>
                     </div>
 
+                    <!-- Battle Records Button -->
+                    <a th:href="@{/account/records}" target="_blank"
+                       class="btn btn-secondary-custom w-100 py-2 mb-3 d-flex align-items-center justify-content-center gap-2">
+                        <i class="fa-solid fa-chart-bar"></i>
+                        <span>対戦成績を見る</span>
+                        <i class="fa-solid fa-arrow-up-right-from-square fa-xs opacity-75"></i>
+                    </a>
+
                     <hr class="border-secondary my-4">
 
                     <!-- Update Password Form -->

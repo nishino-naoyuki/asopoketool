@@ -11,6 +11,8 @@ public interface MatchGameMapper {
     MatchGame findById(Long id);
     List<MatchGame> findByEntryId(Long entryId);
     List<MatchGame> findAllByTournamentId(Long tournamentId);
+    /** 対象アカウントが関わった全スイス式試合（結果登録済み or BYE）を取得 */
+    List<MatchGame> findByAccountId(Long accountId);
     void insert(MatchGame matchGame);
     void batchInsert(List<MatchGame> matchGames);
 

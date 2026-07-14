@@ -1,0 +1,386 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title th:text="${isAdminView ? '【管理者】戦績 | ASOPokeTool' : '対戦成績 | ASOPokeTool'}">対戦成績 | ASOPokeTool</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
+    <link th:href="@{/css/common.css}" rel="stylesheet">
+    <style>
+        body {
+            background: linear-gradient(135deg, #fff0f8 0%, #f0f4ff 50%, #f0fff8 100%);
+            min-height: 100vh;
+            font-family: 'Noto Sans JP', 'Poppins', sans-serif;
+        }
+        .page-header {
+            background: linear-gradient(135deg, #ff9de2 0%, #a78bfa 50%, #6ee7b7 100%);
+            border-radius: 24px;
+            padding: 28px 32px;
+            margin-bottom: 28px;
+            box-shadow: 0 8px 32px rgba(167, 139, 250, 0.25);
+            position: relative;
+            overflow: hidden;
+        }
+        .page-header::before {
+            content: "✨";
+            position: absolute;
+            font-size: 80px;
+            opacity: 0.12;
+            right: 20px;
+            top: -10px;
+        }
+        .page-header h1 {
+            color: #fff;
+            font-weight: 800;
+            text-shadow: 0 2px 8px rgba(0,0,0,0.18);
+        }
+        .page-header .subtitle {
+            color: rgba(255,255,255,0.9);
+            font-size: 0.95rem;
+        }
+        /* タブUI */
+        .records-tabs .nav-link {
+            border-radius: 20px !important;
+            font-weight: 700;
+            color: #8b77e0;
+            background: rgba(167,139,250,0.08);
+            border: 2px solid rgba(167,139,250,0.2) !important;
+            margin-right: 8px;
+            padding: 10px 28px;
+            transition: all 0.25s ease;
+        }
+        .records-tabs .nav-link.active {
+            background: linear-gradient(135deg, #a78bfa 0%, #60a5fa 100%) !important;
+            color: #fff !important;
+            border-color: transparent !important;
+            box-shadow: 0 4px 14px rgba(167,139,250,0.35);
+        }
+        .records-tabs .nav-link:hover:not(.active) {
+            background: rgba(167,139,250,0.15) !important;
+            color: #7c3aed;
+        }
+        /* 大会別カード */
+        .tournament-card {
+            background: rgba(255,255,255,0.88);
+            border-radius: 18px;
+            border: 2px solid rgba(167,139,250,0.18);
+            box-shadow: 0 4px 16px rgba(167,139,250,0.10);
+            padding: 20px 24px;
+            margin-bottom: 14px;
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+        }
+        .tournament-card:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 24px rgba(167,139,250,0.18);
+        }
+        .tournament-name {
+            font-size: 1.05rem;
+            font-weight: 800;
+            color: #5b21b6;
+        }
+        .tournament-date {
+            font-size: 0.8rem;
+            color: #9ca3af;
+        }
+        /* 勝敗バッジ */
+        .record-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            border-radius: 12px;
+            padding: 4px 12px;
+            font-weight: 700;
+            font-size: 0.85rem;
+        }
+        .record-win  { background: #dcfce7; color: #16a34a; }
+        .record-lose { background: #fee2e2; color: #dc2626; }
+        .record-total{ background: #ede9fe; color: #7c3aed; }
+        .record-section-label {
+            font-size: 0.72rem;
+            color: #9ca3af;
+            letter-spacing: 0.05em;
+            margin-bottom: 4px;
+        }
+        /* 優勝・準優勝バナー */
+        .champion-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 6px 18px;
+            border-radius: 50px;
+            font-weight: 900;
+            font-size: 1rem;
+            letter-spacing: 0.05em;
+            animation: shine 2s linear infinite;
+        }
+        .champion-badge.gold {
+            background: linear-gradient(90deg, #fde68a, #fbbf24, #f59e0b, #fbbf24, #fde68a);
+            background-size: 200% auto;
+            color: #78350f;
+            box-shadow: 0 4px 18px rgba(251,191,36,0.4);
+        }
+        .champion-badge.silver {
+            background: linear-gradient(90deg, #e5e7eb, #9ca3af, #d1d5db, #9ca3af, #e5e7eb);
+            background-size: 200% auto;
+            color: #1f2937;
+            box-shadow: 0 4px 18px rgba(156,163,175,0.4);
+        }
+        @keyframes shine {
+            0%   { background-position: 0% center; }
+            100% { background-position: 200% center; }
+        }
+        /* 対戦相手カード */
+        .opponent-card {
+            background: rgba(255,255,255,0.88);
+            border-radius: 16px;
+            border: 2px solid rgba(96,165,250,0.18);
+            padding: 16px 22px;
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            transition: transform 0.2s ease;
+        }
+        .opponent-card:hover { transform: translateY(-2px); }
+        .opponent-name {
+            font-weight: 800;
+            font-size: 1rem;
+            color: #1e40af;
+            flex: 1;
+        }
+        .win-rate-bar {
+            width: 80px;
+            height: 8px;
+            background: #e5e7eb;
+            border-radius: 999px;
+            overflow: hidden;
+        }
+        .win-rate-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #6ee7b7, #34d399);
+            border-radius: 999px;
+            transition: width 0.6s ease;
+        }
+        /* 空ステート */
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: #9ca3af;
+        }
+        .empty-state i { font-size: 3rem; margin-bottom: 16px; }
+        /* 管理者ヘッダー */
+        .admin-view-badge {
+            background: rgba(255,255,255,0.25);
+            border-radius: 12px;
+            padding: 4px 14px;
+            font-size: 0.8rem;
+            font-weight: 700;
+            color: #fff;
+            display: inline-block;
+            margin-bottom: 8px;
+        }
+    </style>
+</head>
+<body>
+<div class="container py-4" style="max-width: 900px;">
+
+    <!-- ページヘッダー -->
+    <div class="page-header">
+        <span th:if="${isAdminView}" class="admin-view-badge">
+            <i class="fa-solid fa-shield-halved"></i> 管理者閲覧モード
+        </span>
+        <h1 class="mb-1">
+            <i class="fa-solid fa-chart-bar me-2"></i>対戦成績
+        </h1>
+        <p class="subtitle mb-0">
+            <i class="fa-solid fa-user me-1"></i>
+            <span th:text="${targetDisplayName}">プレイヤー</span>
+            さんの戦績
+        </p>
+    </div>
+
+    <!-- タブ -->
+    <ul class="nav records-tabs mb-4" id="recordsTab" role="tablist">
+        <li class="nav-item" role="presentation">
+            <button class="nav-link active" id="tournament-tab"
+                    data-bs-toggle="tab" data-bs-target="#tournament-pane"
+                    type="button" role="tab" aria-selected="true">
+                <i class="fa-solid fa-trophy me-1"></i>大会別
+            </button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link" id="opponent-tab"
+                    data-bs-toggle="tab" data-bs-target="#opponent-pane"
+                    type="button" role="tab" aria-selected="false">
+                <i class="fa-solid fa-swords me-1"></i>対戦別
+            </button>
+        </li>
+    </ul>
+
+    <div class="tab-content" id="recordsTabContent">
+
+        <!-- ===== 大会別タブ ===== -->
+        <div class="tab-pane fade show active" id="tournament-pane" role="tabpanel">
+
+            <div th:if="${#lists.isEmpty(tournamentRecords)}" class="empty-state">
+                <i class="fa-solid fa-box-open d-block"></i>
+                <p class="mb-0">まだ対戦成績がありません。大会に参加して結果を登録しましょう！</p>
+            </div>
+
+            <!-- サマリーバー -->
+            <div th:unless="${#lists.isEmpty(tournamentRecords)}"
+                 class="d-flex gap-3 mb-4 flex-wrap">
+                <div class="p-3 rounded-3 text-center flex-fill" style="background:rgba(167,139,250,0.1); min-width:120px;">
+                    <div class="small text-muted mb-1">参加大会数</div>
+                    <div class="fw-bold fs-4 text-purple" style="color:#7c3aed;"
+                         th:text="${#lists.size(tournamentRecords)}">0</div>
+                </div>
+                <div class="p-3 rounded-3 text-center flex-fill" style="background:rgba(110,231,183,0.15); min-width:120px;">
+                    <div class="small text-muted mb-1">通算勝利</div>
+                    <div class="fw-bold fs-4" style="color:#16a34a;"
+                         th:text="${#aggregates.sum(tournamentRecords.![totalWins])} + ' 勝'">0 勝</div>
+                </div>
+                <div class="p-3 rounded-3 text-center flex-fill" style="background:rgba(254,202,202,0.25); min-width:120px;">
+                    <div class="small text-muted mb-1">通算敗北</div>
+                    <div class="fw-bold fs-4" style="color:#dc2626;"
+                         th:text="${#aggregates.sum(tournamentRecords.![totalLosses])} + ' 敗'">0 敗</div>
+                </div>
+                <div class="p-3 rounded-3 text-center flex-fill" style="background:rgba(253,230,138,0.3); min-width:120px;">
+                    <div class="small text-muted mb-1">優勝回数</div>
+                    <div class="fw-bold fs-4" style="color:#b45309;"
+                         th:text="${#lists.size(tournamentRecords.?[result == 'CHAMPION'])} + ' 回'">0 回</div>
+                </div>
+            </div>
+
+            <!-- 大会カード一覧 -->
+            <div th:each="rec : ${tournamentRecords}" class="tournament-card">
+                <div class="d-flex align-items-start justify-content-between flex-wrap gap-2">
+                    <div>
+                        <div class="tournament-name" th:text="${rec.tournamentName}">大会名</div>
+                        <div class="tournament-date">
+                            <i class="fa-solid fa-calendar-day me-1"></i>
+                            <span th:text="${rec.heldDate}">2026-07-01</span>
+                            <span class="ms-2 text-muted" th:text="'エントリー名：' + ${rec.entryName}">エントリー名</span>
+                        </div>
+                    </div>
+                    <!-- 優勝・準優勝バッジ -->
+                    <div th:if="${rec.champion}" class="champion-badge gold">
+                        <i class="fa-solid fa-trophy"></i> 優勝！
+                    </div>
+                    <div th:if="${rec.runnerUp}" class="champion-badge silver">
+                        <i class="fa-solid fa-medal"></i> 準優勝
+                    </div>
+                </div>
+
+                <div class="d-flex flex-wrap gap-3 mt-3">
+                    <!-- 予選（スイス式） -->
+                    <div>
+                        <div class="record-section-label">予選（スイス式）</div>
+                        <div class="d-flex gap-2 align-items-center">
+                            <span class="record-badge record-win">
+                                <i class="fa-solid fa-circle-up fa-xs"></i>
+                                <span th:text="${rec.swissWins}">0</span> 勝
+                            </span>
+                            <span class="record-badge record-lose">
+                                <i class="fa-solid fa-circle-down fa-xs"></i>
+                                <span th:text="${rec.swissLosses}">0</span> 敗
+                            </span>
+                            <span th:if="${rec.swissByes > 0}" class="record-badge"
+                                  style="background:#f3f4f6;color:#6b7280;"
+                                  th:text="'BYE×' + ${rec.swissByes}">BYE×0</span>
+                        </div>
+                    </div>
+
+                    <!-- 決勝T -->
+                    <div th:if="${rec.bracketParticipated}">
+                        <div class="record-section-label">決勝トーナメント</div>
+                        <div class="d-flex gap-2 align-items-center">
+                            <span class="record-badge record-win">
+                                <i class="fa-solid fa-circle-up fa-xs"></i>
+                                <span th:text="${rec.bracketWins}">0</span> 勝
+                            </span>
+                            <span class="record-badge record-lose">
+                                <i class="fa-solid fa-circle-down fa-xs"></i>
+                                <span th:text="${rec.bracketLosses}">0</span> 敗
+                            </span>
+                        </div>
+                    </div>
+
+                    <!-- 合計 -->
+                    <div>
+                        <div class="record-section-label">合計</div>
+                        <div class="d-flex gap-2 align-items-center">
+                            <span class="record-badge record-total fw-bold">
+                                <i class="fa-solid fa-sigma fa-xs"></i>
+                                <span th:text="${rec.totalWins}">0</span> 勝
+                                <span th:text="${rec.totalLosses}">0</span> 敗
+                            </span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div><!-- /tournament-pane -->
+
+        <!-- ===== 対戦別タブ ===== -->
+        <div class="tab-pane fade" id="opponent-pane" role="tabpanel">
+
+            <div th:if="${#lists.isEmpty(opponentRecords)}" class="empty-state">
+                <i class="fa-solid fa-users d-block"></i>
+                <p class="mb-0">まだ対戦相手データがありません。</p>
+            </div>
+
+            <!-- サマリーバー -->
+            <div th:unless="${#lists.isEmpty(opponentRecords)}"
+                 class="d-flex gap-3 mb-4 flex-wrap">
+                <div class="p-3 rounded-3 text-center flex-fill" style="background:rgba(96,165,250,0.1); min-width:120px;">
+                    <div class="small text-muted mb-1">対戦相手数</div>
+                    <div class="fw-bold fs-4" style="color:#1d4ed8;"
+                         th:text="${#lists.size(opponentRecords)}">0</div>
+                </div>
+                <div class="p-3 rounded-3 text-center flex-fill" style="background:rgba(110,231,183,0.15); min-width:120px;">
+                    <div class="small text-muted mb-1">総対戦数</div>
+                    <div class="fw-bold fs-4" style="color:#047857;"
+                         th:text="${#aggregates.sum(opponentRecords.![totalGames])} + ' 戦'">0 戦</div>
+                </div>
+            </div>
+
+            <!-- 対戦相手カード一覧 -->
+            <div th:each="opp : ${opponentRecords}" class="opponent-card">
+                <div class="me-2" style="font-size:1.8rem;">
+                    <i class="fa-solid fa-user-ninja" style="color:#a78bfa;"></i>
+                </div>
+                <div class="flex-fill">
+                    <div class="opponent-name" th:text="${opp.opponentName}">相手名</div>
+                    <div class="small text-muted" th:if="${opp.lastPlayedDate != ''}">
+                        <i class="fa-solid fa-clock fa-xs me-1"></i>最終対戦:
+                        <span th:text="${opp.lastPlayedDate}">2026-07-01</span>
+                    </div>
+                </div>
+                <!-- 勝率バー -->
+                <div class="text-end me-3" style="min-width:90px;">
+                    <div class="record-badge record-win mb-1" style="justify-content:center;">
+                        <span th:text="${opp.wins}">0</span> 勝 / <span th:text="${opp.losses}">0</span> 敗
+                    </div>
+                    <div class="win-rate-bar mx-auto">
+                        <div class="win-rate-fill"
+                             th:style="${opp.totalGames > 0 ? 'width:' + (opp.wins * 100 / opp.totalGames) + '%' : 'width:0%'}"></div>
+                    </div>
+                    <div class="small text-muted mt-1"
+                         th:text="${opp.totalGames > 0 ? '勝率 ' + #numbers.formatDecimal(opp.wins * 100.0 / opp.totalGames, 1, 1) + '%' : '-'}">-</div>
+                </div>
+            </div>
+        </div><!-- /opponent-pane -->
+
+    </div><!-- /tab-content -->
+
+    <div class="text-center mt-5">
+        <button onclick="window.close()" class="btn btn-outline-secondary px-5 rounded-pill">
+            <i class="fa-solid fa-xmark me-1"></i>閉じる
+        </button>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

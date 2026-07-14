@@ -24,4 +24,5 @@ public class MatchGame {
     private String player1Icon;
     private String player2Icon;
     private boolean hasResult;
+    private Long tournamentId; // populated by findByAccountId query
 }
