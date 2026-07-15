@@ -158,6 +158,96 @@ public class AdminController {
         return "redirect:/admin";
     }
 
+    @GetMapping("/tournament/{id}/edit")
+    public String showEditForm(@PathVariable Long id, Model model) {
+        Tournament tournament = tournamentService.getTournamentById(id);
+        if (tournament == null) {
+            return "redirect:/admin";
+        }
+        List<PrizePointSetting> prizeSettings = prizePointMapper.findByTournamentId(id);
+        Map<Integer, Integer> prizePointsMap = new HashMap<>();
+        for (PrizePointSetting p : prizeSettings) {
+            prizePointsMap.put(p.getPrizeRank(), p.getPoint());
+        }
+        model.addAttribute("tournament", tournament);
+        model.addAttribute("prizePointsMap", prizePointsMap);
+        return "admin/tournament-edit";
+    }
+
+    @PostMapping("/tournament/{id}/edit")
+    public String editTournament(@PathVariable Long id,
+                                 @RequestParam String name,
+                                 @RequestParam String heldDate,
+                                 @RequestParam int capacity,
+                                 @RequestParam int totalRounds,
+                                 @RequestParam int winPoint,
+                                 @RequestParam int losePoint,
+                                 @RequestParam int participationPoint,
+                                 @RequestParam int bracketGroupSize,
+                                 @RequestParam(required = false) String venue,
+                                 @RequestParam(required = false) String description,
+                                 @RequestParam(required = false) String iconBase64,
+                                 @RequestParam Map<String, String> allParams) {
+        
+        Tournament tournament = tournamentService.getTournamentById(id);
+        if (tournament == null) {
+            return "redirect:/admin";
+        }
+
+        String iconPath = tournament.getIconPath();
+        if (iconBase64 != null && !iconBase64.trim().isEmpty()) {
+            try {
+                String base64Data = iconBase64;
+                if (base64Data.contains(",")) {
+                    base64Data = base64Data.substring(base64Data.indexOf(",") + 1);
+                }
+                byte[] decodedBytes = java.util.Base64.getDecoder().decode(base64Data);
+
+                java.io.File dir = new java.io.File(System.getProperty("user.dir") + "/data/images");
+                if (!dir.exists()) {
+                    dir.mkdirs();
+                }
+                String filename = "icon_" + System.currentTimeMillis() + ".png";
+                java.io.File dest = new java.io.File(dir, filename);
+                try (java.io.FileOutputStream fos = new java.io.FileOutputStream(dest)) {
+                    fos.write(decodedBytes);
+                }
+                iconPath = "/asopoketool/timer-bg-files/" + filename;
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        }
+
+        tournament.setName(name);
+        tournament.setHeldDate(LocalDate.parse(heldDate));
+        tournament.setCapacity(capacity);
+        tournament.setTotalRounds(totalRounds);
+        tournament.setWinPoint(winPoint);
+        tournament.setLosePoint(losePoint);
+        tournament.setParticipationPoint(participationPoint);
+        tournament.setBracketGroupSize(bracketGroupSize);
+        tournament.setVenue(venue);
+        tournament.setDescription(description);
+        tournament.setIconPath(iconPath);
+        tournamentService.updateTournament(tournament);
+
+        // Update prize points (delete existing and insert new batch)
+        prizePointMapper.deleteByTournamentId(id);
+        List<PrizePointSetting> prizeSettings = new ArrayList<>();
+        for (int i = 1; i <= 16; i++) {
+            String paramVal = allParams.get("prize_point_" + i);
+            int ptVal = (paramVal != null && !paramVal.trim().isEmpty()) ? Integer.parseInt(paramVal) : 0;
+            prizeSettings.add(PrizePointSetting.builder()
+                    .tournamentId(id)
+                    .prizeRank(i)
+                    .point(ptVal)
+                    .build());
+        }
+        prizePointMapper.insertBatch(prizeSettings);
+
+        return "redirect:/admin/tournament/" + id;
+    }
+
     @GetMapping("/tournament/{id}")
     public String manageTournament(@PathVariable Long id, Model model) {
         Tournament tournament = tournamentService.getTournamentById(id);

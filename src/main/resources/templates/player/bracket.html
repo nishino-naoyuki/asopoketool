@@ -55,7 +55,7 @@
             <div class="tab-content" id="bracketTabContent">
                 <div class="tab-pane fade" th:each="b, iter : ${brackets}" th:classappend="${iter.first ? 'show active' : ''}" 
                      th:id="'panel-' + ${b.id}" role="tabpanel" th:aria-labelledby="'tab-' + ${b.id}">
-                                        <div class="card-glass p-4 overflow-auto" th:id="'bracketArea-' + ${b.id}" style="border-radius: 16px;">
+                    <div class="card-glass p-4 overflow-auto" th:id="'bracketArea-' + ${b.id}" style="border-radius: 16px;">
                         <div class="d-flex gap-5 py-3 align-items-center justify-content-between bracket-tree-container" style="min-width: 800px; position: relative;">
                             
                             <!-- Round 1: Quarterfinals (QF) -->
@@ -68,6 +68,8 @@
                                      th:data-match-num="${m.matchNumber}"
                                      th:data-p1-name="${m.player1Name != null ? m.player1Name : '（TBD）'}"
                                      th:data-p2-name="${m.isBye ? '（不戦勝）' : (m.player2Name != null ? m.player2Name : '（TBD）')}"
+                                     th:data-p1-icon="${m.player1IconPath != null ? m.player1IconPath : ''}"
+                                     th:data-p2-icon="${m.player2IconPath != null ? m.player2IconPath : ''}"
                                      th:data-winner-id="${m.winnerEntryId}"
                                      th:data-p1-id="${m.player1EntryId}"
                                      th:data-p2-id="${m.player2EntryId}"
@@ -94,6 +96,8 @@
                                      th:data-match-num="${m.matchNumber}"
                                      th:data-p1-name="${m.player1Name != null ? m.player1Name : '（待機中）'}"
                                      th:data-p2-name="${m.player2Name != null ? m.player2Name : '（待機中）'}"
+                                     th:data-p1-icon="${m.player1IconPath != null ? m.player1IconPath : ''}"
+                                     th:data-p2-icon="${m.player2IconPath != null ? m.player2IconPath : ''}"
                                      th:data-winner-id="${m.winnerEntryId}"
                                      th:data-p1-id="${m.player1EntryId}"
                                      th:data-p2-id="${m.player2EntryId}"
@@ -121,6 +125,8 @@
                                      th:data-match-num="${m.matchNumber}"
                                      th:data-p1-name="${m.player1Name != null ? m.player1Name : '（待機中）'}"
                                      th:data-p2-name="${m.player2Name != null ? m.player2Name : '（待機中）'}"
+                                     th:data-p1-icon="${m.player1IconPath != null ? m.player1IconPath : ''}"
+                                     th:data-p2-icon="${m.player2IconPath != null ? m.player2IconPath : ''}"
                                      th:data-winner-id="${m.winnerEntryId}"
                                      th:data-p1-id="${m.player1EntryId}"
                                      th:data-p2-id="${m.player2EntryId}"
@@ -374,6 +380,8 @@
                 const p1Name = element.getAttribute('data-p1-name');
                 const p2Id = element.getAttribute('data-p2-id');
                 const p2Name = element.getAttribute('data-p2-name');
+                const p1Icon = element.getAttribute('data-p1-icon');
+                const p2Icon = element.getAttribute('data-p2-icon');
 
                 document.getElementById('modalBracketMatchId').value = matchId;
                 bracketP1EntryIdVal = p1Id;
@@ -381,9 +389,11 @@
 
                 document.getElementById('bracketP1Name').innerText = p1Name;
                 document.getElementById('bracketLabelP1Win').innerText = p1Name + " さんの勝ち";
+                document.getElementById('bracketP1Icon').src = p1Icon && p1Icon.trim() !== '' ? p1Icon : '/asopoketool/images/pikachu.png';
 
                 document.getElementById('bracketP2Name').innerText = p2Name;
                 document.getElementById('bracketLabelP2Win').innerText = p2Name + " さんの勝ち";
+                document.getElementById('bracketP2Icon').src = p2Icon && p2Icon.trim() !== '' ? p2Icon : '/asopoketool/images/pikachu.png';
 
                 // Reset radios
                 document.querySelectorAll('input[name="bracketResultOption"]').forEach(r => r.checked = false);
@@ -476,7 +486,7 @@
                             <div class="d-flex justify-content-around align-items-center mb-4">
                                 <!-- Player 1 Card -->
                                 <div class="text-center p-3 rounded-3" style="width: 45%; background: rgba(255,107,53,0.05); border: 1px solid rgba(255,107,53,0.15);">
-                                    <img src="/asopoketool/images/pikachu.png" class="rounded-circle mb-2" style="width: 64px; height: 64px; object-fit: cover; border: 3px solid #ffffff; box-shadow: 0 4px 8px rgba(0,0,0,0.1);">
+                                    <img id="bracketP1Icon" src="/asopoketool/images/pikachu.png" class="rounded-circle mb-2" style="width: 64px; height: 64px; object-fit: cover; border: 3px solid #ffffff; box-shadow: 0 4px 8px rgba(0,0,0,0.1);">
                                     <div id="bracketP1Name" class="fw-bold text-truncate" style="color: #4A3E3D; font-size: 1.1rem;">-</div>
                                 </div>
                                 
@@ -484,7 +494,7 @@
                                 
                                 <!-- Player 2 Card -->
                                 <div class="text-center p-3 rounded-3" style="width: 45%; background: rgba(255,107,53,0.05); border: 1px solid rgba(255,107,53,0.15);">
-                                    <img src="/asopoketool/images/pikachu.png" class="rounded-circle mb-2" style="width: 64px; height: 64px; object-fit: cover; border: 3px solid #ffffff; box-shadow: 0 4px 8px rgba(0,0,0,0.1);">
+                                    <img id="bracketP2Icon" src="/asopoketool/images/pikachu.png" class="rounded-circle mb-2" style="width: 64px; height: 64px; object-fit: cover; border: 3px solid #ffffff; box-shadow: 0 4px 8px rgba(0,0,0,0.1);">
                                     <div id="bracketP2Name" class="fw-bold text-truncate" style="color: #4A3E3D; font-size: 1.1rem;">-</div>
                                 </div>
                             </div>

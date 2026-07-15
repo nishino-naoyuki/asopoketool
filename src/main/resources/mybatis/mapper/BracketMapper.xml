@@ -39,11 +39,15 @@
         SELECT m.*,
                e1.player_name AS player1_name,
                e2.player_name AS player2_name,
-               ew.player_name AS winner_name
+               ew.player_name AS winner_name,
+               a1.icon_path AS player1_icon_path,
+               a2.icon_path AS player2_icon_path
         FROM bracket_match m
         LEFT JOIN entry e1 ON m.player1_entry_id = e1.id
         LEFT JOIN entry e2 ON m.player2_entry_id = e2.id
         LEFT JOIN entry ew ON m.winner_entry_id = ew.id
+        LEFT JOIN player_account a1 ON e1.account_id = a1.id
+        LEFT JOIN player_account a2 ON e2.account_id = a2.id
         WHERE m.bracket_tournament_id = #{bracketTournamentId}
         ORDER BY m.round_number ASC, m.match_number ASC
     </select>
@@ -56,11 +60,15 @@
         SELECT m.*,
                e1.player_name AS player1_name,
                e2.player_name AS player2_name,
-               ew.player_name AS winner_name
+               ew.player_name AS winner_name,
+               a1.icon_path AS player1_icon_path,
+               a2.icon_path AS player2_icon_path
         FROM bracket_match m
         LEFT JOIN entry e1 ON m.player1_entry_id = e1.id
         LEFT JOIN entry e2 ON m.player2_entry_id = e2.id
         LEFT JOIN entry ew ON m.winner_entry_id = ew.id
+        LEFT JOIN player_account a1 ON e1.account_id = a1.id
+        LEFT JOIN player_account a2 ON e2.account_id = a2.id
         WHERE m.id = #{id}
     </select>
 
