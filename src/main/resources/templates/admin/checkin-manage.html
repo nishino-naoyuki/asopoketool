@@ -73,10 +73,20 @@
                                         <span class="badge" th:classappend="${e.checkinFlg ? 'bg-success' : 'bg-secondary'}" th:text="${e.checkinFlg ? '完了' : '未チェック'}">未チェック</span>
                                     </td>
                                     <td class="text-center align-middle">
-                                        <form th:action="@{/admin/tournament/{id}/checkin/{entryId}(id=${tournament.id}, entryId=${e.id})}" method="POST" th:if="${!e.checkinFlg}">
-                                            <button type="submit" class="btn btn-secondary-custom btn-sm">手動チェックイン</button>
-                                        </form>
-                                        <span th:if="${e.checkinFlg}" class="text-success"><i class="fa-solid fa-circle-check"></i> 完了</span>
+                                        <div class="d-flex justify-content-center gap-2 align-items-center">
+                                            <!-- Manual Checkin -->
+                                            <form th:action="@{/admin/tournament/{id}/checkin/{entryId}(id=${tournament.id}, entryId=${e.id})}" method="POST" th:if="${!e.checkinFlg}">
+                                                <button type="submit" class="btn btn-secondary-custom btn-sm">手動チェックイン</button>
+                                            </form>
+                                            <span th:if="${e.checkinFlg}" class="text-success"><i class="fa-solid fa-circle-check"></i> 受付済</span>
+
+                                            <!-- Cancel Entry -->
+                                            <form th:action="@{/admin/tournament/{id}/checkin/{entryId}/cancel(id=${tournament.id}, entryId=${e.id})}" method="POST"
+                                                  th:if="${tournament.status == 'ENTRY'}"
+                                                  onsubmit="return confirm('本当にこの参加者のエントリー（登録）を取り消しますか？');">
+                                                <button type="submit" class="btn btn-outline-danger btn-sm px-2 py-1"><i class="fa-solid fa-user-xmark"></i> 登録取消</button>
+                                            </form>
+                                        </div>
                                     </td>
                                 </tr>
                             </tbody>

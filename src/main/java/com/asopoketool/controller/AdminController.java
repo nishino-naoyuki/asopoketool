@@ -416,6 +416,16 @@ public class AdminController {
         return "redirect:/admin/tournament/" + id + "/checkin";
     }
 
+    @PostMapping("/tournament/{id}/checkin/{entryId}/cancel")
+    public String adminCancelEntry(@PathVariable Long id, @PathVariable Long entryId) {
+        try {
+            entryService.cancelEntry(entryId);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return "redirect:/admin/tournament/" + id + "/checkin";
+    }
+
     @PostMapping("/tournament/{id}/checkin/scan")
     @ResponseBody
     public Map<String, Object> scanCheckin(@PathVariable Long id, @RequestParam String qrToken) {
