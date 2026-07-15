@@ -29,6 +29,16 @@
 
                         <p class="text-muted" th:text="${tournament.description}">大会説明文がここに入ります。</p>
 
+                        <!-- Champion Showcase banner for finished tournaments -->
+                        <div th:if="${tournament.status == 'FINISHED' and championName != null}" 
+                             class="p-4 mb-4 border border-warning rounded-4 text-center text-dark" 
+                             style="background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%); box-shadow: 0 8px 24px rgba(251, 191, 36, 0.25);">
+                            <div class="fs-1 mb-2">🏆</div>
+                            <h4 class="fw-bold mb-1" style="color: #92400e;">大会結果：優勝者決定！</h4>
+                            <div class="fs-3 fw-bold text-danger my-2" th:text="${championName}">優勝者名</div>
+                            <p class="mb-0 text-muted small">おめでとうございます！🎉</p>
+                        </div>
+
                         <hr class="border-secondary my-4">
 
                         <h4 class="mb-3 text-warning"><i class="fa-solid fa-circle-info"></i> 開催情報</h4>

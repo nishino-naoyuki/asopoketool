@@ -90,6 +90,29 @@ public class TournamentController {
         Entry myEntry = entryService.getEntryForCurrentUser(id, sessionToken, accountId);
         model.addAttribute("myEntry", myEntry);
 
+        // Fetch champion details if tournament is FINISHED
+        if ("FINISHED".equals(tournament.getStatus())) {
+            List<BracketTournament> brackets = bracketService.getBracketsByTournament(id);
+            if (brackets != null && !brackets.isEmpty()) {
+                // Get matches in the first group (usually Group A / highest tier)
+                brackets.sort((b1, b2) -> b1.getGroupName().compareTo(b2.getGroupName()));
+                BracketTournament primaryBracket = brackets.get(0);
+                List<BracketMatch> matches = primaryBracket.getMatches();
+                if (matches != null && !matches.isEmpty()) {
+                    int maxRound = matches.stream().mapToInt(BracketMatch::getRoundNumber).max().orElse(1);
+                    BracketMatch finalMatch = matches.stream()
+                            .filter(m -> m.getRoundNumber() == maxRound && m.getMatchNumber() == 1)
+                            .findFirst().orElse(null);
+                    if (finalMatch != null && finalMatch.getWinnerEntryId() != null) {
+                        String championName = finalMatch.getWinnerEntryId().equals(finalMatch.getPlayer1EntryId()) 
+                                ? finalMatch.getPlayer1Name() 
+                                : finalMatch.getPlayer2Name();
+                        model.addAttribute("championName", championName);
+                    }
+                }
+            }
+        }
+
         return "player/tournament-detail";
     }
 
