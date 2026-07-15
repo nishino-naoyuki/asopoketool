@@ -44,18 +44,33 @@
             <div class="table-responsive">
                 <table class="table table-custom text-white w-100">
                     <thead>
-                        <tr>
-                            <th>アカウントID</th>
+                        <tr style="user-select: none;">
+                            <th class="sortable-header" data-sort-key="id" style="cursor: pointer;">
+                                アカウントID <span class="sort-indicator ms-1 text-muted small"><i class="fa-solid fa-sort"></i></span>
+                            </th>
                             <th style="width: 70px;">アイコン</th>
-                            <th>表示名</th>
-                            <th class="text-center">参加大会数</th>
-                            <th class="text-center">累計獲得ポイント</th>
-                            <th>登録日時</th>
+                            <th class="sortable-header" data-sort-key="name" style="cursor: pointer;">
+                                表示名 <span class="sort-indicator ms-1 text-muted small"><i class="fa-solid fa-sort"></i></span>
+                            </th>
+                            <th class="sortable-header text-center" data-sort-key="entries" style="cursor: pointer;">
+                                参加大会数 <span class="sort-indicator ms-1 text-muted small"><i class="fa-solid fa-sort"></i></span>
+                            </th>
+                            <th class="sortable-header text-center" data-sort-key="points" style="cursor: pointer;">
+                                累計獲得ポイント <span class="sort-indicator ms-1 text-muted small"><i class="fa-solid fa-sort"></i></span>
+                            </th>
+                            <th class="sortable-header" data-sort-key="created" style="cursor: pointer;">
+                                登録日時 <span class="sort-indicator ms-1 text-muted small"><i class="fa-solid fa-sort"></i></span>
+                            </th>
                             <th class="text-center" style="width: 15%">操作</th>
                         </tr>
                     </thead>
-                    <tbody>
-                        <tr th:each="p : ${players}">
+                    <tbody id="playerTableBody">
+                        <tr th:each="p : ${players}" 
+                            th:data-sort-id="${p.id}"
+                            th:data-sort-name="${p.displayName}"
+                            th:data-sort-entries="${entryCounts.get(p.id)}"
+                            th:data-sort-points="${cumulativePoints.get(p.id)}"
+                            th:data-sort-created="${p.createdAt}">
                             <td class="align-middle font-monospace" th:text="${p.id}">1</td>
                             <td class="align-middle">
                                 <img th:src="${p.iconPath != null ? p.iconPath : '/asopoketool/images/pikachu.png'}"
@@ -68,11 +83,11 @@
                                    target="_blank"
                                    class="text-warning text-decoration-none"
                                    th:title="'戦績を見る：' + ${p.displayName}">
-                                    <span th:text="${p.displayName}">たろう</span>
-                                    <i class="fa-solid fa-chart-bar ms-1 fa-xs opacity-60"></i>
+                                     <span th:text="${p.displayName}">たろう</span>
+                                     <i class="fa-solid fa-chart-bar ms-1 fa-xs opacity-60"></i>
                                 </a>
                             </td>
-                            <td class="text-center align-middle font-monospace" th:text="${entryCounts.get(p.id)}">3 回</td>
+                            <td class="text-center align-middle font-monospace" th:text="${entryCounts.get(p.id)} + ' 回'">3 回</td>
                             <td class="text-center align-middle fw-bold text-accent font-monospace" th:text="${cumulativePoints.get(p.id)} + ' pt'">150 pt</td>
                             <td class="align-middle text-muted small" th:text="${p.createdAt}">2026-07-01 12:00:00</td>
                             <td class="text-center align-middle">
@@ -85,6 +100,16 @@
                     </tbody>
                 </table>
             </div>
+            
+            <!-- Sorting info card showing current priorities -->
+            <div class="mt-3 p-3 bg-dark border border-secondary rounded-4 d-flex justify-content-between align-items-center">
+                <div class="small text-muted">
+                    <i class="fa-solid fa-circle-info text-warning me-1"></i>
+                    <strong>複数項目ソート:</strong> 項目ヘッダーをクリックするとソート方向（昇順 ⇄ 降順）が切り替わり、優先順位が最後にクリックした項目に更新されます。
+                </div>
+                <div id="sortStatus" class="small text-warning fw-bold">ソート未適用 (デフォルト順)</div>
+            </div>
+
         </div>
     </div>
 
@@ -118,8 +143,37 @@
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
     <script>
         let modal = null;
+        
+        // Active sort criteria array. e.g. [{key: 'points', dir: 'desc'}, {key: 'entries', dir: 'asc'}]
+        let sortCriteria = [];
+
         document.addEventListener('DOMContentLoaded', () => {
             modal = new bootstrap.Modal(document.getElementById('resetPasswordModal'));
+
+            // Setup sort event handlers on table headers
+            const headers = document.querySelectorAll('.sortable-header');
+            headers.forEach(header => {
+                header.addEventListener('click', () => {
+                    const key = header.getAttribute('data-sort-key');
+                    
+                    // Find index of existing sort key
+                    const idx = sortCriteria.findIndex(c => c.key === key);
+                    let newDir = 'asc';
+                    
+                    if (idx !== -1) {
+                        // Toggle direction and move to front (highest priority)
+                        const prev = sortCriteria.splice(idx, 1)[0];
+                        newDir = prev.dir === 'asc' ? 'desc' : 'asc';
+                    }
+                    
+                    // Push to the front of criteria list
+                    sortCriteria.unshift({ key: key, dir: newDir });
+                    
+                    // Execute sort and UI refresh
+                    applySort();
+                    updateHeadersUI();
+                });
+            });
         });
 
         function openResetModal(playerId, playerName) {
@@ -127,6 +181,75 @@
             document.getElementById('resetForm').action = '/asopoketool/admin/players/' + playerId + '/reset-password';
             document.getElementById('newPassword').value = '';
             modal.show();
+        }
+
+        function applySort() {
+            const tbody = document.getElementById('playerTableBody');
+            const rows = Array.from(tbody.querySelectorAll('tr'));
+            
+            if (sortCriteria.length === 0) return;
+
+            rows.sort((rowA, rowB) => {
+                for (const criterion of sortCriteria) {
+                    const valA = getRowValue(rowA, criterion.key);
+                    const valB = getRowValue(rowB, criterion.key);
+                    
+                    if (valA !== valB) {
+                        const compare = valA > valB ? 1 : -1;
+                        return criterion.dir === 'asc' ? compare : -compare;
+                    }
+                }
+                return 0;
+            });
+            
+            // Re-append sorted rows to the body
+            rows.forEach(row => tbody.appendChild(row));
+        }
+
+        function getRowValue(row, key) {
+            const attrVal = row.getAttribute('data-sort-' + key);
+            
+            // Cast values appropriately for proper sorting
+            if (key === 'id' || key === 'entries' || key === 'points') {
+                return parseInt(attrVal, 10) || 0;
+            }
+            // Defaults to string sorting
+            return (attrVal || '').toLowerCase();
+        }
+
+        function updateHeadersUI() {
+            const headers = document.querySelectorAll('.sortable-header');
+            headers.forEach(header => {
+                const key = header.getAttribute('data-sort-key');
+                const indicator = header.querySelector('.sort-indicator');
+                const idx = sortCriteria.findIndex(c => c.key === key);
+                
+                if (idx !== -1) {
+                    const criterion = sortCriteria[idx];
+                    const dirIcon = criterion.dir === 'asc' ? 'fa-sort-up' : 'fa-sort-down';
+                    // Highlight header based on priority (index 0 is active primary)
+                    if (idx === 0) {
+                        header.classList.add('text-warning');
+                        indicator.className = 'sort-indicator ms-1 text-warning small';
+                    } else {
+                        header.classList.remove('text-warning');
+                        indicator.className = 'sort-indicator ms-1 text-secondary small';
+                    }
+                    indicator.innerHTML = `<i class="fa-solid ${dirIcon}"></i> <span class="badge bg-secondary px-1 text-white opacity-75 font-monospace" style="font-size: 0.7rem;">${idx + 1}</span>`;
+                } else {
+                    header.classList.remove('text-warning');
+                    indicator.className = 'sort-indicator ms-1 text-muted small';
+                    indicator.innerHTML = '<i class="fa-solid fa-sort"></i>';
+                }
+            });
+
+            // Update status text
+            const sortStatusText = sortCriteria.map((c, i) => {
+                const nameMap = { id: 'ID', name: '表示名', entries: '参加数', points: 'ポイント', created: '登録日' };
+                return `${i + 1}. ${nameMap[c.key]}(${c.dir === 'asc' ? '▲昇順' : '▼降順'})`;
+            }).join(' ➔ ');
+            
+            document.getElementById('sortStatus').innerText = sortCriteria.length > 0 ? sortStatusText : 'ソート未適用 (デフォルト順)';
         }
     </script>
 </body>
