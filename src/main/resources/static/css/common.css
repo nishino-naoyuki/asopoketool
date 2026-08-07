@@ -677,20 +677,20 @@ body.admin-body .navbar-custom {
 
 /* Responsive Match Table styling for mobile screens */
 @media (max-width: 576px) {
-    /* Target matching page and admin matching tables */
-    .table-custom.text-white thead {
+    /* Target matching page and admin matching tables ONLY (avoid ranking table) */
+    .table-custom.text-white:not(.ranking-table-target) thead {
         display: none !important; /* Hide column headers on mobile */
     }
     
-    .table-custom.text-white tbody, 
-    .table-custom.text-white tr, 
-    .table-custom.text-white td {
+    .table-custom.text-white:not(.ranking-table-target) tbody, 
+    .table-custom.text-white:not(.ranking-table-target) tr, 
+    .table-custom.text-white:not(.ranking-table-target) td {
         display: block !important;
         width: 100% !important;
         text-align: center !important;
     }
     
-    .table-custom.text-white tr {
+    .table-custom.text-white:not(.ranking-table-target) tr {
         background: rgba(255, 255, 255, 0.05) !important;
         border: 2px solid rgba(255, 123, 84, 0.15) !important;
         border-radius: 16px !important;
@@ -700,19 +700,19 @@ body.admin-body .navbar-custom {
     }
     
     /* Table row highlight for user's own match */
-    .table-custom.text-white tr.my-match-highlight {
+    .table-custom.text-white:not(.ranking-table-target) tr.my-match-highlight {
         background: linear-gradient(135deg, rgba(255, 229, 217, 0.4) 0%, rgba(255, 202, 178, 0.4) 100%) !important;
         border: 2px solid var(--primary) !important;
         box-shadow: 0 4px 15px var(--primary-glow) !important;
     }
 
-    .table-custom.text-white td {
+    .table-custom.text-white:not(.ranking-table-target) td {
         border: none !important;
         padding: 6px 12px !important;
     }
     
     /* Add a visual table number badge indicator to mobile row layout */
-    .table-custom.text-white td:first-child {
+    .table-custom.text-white:not(.ranking-table-target) td:first-child {
         font-size: 1.1rem !important;
         font-weight: 800 !important;
         color: var(--primary) !important;
@@ -721,7 +721,7 @@ body.admin-body .navbar-custom {
         padding-bottom: 8px !important;
     }
     
-    .table-custom.text-white td:first-child::before {
+    .table-custom.text-white:not(.ranking-table-target) td:first-child::before {
         content: "卓番号: ";
         font-size: 0.9rem !important;
         font-weight: normal !important;
@@ -729,7 +729,7 @@ body.admin-body .navbar-custom {
     }
     
     /* Center the VS and style it */
-    .table-custom.text-white td:nth-child(3) {
+    .table-custom.text-white:not(.ranking-table-target) td:nth-child(3) {
         font-weight: bold !important;
         color: var(--primary) !important;
         font-size: 1rem !important;
@@ -738,18 +738,18 @@ body.admin-body .navbar-custom {
     }
 
     /* Style admin match register forms on mobile */
-    .table-custom.text-white td:last-child {
+    .table-custom.text-white:not(.ranking-table-target) td:last-child {
         border-top: 1px dashed rgba(255, 123, 84, 0.2) !important;
         margin-top: 8px !important;
         padding-top: 12px !important;
     }
     
-    .table-custom.text-white td:last-child form {
+    .table-custom.text-white:not(.ranking-table-target) td:last-child form {
         flex-direction: column !important;
         width: 100% !important;
     }
     
-    .table-custom.text-white td:last-child form button {
+    .table-custom.text-white:not(.ranking-table-target) td:last-child form button {
         width: 100% !important;
         margin-bottom: 6px !important;
     }
@@ -757,22 +757,56 @@ body.admin-body .navbar-custom {
 
 /* User Ranking Table responsive optimizations */
 @media (max-width: 768px) {
-    /* Make the screenshot container fit neatly without bloating size */
-    #rankingTableArea {
-        padding: 5px !important;
+    /* Style Ranking Table as a clean compact scrollable table list (high contrast, light background to avoid dark-theme text issue) */
+    .ranking-table-target {
+        display: table !important; /* Keep table behavior */
+        background-color: #ffffff !important;
+        color: #4A3E3D !important;
     }
     
-    /* Make table rows more compact to fit more players on one screen */
-    .table-custom th, .table-custom td {
-        padding: 8px 6px !important;
-        font-size: 0.85rem !important;
+    .ranking-table-target thead {
+        display: table-header-group !important; /* Restore headers */
     }
-
-    .table-custom th:nth-child(5), .table-custom td:nth-child(5),
-    .table-custom th:nth-child(6), .table-custom td:nth-child(6) {
-        /* Reduce width/hide less important tiebreaker headers on super small screens if needed, 
-           or simply keep them compact */
+    
+    .ranking-table-target tr {
+        display: table-row !important;
+        background-color: #ffffff !important;
+        border: none !important;
+        margin-bottom: 0 !important;
+        padding: 0 !important;
+        box-shadow: none !important;
+    }
+    
+    .ranking-table-target th,
+    .ranking-table-target td {
+        display: table-cell !important;
+        width: auto !important;
+        text-align: left !important;
+        border-bottom: 1px solid rgba(255, 123, 84, 0.15) !important;
+        padding: 8px 6px !important;
         font-size: 0.75rem !important;
+        font-weight: normal !important;
+        color: #4A3E3D !important;
+    }
+    
+    /* Ensure clear text color contrast against light rows */
+    .ranking-table-target td * {
+        color: #4A3E3D !important;
+    }
+    
+    .ranking-table-target td.text-center,
+    .ranking-table-target th.text-center {
+        text-align: center !important;
+    }
+    
+    .ranking-table-target td:first-child::before {
+        content: "" !important; /* Remove prefix */
+    }
+    
+    #rankingTableArea {
+        padding: 8px !important;
+        background-color: #ffffff !important; /* Clear light background */
+        border: 2px solid rgba(255, 123, 84, 0.25) !important;
     }
     
     /* Player List view compact styling */
