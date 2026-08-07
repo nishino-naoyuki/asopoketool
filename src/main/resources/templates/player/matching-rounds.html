@@ -127,6 +127,61 @@
         .status-ongoing { background-color: #FFF3CD; color: #856404; }
         .status-won { background-color: #D4EDDA; color: #155724; }
         .status-draw { background-color: #E2E3E5; color: #383D41; }
+
+        /* Mobile Responsive Overrides */
+        @media (max-width: 768px) {
+            body {
+                padding: 15px !important;
+            }
+            .project-header {
+                padding-left: 0 !important;
+                padding-right: 0 !important;
+                margin-bottom: 15px !important;
+            }
+            .project-container {
+                padding: 0 !important;
+            }
+            .pokemon-corner {
+                width: 70px !important;
+                height: 70px !important;
+                opacity: 0.3 !important; /* Low opacity on mobile to avoid overlapping text */
+            }
+            /* Reposition corner pokemons slightly off screen to maximize usable reading space */
+            .pokemon-top-left { top: -5px; left: -5px; }
+            .pokemon-top-right { top: -5px; right: -5px; }
+            .pokemon-bottom-left { bottom: -5px; left: -5px; }
+            .pokemon-bottom-right { bottom: -5px; right: -5px; }
+
+            .matching-grid {
+                grid-template-columns: 1fr !important; /* Force single column matching cards list */
+                gap: 12px !important;
+            }
+            
+            .project-match-card {
+                padding: 12px 15px !important;
+                border-radius: 16px !important;
+            }
+            
+            .table-num {
+                font-size: 1.5rem !important;
+                min-width: 60px !important;
+                padding-right: 10px !important;
+            }
+            
+            .players-area {
+                padding-left: 12px !important;
+            }
+            
+            .player-name-project {
+                font-size: 1rem !important;
+                max-width: 140px !important;
+            }
+
+            .player-icon {
+                width: 28px !important;
+                height: 28px !important;
+            }
+        }
     </style>
 </head>
 <body>
