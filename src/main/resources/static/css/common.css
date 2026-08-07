@@ -675,3 +675,83 @@ body.admin-body .navbar-custom {
     background-color: var(--primary) !important;
 }
 
+/* Responsive Match Table styling for mobile screens */
+@media (max-width: 576px) {
+    /* Target matching page and admin matching tables */
+    .table-custom.text-white thead {
+        display: none !important; /* Hide column headers on mobile */
+    }
+    
+    .table-custom.text-white tbody, 
+    .table-custom.text-white tr, 
+    .table-custom.text-white td {
+        display: block !important;
+        width: 100% !important;
+        text-align: center !important;
+    }
+    
+    .table-custom.text-white tr {
+        background: rgba(255, 255, 255, 0.05) !important;
+        border: 2px solid rgba(255, 123, 84, 0.15) !important;
+        border-radius: 16px !important;
+        margin-bottom: 16px !important;
+        padding: 12px 8px !important;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05) !important;
+    }
+    
+    /* Table row highlight for user's own match */
+    .table-custom.text-white tr.my-match-highlight {
+        background: linear-gradient(135deg, rgba(255, 229, 217, 0.4) 0%, rgba(255, 202, 178, 0.4) 100%) !important;
+        border: 2px solid var(--primary) !important;
+        box-shadow: 0 4px 15px var(--primary-glow) !important;
+    }
+
+    .table-custom.text-white td {
+        border: none !important;
+        padding: 6px 12px !important;
+    }
+    
+    /* Add a visual table number badge indicator to mobile row layout */
+    .table-custom.text-white td:first-child {
+        font-size: 1.1rem !important;
+        font-weight: 800 !important;
+        color: var(--primary) !important;
+        border-bottom: 1px dashed rgba(255, 123, 84, 0.2) !important;
+        margin-bottom: 8px !important;
+        padding-bottom: 8px !important;
+    }
+    
+    .table-custom.text-white td:first-child::before {
+        content: "卓番号: ";
+        font-size: 0.9rem !important;
+        font-weight: normal !important;
+        color: #8D8280 !important;
+    }
+    
+    /* Center the VS and style it */
+    .table-custom.text-white td:nth-child(3) {
+        font-weight: bold !important;
+        color: var(--primary) !important;
+        font-size: 1rem !important;
+        padding: 2px !important;
+        opacity: 0.8;
+    }
+
+    /* Style admin match register forms on mobile */
+    .table-custom.text-white td:last-child {
+        border-top: 1px dashed rgba(255, 123, 84, 0.2) !important;
+        margin-top: 8px !important;
+        padding-top: 12px !important;
+    }
+    
+    .table-custom.text-white td:last-child form {
+        flex-direction: column !important;
+        width: 100% !important;
+    }
+    
+    .table-custom.text-white td:last-child form button {
+        width: 100% !important;
+        margin-bottom: 6px !important;
+    }
+}
+
