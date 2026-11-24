@@ -51,6 +51,11 @@ public class PointService {
         int partPoint = tournament.getParticipationPoint();
 
         for (Entry entry : entries) {
+            // Only award points to checked-in participants
+            if (!entry.isCheckinFlg()) {
+                continue;
+            }
+
             // Find final rank
             Integer rank = finalRanks.get(entry.getId());
             int prizePoint = 0;
@@ -125,6 +130,11 @@ public class PointService {
                 }
             }
         }
+    }
+
+    @Transactional
+    public void resetAllCumulativePoints() {
+        pointMapper.resetAllCumulativePoints();
     }
 
     private Long getLoser(BracketMatch match) {

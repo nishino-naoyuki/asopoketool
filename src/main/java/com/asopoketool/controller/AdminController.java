@@ -67,6 +67,9 @@ public class AdminController {
     private PointMapper pointMapper;
 
     @Autowired
+    private PointService pointService;
+
+    @Autowired
     private org.springframework.security.crypto.password.PasswordEncoder passwordEncoder;
 
     @Autowired
@@ -915,5 +918,24 @@ public class AdminController {
         accountController.buildRecordsModelPublic(id, account.getDisplayName(), model);
         model.addAttribute("isAdminView", true);
         return "account/records";
+    }
+
+    /** 管理者用 年間（累計）ポイントランキング画面 */
+    @GetMapping("/ranking")
+    public String showCumulativeRanking(Model model) {
+        List<PlayerCumulativePoint> ranking = pointMapper.findAllOrderByPoint();
+        model.addAttribute("ranking", ranking);
+        model.addAttribute("currentYear", java.time.LocalDate.now().getYear());
+        return "admin/cumulative-ranking";
+    }
+
+    /** 年間（累計）ポイント一括リセット */
+    @PostMapping("/ranking/reset")
+    public String resetCumulativePoints(@RequestParam(required = false) String confirmText) {
+        if (!"リセット".equals(confirmText)) {
+            return "redirect:/admin/ranking?error=confirm";
+        }
+        pointService.resetAllCumulativePoints();
+        return "redirect:/admin/ranking?success=reset";
     }
 }

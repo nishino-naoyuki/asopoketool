@@ -18,5 +18,7 @@ public class PlayerCumulativePoint {
 
     // Transient fields
     private String displayName;
+    private String iconPath;
+    private int rank;
     private String recentResults; // e.g. "1位, 2位, 参加"
 }

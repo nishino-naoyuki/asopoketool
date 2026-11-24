@@ -5,12 +5,92 @@
 </head>
 <body>
     <div>
-        <a th:href="@{/tournament/{id}(id=${tournament.id})}" class="btn btn-outline-light btn-sm mb-4"><i class="fa-solid fa-arrow-left"></i> 大会詳細に戻る</a>
+        <style>
+            .ranking-table-target {
+                table-layout: auto;
+            }
+            .ranking-table-target th,
+            .ranking-table-target td {
+                white-space: nowrap;
+            }
+            .ranking-player-name {
+                display: inline-block;
+                vertical-align: middle;
+                max-width: 240px;
+                overflow: hidden;
+                text-overflow: ellipsis;
+                white-space: nowrap;
+            }
+            @media (max-width: 768px) {
+                .ranking-header-wrap {
+                    flex-direction: column;
+                    align-items: flex-start !important;
+                    gap: 10px;
+                }
+                .ranking-header-wrap h2 {
+                    font-size: 1.25rem;
+                }
+                #rankingTableArea {
+                    padding: 6px !important;
+                    overflow-x: hidden !important;
+                }
+                .ranking-table-target {
+                    table-layout: fixed;
+                    width: 100% !important;
+                    font-size: 0.76rem;
+                    margin-bottom: 0;
+                }
+                .ranking-table-target th,
+                .ranking-table-target td {
+                    padding: 8px 3px !important;
+                    white-space: nowrap;
+                    text-align: center;
+                }
+                .ranking-table-target th.col-rank,
+                .ranking-table-target td.col-rank {
+                    width: 13%;
+                    text-align: center;
+                }
+                .ranking-table-target th.col-name,
+                .ranking-table-target td.col-name {
+                    width: 31%;
+                    text-align: left;
+                    padding-left: 5px !important;
+                }
+                .ranking-table-target th.col-wl,
+                .ranking-table-target td.col-wl {
+                    width: 14%;
+                }
+                .ranking-table-target th.col-pt,
+                .ranking-table-target td.col-pt {
+                    width: 12%;
+                }
+                .ranking-table-target th.col-omw,
+                .ranking-table-target td.col-omw {
+                    width: 17%;
+                }
+                .ranking-table-target th.col-opp2,
+                .ranking-table-target td.col-opp2 {
+                    width: 13%;
+                }
+                .ranking-player-name {
+                    max-width: 100%;
+                    display: block;
+                }
+                .ranking-dropout-badge {
+                    font-size: 0.62rem !important;
+                    padding: 1px 4px !important;
+                    margin-left: 0 !important;
+                }
+            }
+        </style>
 
-        <div class="d-flex justify-content-between align-items-center mb-4 text-white">
+        <a th:href="@{/tournament/{id}(id=${tournament.id})}" class="btn btn-outline-light btn-sm mb-3"><i class="fa-solid fa-arrow-left"></i> 大会詳細に戻る</a>
+
+        <div class="d-flex justify-content-between align-items-center mb-3 text-white ranking-header-wrap">
             <div>
                 <h2 class="fw-bold mb-1" th:text="${tournament.name} + ' - ランキング'">大会ランキング</h2>
-                <p class="text-muted mb-0">各タイブレイカーをもとに順位が自動計算されます。</p>
+                <p class="text-muted mb-0 small">各タイブレイカーをもとに順位が自動計算されます。</p>
             </div>
             <div class="d-flex gap-2">
                 <button class="btn btn-success btn-sm" onclick="downloadScreenshot('rankingTableArea', 'ranking')">
@@ -22,45 +102,74 @@
             </div>
         </div>
 
-        <div class="card card-glass p-3 text-white mb-4 small text-muted">
+        <div class="card card-glass p-3 text-white mb-3 small text-muted">
             <i class="fa-solid fa-circle-info text-warning me-1"></i>
             <strong>タイブレイカー判定順</strong>: 
             1. 勝ち点 (勝利 3pt) &gt;&gt; 
-            2. OMW% (対戦相手の勝率平均、下限 33%) &gt;&gt; 
-            3. 対戦相手の勝ち点合計 &gt;&gt; 
-            4. OOMW% (対戦相手のOMW%平均) &gt;&gt; 
-            5. 直接対決結果
+            2. OMW% (オポ、下限 33%) &gt;&gt; 
+            3. 相手勝ち点合計 (オポ2) &gt;&gt; 
+            4. OOMW% &gt;&gt; 
+            5. 直接対決
         </div>
 
-        <div class="table-responsive" id="rankingTableArea" style="padding: 10px; background-color: #0d0d1a; border-radius: 8px;">
-            <table class="table table-custom ranking-table-target text-white w-100">
+        <div class="table-responsive" id="rankingTableArea" style="padding: 10px; background-color: #0d0d1a; border-radius: 12px;">
+            <table class="table table-custom ranking-table-target text-white w-100 mb-0">
                 <thead>
                     <tr>
-                        <th style="width: 10%">順位</th>
-                        <th style="width: 30%">プレイヤー名</th>
-                        <th class="text-center" style="width: 15%">勝敗 (W-L)</th>
-                        <th class="text-center" style="width: 15%">勝ち点</th>
-                        <th class="text-center" style="width: 15%">OMW% (オポ)</th>
-                        <th class="text-center" style="width: 15%">相手勝ち点合計 (オポ2)</th>
+                        <th class="col-rank">
+                            <span class="d-none d-md-inline">順位</span>
+                            <span class="d-inline d-md-none">順</span>
+                        </th>
+                        <th class="col-name">
+                            <span class="d-none d-md-inline">プレイヤー名</span>
+                            <span class="d-inline d-md-none">名前</span>
+                        </th>
+                        <th class="text-center col-wl">
+                            <span class="d-none d-md-inline">勝敗 (W-L)</span>
+                            <span class="d-inline d-md-none">勝敗</span>
+                        </th>
+                        <th class="text-center col-pt">
+                            <span class="d-none d-md-inline">勝ち点</span>
+                            <span class="d-inline d-md-none">Pt</span>
+                        </th>
+                        <th class="text-center col-omw">
+                            <span class="d-none d-md-inline">OMW% (オポ)</span>
+                            <span class="d-inline d-md-none">オポ</span>
+                        </th>
+                        <th class="text-center col-opp2">
+                            <span class="d-none d-md-inline">相手勝ち点合計 (オポ2)</span>
+                            <span class="d-inline d-md-none">オポ2</span>
+                        </th>
                     </tr>
                 </thead>
                 <tbody>
                     <tr th:each="r : ${ranking}">
-                        <td class="align-middle fw-bold">
-                            <!-- Medal Emojis for top 3 -->
-                            <span th:if="${r.rank == 1}" class="rank-1"><i class="fa-solid fa-medal"></i> 1位</span>
-                            <span th:if="${r.rank == 2}" class="rank-2"><i class="fa-solid fa-medal"></i> 2位</span>
-                            <span th:if="${r.rank == 3}" class="rank-3"><i class="fa-solid fa-medal"></i> 3位</span>
+                        <td class="align-middle fw-bold col-rank">
+                            <span th:if="${r.rank == 1}" class="rank-1"><i class="fa-solid fa-medal"></i><span class="d-none d-md-inline"> </span>1位</span>
+                            <span th:if="${r.rank == 2}" class="rank-2"><i class="fa-solid fa-medal"></i><span class="d-none d-md-inline"> </span>2位</span>
+                            <span th:if="${r.rank == 3}" class="rank-3"><i class="fa-solid fa-medal"></i><span class="d-none d-md-inline"> </span>3位</span>
                             <span th:if="${r.rank > 3}" th:text="${r.rank} + '位'">4位</span>
                         </td>
-                        <td class="align-middle">
-                            <span th:text="${r.playerName}" th:style="${r.isDropout ? 'text-decoration: line-through; color: #777;' : ''}">たろう</span>
-                            <span class="badge bg-secondary ms-2" th:if="${r.isDropout}">棄権</span>
+                        <td class="align-middle col-name">
+                            <span class="ranking-player-name" th:text="${r.playerName}" th:title="${r.playerName}" th:style="${r.isDropout ? 'text-decoration: line-through; color: #777;' : ''}">たろう</span>
+                            <span class="badge bg-secondary ms-1 ranking-dropout-badge" th:if="${r.isDropout}">棄権</span>
                         </td>
-                        <td class="text-center align-middle font-monospace" th:text="${r.wins} + ' - ' + ${r.losses}">5 - 0</td>
-                        <td class="text-center align-middle fw-bold text-warning font-monospace" th:text="${r.winPoints} + ' pt'">15 pt</td>
-                        <td class="text-center align-middle font-monospace" th:text="${#numbers.formatDecimal(r.omwPercent * 100, 1, 2)} + ' %'">60.00 %</td>
-                        <td class="text-center align-middle font-monospace" th:text="${r.opponentWinPointsTotal} + ' pt'">45 pt</td>
+                        <td class="text-center align-middle font-monospace col-wl">
+                            <span class="d-none d-md-inline" th:text="${r.wins} + ' - ' + ${r.losses}">5 - 0</span>
+                            <span class="d-inline d-md-none" th:text="${r.wins} + '-' + ${r.losses}">5-0</span>
+                        </td>
+                        <td class="text-center align-middle fw-bold text-warning font-monospace col-pt">
+                            <span class="d-none d-md-inline" th:text="${r.winPoints} + ' pt'">15 pt</span>
+                            <span class="d-inline d-md-none" th:text="${r.winPoints}">15</span>
+                        </td>
+                        <td class="text-center align-middle font-monospace col-omw">
+                            <span class="d-none d-md-inline" th:text="${#numbers.formatDecimal(r.omwPercent * 100, 1, 2)} + ' %'">60.00 %</span>
+                            <span class="d-inline d-md-none" th:text="${#numbers.formatDecimal(r.omwPercent * 100, 1, 1)} + '%'">60.0%</span>
+                        </td>
+                        <td class="text-center align-middle font-monospace col-opp2">
+                            <span class="d-none d-md-inline" th:text="${r.opponentWinPointsTotal} + ' pt'">45 pt</span>
+                            <span class="d-inline d-md-none" th:text="${r.opponentWinPointsTotal}">45</span>
+                        </td>
                     </tr>
                 </tbody>
             </table>

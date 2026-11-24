@@ -141,13 +141,21 @@ public class BracketService {
                 bm.setPlayer2EntryId(p2);
 
                 if (p2 == null && p1 != null) {
-                    // BYE match
+                    // BYE match (Player 1 advances)
                     bm.setWinnerEntryId(p1);
                     bm.setBye(true);
                     bracketMapper.updateBracketMatchWinner(bm.getId(), p1);
                     
                     // Auto-advance to Round 2
                     advanceWinner(bm, p1);
+                } else if (p1 == null && p2 != null) {
+                    // BYE match (Player 2 advances)
+                    bm.setWinnerEntryId(p2);
+                    bm.setBye(true);
+                    bracketMapper.updateBracketMatchWinner(bm.getId(), p2);
+                    
+                    // Auto-advance to Round 2
+                    advanceWinner(bm, p2);
                 } else if (p1 == null && p2 == null) {
                     // Double BYE (should not happen, but for safety)
                     bm.setBye(true);

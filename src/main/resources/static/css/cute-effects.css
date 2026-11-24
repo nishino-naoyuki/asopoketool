@@ -1,0 +1,233 @@
+﻿/* ============================================================
+   ASOPokeTool Cute Effects & Animations
+   ============================================================ */
+
+/* --- 🌸 四隅ポケモンの浮遊アニメーション --- */
+.pokemon-corner {
+    position: fixed;
+    width: 140px;
+    height: 140px;
+    z-index: 99;
+    pointer-events: auto !important; /* クリック・ホバー可能にする */
+    cursor: pointer;
+    filter: drop-shadow(0 8px 12px rgba(0, 0, 0, 0.12));
+    transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1), filter 0.2s ease;
+    user-select: none;
+    -webkit-user-drag: none;
+}
+
+/* 各コーナーの初期配置と浮遊キーフレーム */
+.pokemon-top-left {
+    top: 15px;
+    left: 15px;
+    animation: poke-float-tl 4s ease-in-out infinite;
+}
+.pokemon-top-right {
+    top: 15px;
+    right: 15px;
+    animation: poke-float-tr 4.5s ease-in-out infinite;
+}
+.pokemon-bottom-left {
+    bottom: 15px;
+    left: 15px;
+    animation: poke-float-bl 3.8s ease-in-out infinite;
+}
+.pokemon-bottom-right {
+    bottom: 15px;
+    right: 15px;
+    animation: poke-float-br 4.2s ease-in-out infinite;
+}
+
+/* ふわふわ浮遊キーフレーム（四隅で少しずつ動きを変える） */
+@keyframes poke-float-tl {
+    0%, 100% { transform: translate(0, 0) rotate(-10deg) scale(1); }
+    50% { transform: translate(4px, -10px) rotate(-6deg) scale(1.04); }
+}
+
+@keyframes poke-float-tr {
+    0%, 100% { transform: translate(0, 0) rotate(10deg) scale(1); }
+    50% { transform: translate(-4px, -10px) rotate(6deg) scale(1.04); }
+}
+
+@keyframes poke-float-bl {
+    0%, 100% { transform: translate(0, 0) rotate(10deg) scale(1); }
+    50% { transform: translate(4px, 8px) rotate(14deg) scale(1.04); }
+}
+
+@keyframes poke-float-br {
+    0%, 100% { transform: translate(0, 0) rotate(-10deg) scale(1); }
+    50% { transform: translate(-4px, 8px) rotate(-14deg) scale(1.04); }
+}
+
+/* ホバー時の嬉しそうな揺れ */
+.pokemon-corner:hover {
+    filter: drop-shadow(0 12px 18px rgba(255, 107, 53, 0.35)) brightness(1.08);
+}
+.pokemon-top-left:hover { animation: poke-wiggle-tl 0.6s ease-in-out infinite alternate !important; }
+.pokemon-top-right:hover { animation: poke-wiggle-tr 0.6s ease-in-out infinite alternate !important; }
+.pokemon-bottom-left:hover { animation: poke-wiggle-bl 0.6s ease-in-out infinite alternate !important; }
+.pokemon-bottom-right:hover { animation: poke-wiggle-br 0.6s ease-in-out infinite alternate !important; }
+
+@keyframes poke-wiggle-tl {
+    0% { transform: rotate(-14deg) scale(1.12); }
+    100% { transform: rotate(-4deg) scale(1.18); }
+}
+@keyframes poke-wiggle-tr {
+    0% { transform: rotate(4deg) scale(1.12); }
+    100% { transform: rotate(14deg) scale(1.18); }
+}
+@keyframes poke-wiggle-bl {
+    0% { transform: rotate(6deg) scale(1.12); }
+    100% { transform: rotate(16deg) scale(1.18); }
+}
+@keyframes poke-wiggle-br {
+    0% { transform: rotate(-16deg) scale(1.12); }
+    100% { transform: rotate(-6deg) scale(1.18); }
+}
+
+/* タップ/クリック時の大喜びジャンプ */
+.poke-jumping {
+    animation: poke-jump 0.6s cubic-bezier(0.25, 1, 0.5, 1) !important;
+}
+
+@keyframes poke-jump {
+    0% { transform: scale(1); }
+    30% { transform: scale(1.28) translateY(-22px) rotate(8deg); }
+    60% { transform: scale(0.92) translateY(4px) rotate(-6deg); }
+    80% { transform: scale(1.08) translateY(-6px) rotate(2deg); }
+    100% { transform: scale(1) translateY(0); }
+}
+
+/* --- ✨ パーティクルエフェクト --- */
+.cute-particle {
+    position: fixed;
+    pointer-events: none;
+    z-index: 9999;
+    font-size: 20px;
+    line-height: 1;
+    user-select: none;
+    animation: particle-burst 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+@keyframes particle-burst {
+    0% {
+        opacity: 1;
+        transform: translate(-50%, -50%) translate(0, 0) scale(0.4) rotate(0deg);
+    }
+    50% {
+        opacity: 0.9;
+        transform: translate(-50%, -50%) translate(var(--tx), var(--ty)) scale(1.2) rotate(var(--rot));
+    }
+    100% {
+        opacity: 0;
+        transform: translate(-50%, -50%) translate(calc(var(--tx) * 1.3), calc(var(--ty) * 1.3 + 20px)) scale(0.6) rotate(calc(var(--rot) * 1.5));
+    }
+}
+
+/* --- ⚡ ボタンタップ時のピカチュウ電撃エフェクト --- */
+.btn-electric-click {
+    position: relative;
+    overflow: hidden;
+}
+
+.btn-electric-click::after {
+    content: ;
+ position: absolute;
+ top: 50%;
+ left: 50%;
+ width: 200%;
+ height: 200%;
+ background: radial-gradient(circle, rgba(255, 230, 0, 0.5) 10%, rgba(255, 107, 53, 0) 70%);
+ transform: translate(-50%, -50%) scale(0);
+ opacity: 0;
+ pointer-events: none;
+ transition: transform 0.4s ease-out, opacity 0.4s ease-out;
+}
+
+.btn-electric-click.active-spark::after {
+ transform: translate(-50%, -50%) scale(1);
+ opacity: 1;
+ transition: 0s;
+}
+
+/* --- 🎉 お祝い紙吹雪（Confetti） --- */
+.confetti-piece {
+ position: fixed;
+ pointer-events: none;
+ z-index: 10000;
+ width: 10px;
+ height: 10px;
+ border-radius: 2px;
+ animation: confetti-fall 2.5s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards;
+}
+
+@keyframes confetti-fall {
+ 0% {
+ opacity: 1;
+ transform: translate(var(--sx), -20px) rotate(0deg) scale(1);
+ }
+ 100% {
+ opacity: 0;
+ transform: translate(var(--ex), 105vh) rotate(720deg) scale(0.6);
+ }
+}
+
+/* --- 🔊 サウンド切替ボタン（画面右下・フッターと重ならない位置） --- */
+.sound-toggle-btn {
+ position: fixed;
+ bottom: 58px;
+ right: 14px;
+ z-index: 1000;
+ height: 30px;
+ padding: 0 12px;
+ border-radius: 15px;
+ background: rgba(255, 255, 255, 0.94);
+ border: 1.5px solid #FFB6C1;
+ box-shadow: 0 3px 10px rgba(0, 0, 0, 0.12);
+ color: #FF6B35;
+ font-size: 0.75rem;
+ font-weight: 700;
+ display: inline-flex;
+ align-items: center;
+ gap: 6px;
+ cursor: pointer;
+ transition: all 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+ outline: none;
+ white-space: nowrap;
+ backdrop-filter: blur(4px);
+ user-select: none;
+}
+
+.sound-toggle-btn:hover {
+ transform: scale(1.06);
+ border-color: #FF6B35;
+ background: #FFF5EE;
+ box-shadow: 0 4px 14px rgba(255, 107, 53, 0.35);
+}
+
+.sound-toggle-btn.muted {
+ color: #888888;
+ border-color: #d1d5db;
+ background: rgba(243, 244, 246, 0.94);
+ box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
+}
+
+/* レスポンシブ対応 */
+@media (max-width: 768px) {
+ .pokemon-corner {
+ width: 75px !important;
+ height: 75px !important;
+ opacity: 0.85 !important;
+ }
+ .pokemon-top-left { top: 5px; left: 5px; }
+ .pokemon-top-right { top: 5px; right: 5px; }
+ .pokemon-bottom-left { bottom: 5px; left: 5px; }
+ .pokemon-bottom-right { bottom: 5px; right: 5px; }
+ .sound-toggle-btn {
+ bottom: 56px;
+ right: 10px;
+ height: 26px;
+ padding: 0 10px;
+ font-size: 0.7rem;
+ }
+}

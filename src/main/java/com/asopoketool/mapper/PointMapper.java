@@ -9,10 +9,12 @@ import java.util.List;
 @Mapper
 public interface PointMapper {
     List<PlayerCumulativePoint> findAllOrderByPoint();
+    List<PlayerCumulativePoint> findAllAccountsWithPointsOrderByPoint();
     PlayerCumulativePoint findByAccountId(Long accountId);
     void upsertCumulativePoint(@Param("accountId") Long accountId, @Param("addPoint") int addPoint);
     void insertHistory(PointHistory history);
     List<PointHistory> findHistoryByAccountId(Long accountId);
     List<PointHistory> findHistoryByTournamentId(Long tournamentId);
     void deleteHistoryByTournamentId(Long tournamentId);
+    void resetAllCumulativePoints();
 }

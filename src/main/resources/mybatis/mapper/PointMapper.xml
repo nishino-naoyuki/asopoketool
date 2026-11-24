@@ -3,10 +3,22 @@
 <mapper namespace="com.asopoketool.mapper.PointMapper">
 
     <select id="findAllOrderByPoint" resultType="com.asopoketool.model.PlayerCumulativePoint">
-        SELECT p.*, a.display_name AS display_name
+        SELECT p.*, a.display_name AS display_name, a.icon_path AS icon_path
         FROM player_cumulative_point p
         JOIN player_account a ON p.account_id = a.id
-        ORDER BY p.total_point DESC
+        ORDER BY p.total_point DESC, a.id ASC
+    </select>
+
+    <select id="findAllAccountsWithPointsOrderByPoint" resultType="com.asopoketool.model.PlayerCumulativePoint">
+        SELECT p.id,
+               a.id AS account_id,
+               COALESCE(p.total_point, 0) AS total_point,
+               p.updated_at AS updated_at,
+               a.display_name AS display_name,
+               a.icon_path AS icon_path
+        FROM player_account a
+        LEFT JOIN player_cumulative_point p ON a.id = p.account_id
+        ORDER BY COALESCE(p.total_point, 0) DESC, a.id ASC
     </select>
 
     <select id="findByAccountId" resultType="com.asopoketool.model.PlayerCumulativePoint">
@@ -40,6 +52,10 @@
 
     <delete id="deleteHistoryByTournamentId">
         DELETE FROM point_history WHERE tournament_id = #{tournamentId}
+    </delete>
+
+    <delete id="resetAllCumulativePoints">
+        DELETE FROM player_cumulative_point
     </delete>
 
 </mapper>

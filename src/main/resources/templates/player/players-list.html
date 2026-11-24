@@ -5,6 +5,80 @@
 </head>
 <body>
     <div>
+        <style>
+            .player-entry-row {
+                display: flex;
+                align-items: center;
+                justify-content: space-between;
+                gap: 12px;
+            }
+            .player-entry-left {
+                display: flex;
+                align-items: center;
+                gap: 12px;
+                min-width: 0;
+                flex: 1;
+            }
+            .player-entry-info {
+                min-width: 0;
+                flex: 1;
+            }
+            .player-entry-name {
+                font-weight: 700;
+                font-size: 1.05rem;
+                white-space: nowrap;
+                overflow: hidden;
+                text-overflow: ellipsis;
+            }
+            .player-entry-sub {
+                font-size: 0.78rem;
+                white-space: nowrap;
+                overflow: hidden;
+                text-overflow: ellipsis;
+            }
+            .player-entry-status {
+                display: flex;
+                align-items: center;
+                gap: 6px;
+                flex-shrink: 0;
+            }
+            @media (max-width: 768px) {
+                .players-card-body {
+                    padding: 16px 12px !important;
+                }
+                .players-header-wrap {
+                    flex-direction: column;
+                    align-items: flex-start !important;
+                    gap: 8px;
+                }
+                .players-header-wrap h2 {
+                    font-size: 1.2rem !important;
+                }
+                .player-entry-row {
+                    padding: 12px 10px !important;
+                    gap: 8px;
+                }
+                .player-entry-left {
+                    gap: 8px;
+                }
+                .player-entry-icon {
+                    width: 38px !important;
+                    height: 38px !important;
+                }
+                .player-entry-name {
+                    font-size: 0.95rem;
+                }
+                .player-entry-sub {
+                    font-size: 0.72rem;
+                }
+                .player-entry-badge {
+                    font-size: 0.72rem !important;
+                    padding: 4px 8px !important;
+                    white-space: nowrap;
+                }
+            }
+        </style>
+
         <div class="row justify-content-center">
             <div class="col-lg-8">
                 <!-- Back Link -->
@@ -14,13 +88,13 @@
                     </a>
                 </div>
 
-                <div class="card card-glass text-white p-4">
-                    <div class="d-flex justify-content-between align-items-center mb-4">
+                <div class="card card-glass text-white p-4 players-card-body">
+                    <div class="d-flex justify-content-between align-items-center mb-3 players-header-wrap">
                         <div>
                             <h2 class="fw-bold mb-1 text-white">👤 エントリー選手一覧</h2>
-                            <p class="text-muted mb-0" th:text="${tournament.name}">大会名</p>
+                            <p class="text-muted mb-0 small" th:text="${tournament.name}">大会名</p>
                         </div>
-                        <span class="badge bg-primary fs-6 px-3 py-2" th:text="${#lists.size(entries)} + ' 名が登録中'">0 名</span>
+                        <span class="badge bg-primary fs-6 px-3 py-2" style="white-space: nowrap;" th:text="${#lists.size(entries)} + ' 名が登録中'">0 名</span>
                     </div>
 
                     <div th:if="${#lists.isEmpty(entries)}" class="text-center p-5 text-muted">
@@ -29,42 +103,46 @@
                     </div>
 
                     <div th:unless="${#lists.isEmpty(entries)}" class="list-group list-group-flush rounded-4 overflow-hidden border border-secondary">
-                        <div th:each="e, iter : ${entries}" class="list-group-item bg-dark bg-opacity-70 text-white d-flex align-items-center justify-content-between p-3 border-secondary hover-bg-light-opacity">
-                            <div class="d-flex align-items-center gap-3">
+                        <div th:each="e, iter : ${entries}" class="list-group-item bg-dark bg-opacity-70 text-white p-3 border-secondary player-entry-row">
+                            <div class="player-entry-left">
                                 <!-- Order Badge -->
-                                <span class="badge bg-secondary font-monospace" style="width: 30px;" th:text="${iter.count}">1</span>
+                                <span class="badge bg-secondary font-monospace flex-shrink-0" style="min-width: 28px;" th:text="${iter.count}">1</span>
                                 
                                 <!-- User Icon -->
                                 <img th:src="${e.account?.iconPath != null ? e.account.iconPath : '/asopoketool/images/pikachu.png'}"
-                                     class="rounded-circle border border-warning"
-                                     style="width: 45px; height: 45px; object-fit: cover;"
+                                     class="rounded-circle border border-warning flex-shrink-0 player-entry-icon"
+                                     style="width: 44px; height: 44px; object-fit: cover;"
                                      alt="Icon">
 
-                                <div>
+                                <div class="player-entry-info">
                                     <!-- Player Name -->
-                                    <div class="fw-bold fs-5 text-white" th:text="${e.playerName}">たろう</div>
-                                    <!-- Account Name label (only if logged in and matched) -->
-                                    <div class="small text-muted" th:if="${e.account != null}">
-                                        <i class="fa-solid fa-user-check text-success small"></i> 会員アカウント連携済
+                                    <div class="player-entry-name text-white" th:text="${e.playerName}" th:title="${e.playerName}">たろう</div>
+                                    <!-- Account label -->
+                                    <div class="player-entry-sub text-muted" th:if="${e.account != null}">
+                                        <i class="fa-solid fa-user-check text-success"></i> 会員連携済
                                     </div>
-                                    <div class="small text-muted" th:if="${e.account == null}">
-                                        <i class="fa-regular fa-user small"></i> ゲスト枠エントリー
+                                    <div class="player-entry-sub text-muted" th:if="${e.account == null}">
+                                        <i class="fa-regular fa-user"></i> ゲスト参加
                                     </div>
                                 </div>
                             </div>
 
-                            <div>
+                            <div class="player-entry-status">
                                 <!-- Checkin Status -->
-                                <span th:if="${e.checkinFlg}" class="badge bg-success px-3 py-2">
-                                    <i class="fa-solid fa-circle-check"></i> チェックイン完了
+                                <span th:if="${e.checkinFlg}" class="badge bg-success px-2 px-md-3 py-2 player-entry-badge">
+                                    <i class="fa-solid fa-circle-check"></i>
+                                    <span class="d-none d-sm-inline"> チェックイン完了</span>
+                                    <span class="d-inline d-sm-none"> 済</span>
                                 </span>
-                                <span th:unless="${e.checkinFlg}" class="badge bg-warning text-dark px-3 py-2">
-                                    <i class="fa-regular fa-clock"></i> エントリー済み
+                                <span th:unless="${e.checkinFlg}" class="badge bg-warning text-dark px-2 px-md-3 py-2 player-entry-badge">
+                                    <i class="fa-regular fa-clock"></i>
+                                    <span class="d-none d-sm-inline"> エントリー済</span>
+                                    <span class="d-inline d-sm-none"> 未</span>
                                 </span>
                                 
                                 <!-- Dropout Status -->
-                                <span th:if="${e.dropoutFlg}" class="badge bg-danger ms-2 px-3 py-2">
-                                    ドロップアウト
+                                <span th:if="${e.dropoutFlg}" class="badge bg-danger px-2 py-2 player-entry-badge">
+                                    棄権
                                 </span>
                             </div>
                         </div>

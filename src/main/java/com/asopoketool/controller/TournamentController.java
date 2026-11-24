@@ -34,6 +34,50 @@ public class TournamentController {
     @Autowired
     private com.asopoketool.mapper.TournamentRoundMapper roundMapper;
 
+    @Autowired
+    private com.asopoketool.mapper.EntryMapper entryMapper;
+
+    @PostMapping("/tournament/{id}/restore-session")
+    @ResponseBody
+    public Map<String, Object> restoreGuestSession(@PathVariable Long id,
+                                                   @RequestParam String sessionToken,
+                                                   HttpServletRequest request,
+                                                   javax.servlet.http.HttpServletResponse response) {
+        Map<String, Object> res = new HashMap<>();
+
+        // 1. ログイン中の会員ユーザーがいる場合は、ゲストの復元は絶対に行わない（ログインユーザー最優先）
+        if (Boolean.TRUE.equals(request.getAttribute("isLoggedIn"))) {
+            res.put("success", false);
+            res.put("message", "Already logged in as member");
+            return res;
+        }
+
+        if (sessionToken == null || sessionToken.trim().isEmpty()) {
+            res.put("success", false);
+            res.put("message", "Session token is empty");
+            return res;
+        }
+
+        // 2. 該当大会のゲストエントリー（accountId == null）が存在するか検証
+        Entry entry = entryMapper.findByTournamentAndSession(id, sessionToken.trim());
+        if (entry != null && entry.getAccountId() == null) {
+            // 3. Cookie (SESSION_TOKEN) を再発行
+            javax.servlet.http.Cookie cookie = new javax.servlet.http.Cookie("SESSION_TOKEN", sessionToken.trim());
+            cookie.setPath("/");
+            cookie.setMaxAge(60 * 60 * 24 * 365); // 1 year
+            cookie.setHttpOnly(true);
+            response.addCookie(cookie);
+
+            res.put("success", true);
+            res.put("playerName", entry.getPlayerName());
+            return res;
+        }
+
+        res.put("success", false);
+        res.put("message", "Entry not found or not a guest entry");
+        return res;
+    }
+
     @GetMapping
     public String index(Model model) {
         List<Tournament> all = tournamentService.getAllTournaments();
@@ -246,12 +290,20 @@ public class TournamentController {
     }
 
     @GetMapping("/tournament/{id}/bracket/matches")
-    public String showBracketMatches(@PathVariable Long id, Model model) {
+    public String showBracketMatches(@PathVariable Long id, HttpServletRequest request, Model model) {
         Tournament tournament = tournamentService.getTournamentById(id);
         if (tournament == null) {
             return "redirect:/";
         }
         model.addAttribute("tournament", tournament);
+
+        // Fetch user's entry info for player result registration
+        String sessionToken = (String) request.getAttribute("sessionToken");
+        PlayerAccount account = (PlayerAccount) request.getAttribute("currentAccount");
+        Long accountId = (account != null) ? account.getId() : null;
+        Entry myEntry = entryService.getEntryForCurrentUser(id, sessionToken, accountId);
+        model.addAttribute("myEntry", myEntry);
+        model.addAttribute("isLoggedIn", account != null);
 
         List<BracketTournament> brackets = bracketService.getBracketsByTournament(id);
         
@@ -262,6 +314,9 @@ public class TournamentController {
         int round1TableAcc = 1;
         int round2TableAcc = 1;
         int round3TableAcc = 1;
+
+        Map<Integer, Boolean> isRoundFinishedMap = new HashMap<>();
+        int maxRound = 1;
 
         if (brackets != null) {
             // グループ名でソートして、グループA, B, C の順にする
@@ -280,24 +335,30 @@ public class TournamentController {
                 });
 
                 for (BracketMatch bm : matches) {
+                    if (bm.getRoundNumber() > maxRound) {
+                        maxRound = bm.getRoundNumber();
+                    }
                     if (bm.getRoundNumber() == 1) {
                         int tableNum = round1TableAcc++;
                         round1Matches.add(new BracketMatchDisplay(
-                            bt.getGroupName(), tableNum, bm.getPlayer1Name(), bm.getPlayer2Name(),
+                            bm.getId(), bt.getGroupName(), tableNum, bm.getPlayer1Name(), bm.getPlayer2Name(),
+                            bm.getPlayer1IconPath(), bm.getPlayer2IconPath(),
                             bm.isBye(), bm.getWinnerEntryId(), bm.getPlayer1EntryId(), bm.getPlayer2EntryId(),
                             bm.getRoundNumber(), bm.getMatchNumber()
                         ));
                     } else if (bm.getRoundNumber() == 2) {
                         int tableNum = round2TableAcc++;
                         round2Matches.add(new BracketMatchDisplay(
-                            bt.getGroupName(), tableNum, bm.getPlayer1Name(), bm.getPlayer2Name(),
+                            bm.getId(), bt.getGroupName(), tableNum, bm.getPlayer1Name(), bm.getPlayer2Name(),
+                            bm.getPlayer1IconPath(), bm.getPlayer2IconPath(),
                             bm.isBye(), bm.getWinnerEntryId(), bm.getPlayer1EntryId(), bm.getPlayer2EntryId(),
                             bm.getRoundNumber(), bm.getMatchNumber()
                         ));
                     } else if (bm.getRoundNumber() == 3) {
                         int tableNum = round3TableAcc++;
                         round3Matches.add(new BracketMatchDisplay(
-                            bt.getGroupName(), tableNum, bm.getPlayer1Name(), bm.getPlayer2Name(),
+                            bm.getId(), bt.getGroupName(), tableNum, bm.getPlayer1Name(), bm.getPlayer2Name(),
+                            bm.getPlayer1IconPath(), bm.getPlayer2IconPath(),
                             bm.isBye(), bm.getWinnerEntryId(), bm.getPlayer1EntryId(), bm.getPlayer2EntryId(),
                             bm.getRoundNumber(), bm.getMatchNumber()
                         ));
@@ -305,6 +366,12 @@ public class TournamentController {
                 }
             }
         }
+
+        for (int r = 1; r <= maxRound; r++) {
+            TournamentRound tr = roundMapper.findByTournamentAndRound(id, 100 + r);
+            isRoundFinishedMap.put(r, tr != null && "FINISHED".equals(tr.getStatus()));
+        }
+        model.addAttribute("isRoundFinishedMap", isRoundFinishedMap);
 
         model.addAttribute("round1Matches", round1Matches);
         model.addAttribute("round2Matches", round2Matches);
@@ -314,10 +381,13 @@ public class TournamentController {
     }
 
     public static class BracketMatchDisplay {
+        private Long matchId;
         private String groupName;
         private int tableNumber;
         private String player1Name;
         private String player2Name;
+        private String player1Icon;
+        private String player2Icon;
         private boolean isBye;
         private Long winnerEntryId;
         private Long player1EntryId;
@@ -326,10 +396,17 @@ public class TournamentController {
         private int matchNumber;
 
         public BracketMatchDisplay(String groupName, int tableNumber, String player1Name, String player2Name, boolean isBye, Long winnerEntryId, Long player1EntryId, Long player2EntryId, int roundNumber, int matchNumber) {
+            this(null, groupName, tableNumber, player1Name, player2Name, null, null, isBye, winnerEntryId, player1EntryId, player2EntryId, roundNumber, matchNumber);
+        }
+
+        public BracketMatchDisplay(Long matchId, String groupName, int tableNumber, String player1Name, String player2Name, String player1Icon, String player2Icon, boolean isBye, Long winnerEntryId, Long player1EntryId, Long player2EntryId, int roundNumber, int matchNumber) {
+            this.matchId = matchId;
             this.groupName = groupName;
             this.tableNumber = tableNumber;
             this.player1Name = player1Name;
             this.player2Name = player2Name;
+            this.player1Icon = player1Icon;
+            this.player2Icon = player2Icon;
             this.isBye = isBye;
             this.winnerEntryId = winnerEntryId;
             this.player1EntryId = player1EntryId;
@@ -338,10 +415,13 @@ public class TournamentController {
             this.matchNumber = matchNumber;
         }
 
+        public Long getMatchId() { return matchId; }
         public String getGroupName() { return groupName; }
         public int getTableNumber() { return tableNumber; }
         public String getPlayer1Name() { return player1Name; }
         public String getPlayer2Name() { return player2Name; }
+        public String getPlayer1Icon() { return player1Icon; }
+        public String getPlayer2Icon() { return player2Icon; }
         public boolean isBye() { return isBye; }
         public Long getWinnerEntryId() { return winnerEntryId; }
         public Long getPlayer1EntryId() { return player1EntryId; }

@@ -41,6 +41,15 @@ public class RankingService {
         }
 
         List<Entry> allEntries = entryMapper.findByTournamentId(tournamentId);
+        // Exclude un-checked-in entries from ranking
+        List<Entry> checkedInEntries = allEntries.stream()
+                .filter(Entry::isCheckinFlg)
+                .collect(Collectors.toList());
+
+        if (checkedInEntries.isEmpty()) {
+            return Collections.emptyList();
+        }
+
         List<MatchGame> allMatches = matchGameMapper.findAllByTournamentId(tournamentId);
 
         // Pre-build match results for quick lookup
@@ -57,7 +66,7 @@ public class RankingService {
         Map<Long, Integer> matchesPlayedMap = new HashMap<>();
         Map<Long, List<Long>> opponentsMap = new HashMap<>();
 
-        for (Entry e : allEntries) {
+        for (Entry e : checkedInEntries) {
             winsMap.put(e.getId(), 0);
             matchesPlayedMap.put(e.getId(), 0);
             opponentsMap.put(e.getId(), new ArrayList<>());
@@ -73,10 +82,10 @@ public class RankingService {
 
             // Player 1
             Long p1 = m.getPlayer1EntryId();
-            if (p1 != null) {
+            if (p1 != null && opponentsMap.containsKey(p1)) {
                 if (!m.isBye()) {
                     matchesPlayedMap.put(p1, matchesPlayedMap.getOrDefault(p1, 0) + 1);
-                    if (m.getPlayer2EntryId() != null) {
+                    if (m.getPlayer2EntryId() != null && opponentsMap.containsKey(m.getPlayer2EntryId())) {
                         opponentsMap.get(p1).add(m.getPlayer2EntryId());
                     }
                 } else {
@@ -91,9 +100,11 @@ public class RankingService {
 
             // Player 2
             Long p2 = m.getPlayer2EntryId();
-            if (p2 != null && !m.isBye()) {
+            if (p2 != null && !m.isBye() && opponentsMap.containsKey(p2)) {
                 matchesPlayedMap.put(p2, matchesPlayedMap.getOrDefault(p2, 0) + 1);
-                opponentsMap.get(p2).add(p1);
+                if (p1 != null && opponentsMap.containsKey(p1)) {
+                    opponentsMap.get(p2).add(p1);
+                }
                 if (hasResult && p2.equals(r.getWinnerEntryId())) {
                     winsMap.put(p2, winsMap.getOrDefault(p2, 0) + 1);
                 }
@@ -107,17 +118,17 @@ public class RankingService {
 
         // Tracks rounds each player actually participated in
         Map<Long, Set<Integer>> playedRoundsMap = new HashMap<>();
-        for (Entry e : allEntries) {
+        for (Entry e : checkedInEntries) {
             playedRoundsMap.put(e.getId(), new HashSet<>());
         }
 
         for (MatchGame m : allMatches) {
             Integer rNum = roundIdToNumberMap.get(m.getRoundId());
             if (rNum != null) {
-                if (m.getPlayer1EntryId() != null) {
+                if (m.getPlayer1EntryId() != null && playedRoundsMap.containsKey(m.getPlayer1EntryId())) {
                     playedRoundsMap.get(m.getPlayer1EntryId()).add(rNum);
                 }
-                if (m.getPlayer2EntryId() != null && !m.isBye()) {
+                if (m.getPlayer2EntryId() != null && !m.isBye() && playedRoundsMap.containsKey(m.getPlayer2EntryId())) {
                     playedRoundsMap.get(m.getPlayer2EntryId()).add(rNum);
                 }
             }
@@ -128,7 +139,7 @@ public class RankingService {
         int winPointVal = tournament.getWinPoint();
         int currentRound = tournament.getCurrentRound();
 
-        for (Entry e : allEntries) {
+        for (Entry e : checkedInEntries) {
             int wins = winsMap.get(e.getId());
             int actualPlayed = matchesPlayedMap.get(e.getId());
             int winPoints = wins * winPointVal;

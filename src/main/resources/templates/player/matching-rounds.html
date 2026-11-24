@@ -7,6 +7,7 @@
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
     <link th:href="@{/css/common.css}" rel="stylesheet">
+    <link th:href="@{/css/cute-effects.css}" rel="stylesheet">
     <style>
         body {
             background-color: #FFFDF0; /* パステルイエロー背景 */
@@ -119,67 +120,104 @@
 
         .status-badge {
             font-size: 0.8rem;
-            padding: 3px 10px;
+            padding: 4px 10px;
             border-radius: 20px;
             font-weight: bold;
             display: inline-block;
+            white-space: nowrap;
         }
         .status-ongoing { background-color: #FFF3CD; color: #856404; }
         .status-won { background-color: #D4EDDA; color: #155724; }
         .status-draw { background-color: #E2E3E5; color: #383D41; }
+        .status-report { background: linear-gradient(135deg, #FF6B35, #FF8E53); color: #ffffff; }
 
         /* Mobile Responsive Overrides */
         @media (max-width: 768px) {
             body {
-                padding: 15px !important;
+                padding: 12px 10px 60px 10px !important;
             }
             .project-header {
                 padding-left: 0 !important;
                 padding-right: 0 !important;
-                margin-bottom: 15px !important;
+                margin-bottom: 14px !important;
+            }
+            .project-title {
+                font-size: 1.35rem !important;
+            }
+            .project-header p {
+                font-size: 0.85rem !important;
             }
             .project-container {
                 padding: 0 !important;
             }
             .pokemon-corner {
-                width: 70px !important;
-                height: 70px !important;
-                opacity: 0.3 !important; /* Low opacity on mobile to avoid overlapping text */
+                display: none !important;
             }
-            /* Reposition corner pokemons slightly off screen to maximize usable reading space */
-            .pokemon-top-left { top: -5px; left: -5px; }
-            .pokemon-top-right { top: -5px; right: -5px; }
-            .pokemon-bottom-left { bottom: -5px; left: -5px; }
-            .pokemon-bottom-right { bottom: -5px; right: -5px; }
 
             .matching-grid {
-                grid-template-columns: 1fr !important; /* Force single column matching cards list */
-                gap: 12px !important;
+                grid-template-columns: 1fr !important;
+                gap: 10px !important;
             }
-            
+
             .project-match-card {
-                padding: 12px 15px !important;
+                flex-direction: column !important;
+                align-items: stretch !important;
+                padding: 12px 14px !important;
                 border-radius: 16px !important;
+                gap: 8px;
             }
-            
+
+            .mobile-card-top {
+                display: flex !important;
+                justify-content: space-between;
+                align-items: center;
+                padding-bottom: 8px;
+                border-bottom: 1px dashed rgba(255, 182, 193, 0.7);
+            }
+            .mobile-table-chip {
+                font-weight: 800;
+                font-size: 0.95rem;
+                color: #FF6B35;
+                background: #FFF3EB;
+                border: 1px solid #FFD0B3;
+                padding: 2px 10px;
+                border-radius: 999px;
+                white-space: nowrap;
+            }
+
             .table-num {
-                font-size: 1.5rem !important;
-                min-width: 60px !important;
-                padding-right: 10px !important;
+                display: none !important;
             }
-            
+
             .players-area {
-                padding-left: 12px !important;
+                padding-left: 0 !important;
+                width: 100%;
             }
-            
+
+            .player-row {
+                width: 100%;
+            }
+
             .player-name-project {
-                font-size: 1rem !important;
-                max-width: 140px !important;
+                font-size: 0.98rem !important;
+                max-width: calc(100vw - 95px) !important;
+                white-space: nowrap;
+                overflow: hidden;
+                text-overflow: ellipsis;
             }
 
             .player-icon {
-                width: 28px !important;
-                height: 28px !important;
+                width: 30px !important;
+                height: 30px !important;
+                flex-shrink: 0;
+            }
+
+            .status-badge {
+                font-size: 0.74rem;
+                padding: 3px 9px;
+                max-width: 185px;
+                overflow: hidden;
+                text-overflow: ellipsis;
             }
         }
     </style>
@@ -192,7 +230,12 @@
     <img th:src="@{/images/squirtle.png}" class="pokemon-corner pokemon-bottom-left" alt="ゼニガメ">
     <img th:src="@{/images/pikachu.png}" class="pokemon-corner pokemon-bottom-right" alt="ピカチュウ">
 
-    <div class="container-fluid project-container">
+    <div class="container-fluid project-container" id="matchingRoundsRoot" th:data-tournament-id="${tournament.id}">
+        <div th:if="${isAdmin == null || !isAdmin}" class="mb-2">
+            <a th:href="@{/tournament/{id}(id=${tournament.id})}" class="btn btn-outline-secondary btn-sm" style="border-radius: 10px; background: rgba(255,255,255,0.85);">
+                <i class="fa-solid fa-arrow-left"></i> 大会詳細に戻る
+            </a>
+        </div>
         <div class="project-header">
             <h1 class="display-5 fw-bold project-title mb-1" th:text="${tournament.name}">大会名</h1>
             <p class="text-muted mb-2 fs-5">予選スイスドロー対戦表（ラウンド結果・報告）</p>
@@ -256,6 +299,17 @@
                              th:data-p2-icon="${m.player2Icon != null ? m.player2Icon : '/asopoketool/images/pikachu.png'}"
                              onclick="handleCardClick(this)">
                             
+                            <!-- Mobile Top Header (Table + Status) -->
+                            <div class="mobile-card-top d-none">
+                                <span class="mobile-table-chip" th:text="${m.tableNumber} + '番卓'">1番卓</span>
+                                <div>
+                                    <span class="status-badge status-report" th:if="${!m.hasResult && myEntry != null && (myEntry.id == m.player1EntryId || myEntry.id == m.player2EntryId)}"><i class="fa-solid fa-pen-to-square me-1"></i>結果報告</span>
+                                    <span class="status-badge status-ongoing" th:if="${!m.hasResult && (myEntry == null || (myEntry.id != m.player1EntryId && myEntry.id != m.player2EntryId))}">対戦中</span>
+                                    <span class="status-badge status-draw" th:if="${m.hasResult && m.resultWinnerEntryId == null}">引き分け</span>
+                                    <span class="status-badge status-won" th:if="${m.hasResult && m.resultWinnerEntryId != null}" th:text="${m.resultWinnerEntryId == m.player1EntryId ? m.player1Name + ' 勝' : (m.player2Name != null ? m.player2Name + ' 勝' : '勝者決定')}"></span>
+                                </div>
+                            </div>
+
                             <div class="table-num text-center">
                                 <span th:text="${m.tableNumber}">1</span>
                                 <span class="d-block fs-6 text-muted">番卓</span>
@@ -263,7 +317,7 @@
                             
                             <div class="players-area">
                                 <div class="d-flex justify-content-between align-items-center">
-                                    <div class="d-flex flex-column gap-2">
+                                    <div class="d-flex flex-column gap-2 flex-grow-1" style="min-width: 0;">
                                         <!-- Player 1 -->
                                         <div class="player-row">
                                             <img th:src="${m.player1Icon != null ? m.player1Icon : '/asopoketool/images/pikachu.png'}" class="player-icon" alt="icon">
@@ -278,10 +332,11 @@
                                         </div>
                                     </div>
                                     
-                                    <!-- Status / Winner display -->
-                                    <div class="text-end pe-2">
+                                    <!-- Status / Winner display (Desktop) -->
+                                    <div class="text-end pe-2 d-none d-md-block">
                                         <!-- 1. Ongoing -->
-                                        <div class="status-badge status-ongoing" th:if="${!m.hasResult}">対戦中</div>
+                                        <div class="status-badge status-report" th:if="${!m.hasResult && myEntry != null && (myEntry.id == m.player1EntryId || myEntry.id == m.player2EntryId)}"><i class="fa-solid fa-pen-to-square me-1"></i>結果報告</div>
+                                        <div class="status-badge status-ongoing" th:if="${!m.hasResult && (myEntry == null || (myEntry.id != m.player1EntryId && myEntry.id != m.player2EntryId))}">対戦中</div>
                                         
                                         <!-- 2. Result exists -->
                                         <div th:if="${m.hasResult}">
@@ -481,7 +536,9 @@
                 return;
             }
 
-            const url = '/asopoketool/tournament/' + '[[${tournament.id}]]' + '/result/' + matchId + '/ajax';
+            const rootElem = document.getElementById('matchingRoundsRoot');
+            const tournamentId = rootElem ? rootElem.getAttribute('data-tournament-id') : '';
+            const url = '/asopoketool/tournament/' + tournamentId + '/result/' + matchId + '/ajax';
             
             const formData = new URLSearchParams();
             if (winnerEntryId !== '') {
@@ -510,5 +567,9 @@
             });
         }
     </script>
+    <!-- Cute Effects & Sound Engine -->
+    <script th:src="@{/js/cute-effects.js}"></script>
+    <!-- Guest Session Sync Script -->
+    <th:block th:replace="~{layout/guest-session :: guestSessionSync}"></th:block>
 </body>
 </html>

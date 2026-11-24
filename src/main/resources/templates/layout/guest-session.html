@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head></head>
+<body>
+    <th:block th:fragment="guestSessionSync">
+        <script th:inline="javascript">
+        (function() {
+            try {
+                const tid = /*[[${tournament != null ? tournament.id : null}]]*/ null;
+                if (!tid) return;
+
+                const storageKey = 'asopoketool_guest_entry_' + tid;
+                const attemptKey = 'asopoketool_restore_attempted_' + tid;
+                const isLoggedIn = /*[[${isLoggedIn}]]*/ false;
+                const tStatus = /*[[${tournament != null ? tournament.status : ''}]]*/ '';
+                const myEntrySessionToken = /*[[${myEntry != null && myEntry.accountId == null ? myEntry.sessionToken : null}]]*/ null;
+                const hasMyEntry = /*[[${myEntry != null}]]*/ false;
+                const restoreUrl = /*[[@{/tournament/{id}/restore-session(id=${tournament != null ? tournament.id : 0})}]]*/ '';
+
+                // 1. 期限切れ（3日以上経過）の古いゲストエントリーを自動クリーンアップ
+                for (let i = 0; i < localStorage.length; i++) {
+                    const k = localStorage.key(i);
+                    if (k && k.startsWith('asopoketool_guest_entry_')) {
+                        try {
+                            const item = JSON.parse(localStorage.getItem(k));
+                            if (item && item.savedAt && (Date.now() - item.savedAt > 259200000)) { // 3 days = 259200000 ms
+                                localStorage.removeItem(k);
+                            }
+                        } catch (e) {}
+                    }
+                }
+
+                // 2. 会員ログイン中 または 大会終了時は、ゲスト用ローカルストレージを削除（会員最優先・終了後破棄）
+                if (isLoggedIn || tStatus === 'FINISHED') {
+                    localStorage.removeItem(storageKey);
+                    return;
+                }
+
+                // 3. ゲストエントリーが存在する場合は最新のセッショントークンをローカルストレージに保存
+                if (!isLoggedIn && hasMyEntry && myEntrySessionToken) {
+                    localStorage.setItem(storageKey, JSON.stringify({
+                        tournamentId: tid,
+                        sessionToken: myEntrySessionToken,
+                        savedAt: Date.now()
+                    }));
+                    sessionStorage.removeItem(attemptKey);
+                    return;
+                }
+
+                // 4. 未ログイン かつ エントリー情報なし（Cookie消失）の場合に自動復元を試行
+                if (!isLoggedIn && !hasMyEntry && tStatus !== 'FINISHED') {
+                    const raw = localStorage.getItem(storageKey);
+                    if (!raw) return;
+
+                    const data = JSON.parse(raw);
+                    if (!data || !data.sessionToken) {
+                        localStorage.removeItem(storageKey);
+                        return;
+                    }
+
+                    // 3日以上経過している場合は破棄
+                    if (data.savedAt && (Date.now() - data.savedAt > 259200000)) {
+                        localStorage.removeItem(storageKey);
+                        return;
+                    }
+
+                    // 同一セッションでの無限リロードループ防止
+                    if (sessionStorage.getItem(attemptKey)) {
+                        return;
+                    }
+
+                    fetch(restoreUrl + '?sessionToken=' + encodeURIComponent(data.sessionToken), {
+                        method: 'POST'
+                    })
+                    .then(function(res) { return res.json(); })
+                    .then(function(resData) {
+                        if (resData.success) {
+                            sessionStorage.removeItem(attemptKey);
+                            window.location.reload();
+                        } else {
+                            sessionStorage.setItem(attemptKey, '1');
+                            if (resData.message === 'Entry not found or not a guest entry') {
+                                localStorage.removeItem(storageKey);
+                            }
+                        }
+                    })
+                    .catch(function(err) {
+                        console.error('Session restore failed', err);
+                    });
+                }
+            } catch(e) {
+                console.error('Guest session sync error', e);
+            }
+        })();
+        </script>
+    </th:block>
+</body>
+</html>

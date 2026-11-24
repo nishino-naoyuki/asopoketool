@@ -50,6 +50,13 @@
     <div class="container my-4">
         <a th:href="@{/admin/tournament/{id}(id=${tournament.id})}" class="btn btn-outline-light btn-sm mb-4"><i class="fa-solid fa-arrow-left"></i> 大会管理に戻る</a>
 
+        <div id="tournamentBracketMeta" 
+             th:data-tournament-name="${tournament.name}" 
+             th:data-icon-path="${tournament.iconPath}" 
+             th:data-held-date="${tournament.heldDate}" 
+             th:data-venue="${tournament.venue}" 
+             style="display:none;"></div>
+
         <div class="d-flex justify-content-between align-items-center mb-4 text-white">
             <div>
                 <h2 class="fw-bold mb-1" th:text="${tournament.name} + ' - 決勝トーナメント管理'">決勝T管理</h2>
@@ -97,109 +104,115 @@
                 <div class="tab-pane fade" th:each="b, iter : ${brackets}" th:classappend="${iter.first ? 'show active' : ''}" 
                      th:id="'panel-' + ${b.id}" role="tabpanel" th:aria-labelledby="'tab-' + ${b.id}">
                     
-                    <div th:id="'bracketArea-' + ${b.id}" class="card-glass p-4 overflow-auto">
-                        <div class="d-flex gap-5 py-3 align-items-center justify-content-between bracket-tree-container" style="min-width: 800px; position: relative;">
+                    <div th:id="'bracketArea-' + ${b.id}" th:data-group-name="${b.groupName}" class="card-glass p-4 overflow-auto">
+                        <div class="bracket-tree-container" th:data-group-id="${b.id}">
                             
-                             <!-- Round 1 matches -->
-                            <div class="bracket-round bracket-round-1 d-flex flex-column justify-content-around h-100" style="min-height: 500px; min-width: 220px;">
-                                <h5 class="text-center text-muted small border-bottom border-secondary pb-2 mb-4">1回戦 (準々決勝)</h5>
-                                <div th:each="m : ${b.matches}" th:if="${m.roundNumber == 1}" class="bracket-match-box"
-                                     th:classappend="${m.winnerEntryId != null} ? (${m.winnerEntryId == m.player1EntryId} ? 'winner-p1' : 'winner-p2') : ''"
-                                     th:data-round="1"
-                                     th:data-match-num="${m.matchNumber}"
-                                     th:data-p1-name="${m.player1Name != null ? m.player1Name : '（TBD）'}"
-                                     th:data-p2-name="${m.isBye ? '（不戦勝）' : (m.player2Name != null ? m.player2Name : '（TBD）')}"
-                                     th:data-winner-id="${m.winnerEntryId}"
-                                     th:data-p1-id="${m.player1EntryId}"
-                                     th:data-p2-id="${m.player2EntryId}"
-                                     th:data-is-bye="${m.isBye}">
-                                    <div class="small text-muted mb-1 text-center font-monospace" th:text="'マッチ ' + ${m.matchNumber}">M1</div>
-                                    
-                                    <!-- Player 1 -->
-                                    <button class="btn btn-sm w-100 text-start bracket-player mb-1" 
-                                            th:classappend="${m.winnerEntryId != null && m.winnerEntryId == m.player1EntryId ? 'winner btn-success' : 'btn-outline-light'}"
-                                            th:onclick="'setWinner(' + ${m.id} + ', ' + ${m.player1EntryId} + ')'"
-                                            th:disabled="${m.player1EntryId == null || m.isBye || isRoundFinishedMap.get(m.roundNumber)}">
-                                        <span th:text="${m.player1Name != null ? m.player1Name : '（TBD）'}">選手A</span>
-                                    </button>
-                                    
-                                    <!-- Player 2 -->
-                                    <button class="btn btn-sm w-100 text-start bracket-player" 
-                                            th:classappend="${m.winnerEntryId != null && m.winnerEntryId == m.player2EntryId ? 'winner btn-success' : 'btn-outline-light'}"
-                                            th:onclick="'setWinner(' + ${m.id} + ', ' + ${m.player2EntryId} + ')'"
-                                            th:disabled="${m.player2EntryId == null || m.isBye || isRoundFinishedMap.get(m.roundNumber)}">
-                                        <span th:text="${m.isBye ? '（不戦勝）' : (m.player2Name != null ? m.player2Name : '（TBD）')}">選手B</span>
-                                    </button>
-                                    <div class="match-number-badge" th:text="${m.matchNumber}">1</div>
+                            <!-- Round 1 matches -->
+                            <div th:if="${#lists.size(b.matches.?[roundNumber == 1]) > 0}" class="bracket-round bracket-round-1">
+                                <h5 class="bracket-round-title text-center text-muted small border-bottom border-secondary pb-2">1回戦</h5>
+                                <div class="bracket-round-matches">
+                                    <div th:each="m : ${b.matches}" th:if="${m.roundNumber == 1}" class="bracket-match-box"
+                                         th:classappend="${m.winnerEntryId != null} ? (${m.winnerEntryId == m.player1EntryId} ? 'winner-p1' : 'winner-p2') : ''"
+                                         th:data-round="1"
+                                         th:data-match-num="${m.matchNumber}"
+                                         th:data-p1-name="${m.isBye && m.player1EntryId == null ? '（不戦勝）' : (m.player1Name != null ? m.player1Name : '（TBD）')}"
+                                         th:data-p2-name="${m.isBye && m.player2EntryId == null ? '（不戦勝）' : (m.player2Name != null ? m.player2Name : '（TBD）')}"
+                                         th:data-winner-id="${m.winnerEntryId}"
+                                         th:data-p1-id="${m.player1EntryId}"
+                                         th:data-p2-id="${m.player2EntryId}"
+                                         th:data-is-bye="${m.isBye}">
+                                        <div class="small text-muted mb-1 text-center font-monospace" th:text="'マッチ ' + ${m.matchNumber}">M1</div>
+                                        
+                                        <!-- Player 1 -->
+                                        <button class="btn btn-sm w-100 text-start bracket-player mb-1" 
+                                                th:classappend="${m.winnerEntryId != null && m.winnerEntryId == m.player1EntryId ? 'winner btn-success' : 'btn-outline-light'}"
+                                                th:onclick="'setWinner(' + ${m.id} + ', ' + ${m.player1EntryId} + ')'"
+                                                th:disabled="${m.player1EntryId == null || m.isBye || isRoundFinishedMap.get(m.roundNumber)}">
+                                            <span th:text="${m.isBye && m.player1EntryId == null ? '（不戦勝）' : (m.player1Name != null ? m.player1Name : '（TBD）')}">選手A</span>
+                                        </button>
+                                        
+                                        <!-- Player 2 -->
+                                        <button class="btn btn-sm w-100 text-start bracket-player" 
+                                                th:classappend="${m.winnerEntryId != null && m.winnerEntryId == m.player2EntryId ? 'winner btn-success' : 'btn-outline-light'}"
+                                                th:onclick="'setWinner(' + ${m.id} + ', ' + ${m.player2EntryId} + ')'"
+                                                th:disabled="${m.player2EntryId == null || m.isBye || isRoundFinishedMap.get(m.roundNumber)}">
+                                            <span th:text="${m.isBye && m.player2EntryId == null ? '（不戦勝）' : (m.player2Name != null ? m.player2Name : '（TBD）')}">選手B</span>
+                                        </button>
+                                        <div class="match-number-badge" th:text="${m.matchNumber}">1</div>
+                                    </div>
                                 </div>
                             </div>
 
                             <!-- Round 2 matches -->
-                            <div class="bracket-round bracket-round-2 d-flex flex-column justify-content-around h-100" style="min-height: 500px; min-width: 220px;">
-                                <h5 class="text-center text-muted small border-bottom border-secondary pb-2 mb-4">準決勝</h5>
-                                <div th:each="m : ${b.matches}" th:if="${m.roundNumber == 2}" class="bracket-match-box"
-                                     th:classappend="${m.winnerEntryId != null} ? (${m.winnerEntryId == m.player1EntryId} ? 'winner-p1' : 'winner-p2') : ''"
-                                     th:data-round="2"
-                                     th:data-match-num="${m.matchNumber}"
-                                     th:data-p1-name="${m.player1Name != null ? m.player1Name : '（待機中）'}"
-                                     th:data-p2-name="${m.player2Name != null ? m.player2Name : '（待機中）'}"
-                                     th:data-winner-id="${m.winnerEntryId}"
-                                     th:data-p1-id="${m.player1EntryId}"
-                                     th:data-p2-id="${m.player2EntryId}"
-                                     th:data-is-bye="${m.isBye}">
-                                    <div class="small text-muted mb-1 text-center font-monospace" th:text="'準決勝 ' + ${m.matchNumber}">SF1</div>
-                                    
-                                    <!-- Player 1 -->
-                                    <button class="btn btn-sm w-100 text-start bracket-player mb-1" 
-                                            th:classappend="${m.winnerEntryId != null && m.winnerEntryId == m.player1EntryId ? 'winner btn-success' : 'btn-outline-light'}"
-                                            th:onclick="'setWinner(' + ${m.id} + ', ' + ${m.player1EntryId} + ')'"
-                                            th:disabled="${m.player1EntryId == null || isRoundFinishedMap.get(m.roundNumber)}">
-                                        <span th:text="${m.player1Name != null ? m.player1Name : '（待機中）'}">選手A</span>
-                                    </button>
-                                    
-                                    <!-- Player 2 -->
-                                    <button class="btn btn-sm w-100 text-start bracket-player" 
-                                            th:classappend="${m.winnerEntryId != null && m.winnerEntryId == m.player2EntryId ? 'winner btn-success' : 'btn-outline-light'}"
-                                            th:onclick="'setWinner(' + ${m.id} + ', ' + ${m.player2EntryId} + ')'"
-                                            th:disabled="${m.player2EntryId == null || isRoundFinishedMap.get(m.roundNumber)}">
-                                        <span th:text="${m.player2Name != null ? m.player2Name : '（待機中）'}">選手B</span>
-                                    </button>
-                                    <div class="match-number-badge" th:text="${m.matchNumber + 4}">5</div>
+                            <div th:if="${#lists.size(b.matches.?[roundNumber == 2]) > 0}" class="bracket-round bracket-round-2">
+                                <h5 class="bracket-round-title text-center text-muted small border-bottom border-secondary pb-2">2回戦</h5>
+                                <div class="bracket-round-matches">
+                                    <div th:each="m : ${b.matches}" th:if="${m.roundNumber == 2}" class="bracket-match-box"
+                                         th:classappend="${m.winnerEntryId != null} ? (${m.winnerEntryId == m.player1EntryId} ? 'winner-p1' : 'winner-p2') : ''"
+                                         th:data-round="2"
+                                         th:data-match-num="${m.matchNumber}"
+                                         th:data-p1-name="${m.player1Name != null ? m.player1Name : '（待機中）'}"
+                                         th:data-p2-name="${m.player2Name != null ? m.player2Name : '（待機中）'}"
+                                         th:data-winner-id="${m.winnerEntryId}"
+                                         th:data-p1-id="${m.player1EntryId}"
+                                         th:data-p2-id="${m.player2EntryId}"
+                                         th:data-is-bye="${m.isBye}">
+                                        <div class="small text-muted mb-1 text-center font-monospace" th:text="'マッチ ' + ${m.matchNumber}">M1</div>
+                                        
+                                        <!-- Player 1 -->
+                                        <button class="btn btn-sm w-100 text-start bracket-player mb-1" 
+                                                th:classappend="${m.winnerEntryId != null && m.winnerEntryId == m.player1EntryId ? 'winner btn-success' : 'btn-outline-light'}"
+                                                th:onclick="'setWinner(' + ${m.id} + ', ' + ${m.player1EntryId} + ')'"
+                                                th:disabled="${m.player1EntryId == null || isRoundFinishedMap.get(m.roundNumber)}">
+                                            <span th:text="${m.player1Name != null ? m.player1Name : '（待機中）'}">選手A</span>
+                                        </button>
+                                        
+                                        <!-- Player 2 -->
+                                        <button class="btn btn-sm w-100 text-start bracket-player" 
+                                                th:classappend="${m.winnerEntryId != null && m.winnerEntryId == m.player2EntryId ? 'winner btn-success' : 'btn-outline-light'}"
+                                                th:onclick="'setWinner(' + ${m.id} + ', ' + ${m.player2EntryId} + ')'"
+                                                th:disabled="${m.player2EntryId == null || isRoundFinishedMap.get(m.roundNumber)}">
+                                            <span th:text="${m.player2Name != null ? m.player2Name : '（待機中）'}">選手B</span>
+                                        </button>
+                                        <div class="match-number-badge" th:text="${m.matchNumber + 4}">5</div>
+                                    </div>
                                 </div>
                             </div>
 
                             <!-- Round 3 matches (Final) -->
-                            <div class="bracket-round bracket-round-3 d-flex flex-column justify-content-around h-100" style="min-height: 500px; min-width: 220px;">
-                                <h5 class="text-center text-muted small border-bottom border-secondary pb-2 mb-4">決勝戦</h5>
-                                <div th:each="m : ${b.matches}" th:if="${m.roundNumber == 3}" class="bracket-match-box bracket-match-box-final"
-                                     th:classappend="${m.winnerEntryId != null} ? (${m.winnerEntryId == m.player1EntryId} ? 'winner-p1' : 'winner-p2') : ''"
-                                     style="border: 1px solid var(--accent); box-shadow: 0 0 15px rgba(255, 215, 0, 0.2);"
-                                     th:data-round="3"
-                                     th:data-match-num="${m.matchNumber}"
-                                     th:data-p1-name="${m.player1Name != null ? m.player1Name : '（待機中）'}"
-                                     th:data-p2-name="${m.player2Name != null ? m.player2Name : '（待機中）'}"
-                                     th:data-winner-id="${m.winnerEntryId}"
-                                     th:data-p1-id="${m.player1EntryId}"
-                                     th:data-p2-id="${m.player2EntryId}"
-                                     th:data-is-bye="${m.isBye}">
-                                    <div class="small text-warning mb-1 text-center font-monospace"><i class="fa-solid fa-crown"></i> 決勝</div>
-                                    
-                                    <!-- Player 1 -->
-                                    <button class="btn btn-sm w-100 text-start bracket-player mb-1" 
-                                            th:classappend="${m.winnerEntryId != null && m.winnerEntryId == m.player1EntryId ? 'winner btn-success' : 'btn-outline-light'}"
-                                            th:onclick="'setWinner(' + ${m.id} + ', ' + ${m.player1EntryId} + ')'"
-                                            th:disabled="${m.player1EntryId == null || isRoundFinishedMap.get(m.roundNumber)}">
-                                        <span th:text="${m.player1Name != null ? m.player1Name : '（待機中）'}">選手A</span>
-                                    </button>
-                                    
-                                    <!-- Player 2 -->
-                                    <button class="btn btn-sm w-100 text-start bracket-player" 
-                                            th:classappend="${m.winnerEntryId != null && m.winnerEntryId == m.player2EntryId ? 'winner btn-success' : 'btn-outline-light'}"
-                                            th:onclick="'setWinner(' + ${m.id} + ', ' + ${m.player2EntryId} + ')'"
-                                            th:disabled="${m.player2EntryId == null || isRoundFinishedMap.get(m.roundNumber)}">
-                                        <span th:text="${m.player2Name != null ? m.player2Name : '（待機中）'}">選手B</span>
-                                    </button>
-                                    <div class="match-number-badge" th:text="7">7</div>
+                            <div th:if="${#lists.size(b.matches.?[roundNumber == 3]) > 0}" class="bracket-round bracket-round-3">
+                                <h5 class="bracket-round-title text-center text-muted small border-bottom border-secondary pb-2">3回戦</h5>
+                                <div class="bracket-round-matches">
+                                    <div th:each="m : ${b.matches}" th:if="${m.roundNumber == 3}" class="bracket-match-box bracket-match-box-final"
+                                         th:classappend="${m.winnerEntryId != null} ? (${m.winnerEntryId == m.player1EntryId} ? 'winner-p1' : 'winner-p2') : ''"
+                                         style="border: 1px solid var(--accent); box-shadow: 0 0 15px rgba(255, 215, 0, 0.2);"
+                                         th:data-round="3"
+                                         th:data-match-num="${m.matchNumber}"
+                                         th:data-p1-name="${m.player1Name != null ? m.player1Name : '（待機中）'}"
+                                         th:data-p2-name="${m.player2Name != null ? m.player2Name : '（待機中）'}"
+                                         th:data-winner-id="${m.winnerEntryId}"
+                                         th:data-p1-id="${m.player1EntryId}"
+                                         th:data-p2-id="${m.player2EntryId}"
+                                         th:data-is-bye="${m.isBye}">
+                                        <div class="small text-warning mb-1 text-center font-monospace"><i class="fa-solid fa-crown"></i> 決勝</div>
+                                        
+                                        <!-- Player 1 -->
+                                        <button class="btn btn-sm w-100 text-start bracket-player mb-1" 
+                                                th:classappend="${m.winnerEntryId != null && m.winnerEntryId == m.player1EntryId ? 'winner btn-success' : 'btn-outline-light'}"
+                                                th:onclick="'setWinner(' + ${m.id} + ', ' + ${m.player1EntryId} + ')'"
+                                                th:disabled="${m.player1EntryId == null || isRoundFinishedMap.get(m.roundNumber)}">
+                                            <span th:text="${m.player1Name != null ? m.player1Name : '（待機中）'}">選手A</span>
+                                        </button>
+                                        
+                                        <!-- Player 2 -->
+                                        <button class="btn btn-sm w-100 text-start bracket-player" 
+                                                th:classappend="${m.winnerEntryId != null && m.winnerEntryId == m.player2EntryId ? 'winner btn-success' : 'btn-outline-light'}"
+                                                th:onclick="'setWinner(' + ${m.id} + ', ' + ${m.player2EntryId} + ')'"
+                                                th:disabled="${m.player2EntryId == null || isRoundFinishedMap.get(m.roundNumber)}">
+                                            <span th:text="${m.player2Name != null ? m.player2Name : '（待機中）'}">選手B</span>
+                                        </button>
+                                        <div class="match-number-badge" th:text="7">7</div>
+                                    </div>
                                 </div>
                             </div>
 
@@ -240,10 +253,22 @@
     </script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
     <script>
-        function downloadScreenshot(elementId, filename) {
+        async function downloadScreenshot(elementId, filename, groupName) {
             const element = document.getElementById(elementId);
             if (!element) return;
             
+            if (!groupName && element) {
+                groupName = element.getAttribute('data-group-name') || '';
+            }
+            if (!groupName) {
+                const pane = element.closest('.tab-pane');
+                if (pane) {
+                    const tabBtn = document.getElementById('tab-' + pane.id.replace('panel-', ''));
+                    if (tabBtn) groupName = tabBtn.innerText.trim();
+                }
+            }
+            if (!groupName) groupName = '';
+
             // データ属性からマッチ情報を抽出
             const matchBoxes = element.querySelectorAll('.bracket-match-box');
             const matches = [];
@@ -259,22 +284,105 @@
                     isBye: box.getAttribute('data-is-bye') === 'true'
                 });
             });
-            
+
+            if (matches.length === 0) return;
+
+            const round1Matches = matches.filter(m => m.round === 1).sort((a, b) => a.matchNum - b.matchNum);
+            const totalRounds = Math.max(...matches.map(m => m.round));
+            const totalPlayers = round1Matches.length * 2;
+
+            // 画像読み込みヘルパー
+            const loadImage = (src) => new Promise((resolve) => {
+                if (!src || src === 'null' || src.trim() === '') return resolve(null);
+                const img = new Image();
+                img.onload = () => resolve(img);
+                img.onerror = () => resolve(null);
+                img.src = src;
+            });
+
+            const metaElem = document.getElementById('tournamentBracketMeta');
+            const tournamentName = metaElem ? (metaElem.getAttribute('data-tournament-name') || '') : '';
+            const bannerSrc = metaElem ? (metaElem.getAttribute('data-icon-path') || '') : '';
+            const heldDate = metaElem ? (metaElem.getAttribute('data-held-date') || '') : '';
+            const venue = metaElem ? (metaElem.getAttribute('data-venue') || '') : '';
+
+            const isGroupA = !groupName || /グループ\s*A|Group\s*A|^A\b/i.test(groupName) || groupName.includes('A') || groupName === 'グループA';
+
+            const [trophyPikachuImg, bannerImg] = await Promise.all([
+                isGroupA ? loadImage('/asopoketool/images/pikachu_trophy.png') : Promise.resolve(null),
+                loadImage(bannerSrc)
+            ]);
+
             // キャンバスを作成
             const canvas = document.createElement('canvas');
-            canvas.width = 1000;
-            canvas.height = 650;
+            canvas.width = 1040;
+            canvas.height = 700;
             const ctx = canvas.getContext('2d');
-            
+
             // 白背景で塗りつぶし
             ctx.fillStyle = '#ffffff';
             ctx.fillRect(0, 0, canvas.width, canvas.height);
-            
-            // フォント設定
-            ctx.font = 'bold 15px "Noto Sans JP", sans-serif';
-            ctx.textBaseline = 'middle';
-            
-            // 線を描画する共通ヘルパー
+
+            // 案B: モンスターボールの透かし（ウォーターマーク）
+            function drawPokeballWatermark(cx, cy, radius, opacity) {
+                ctx.save();
+                ctx.globalAlpha = opacity;
+                ctx.translate(cx, cy);
+
+                ctx.beginPath();
+                ctx.arc(0, 0, radius, 0, Math.PI * 2);
+                ctx.strokeStyle = '#64748b';
+                ctx.lineWidth = radius * 0.07;
+                ctx.stroke();
+
+                ctx.beginPath();
+                ctx.moveTo(-radius, 0);
+                ctx.lineTo(radius, 0);
+                ctx.lineWidth = radius * 0.07;
+                ctx.strokeStyle = '#64748b';
+                ctx.stroke();
+
+                ctx.beginPath();
+                ctx.arc(0, 0, radius * 0.28, 0, Math.PI * 2);
+                ctx.fillStyle = '#ffffff';
+                ctx.fill();
+                ctx.strokeStyle = '#64748b';
+                ctx.lineWidth = radius * 0.07;
+                ctx.stroke();
+
+                ctx.beginPath();
+                ctx.arc(0, 0, radius * 0.12, 0, Math.PI * 2);
+                ctx.fillStyle = '#64748b';
+                ctx.fill();
+
+                ctx.restore();
+            }
+            drawPokeballWatermark(640, 370, 190, 0.045);
+
+            // ヘッダー背景（バナー画像の薄い表示 またはグラデーション）
+            ctx.save();
+            ctx.beginPath();
+            ctx.rect(0, 0, canvas.width, 68);
+            ctx.clip();
+
+            if (bannerImg) {
+                ctx.globalAlpha = 0.22;
+                const hRatio = 68 / bannerImg.height;
+                const wRatio = canvas.width / bannerImg.width;
+                const ratio = Math.max(hRatio, wRatio);
+                const nw = bannerImg.width * ratio;
+                const nh = bannerImg.height * ratio;
+                ctx.drawImage(bannerImg, (canvas.width - nw) / 2, (68 - nh) / 2, nw, nh);
+            } else {
+                ctx.globalAlpha = 0.08;
+                const grad = ctx.createLinearGradient(0, 0, canvas.width, 0);
+                grad.addColorStop(0, '#ff6b35');
+                grad.addColorStop(1, '#ff8c42');
+                ctx.fillStyle = grad;
+                ctx.fillRect(0, 0, canvas.width, 68);
+            }
+            ctx.restore();
+
             function drawLine(x1, y1, x2, y2, color, width) {
                 ctx.beginPath();
                 ctx.moveTo(x1, y1);
@@ -282,165 +390,181 @@
                 ctx.strokeStyle = color;
                 ctx.lineWidth = width;
                 ctx.lineCap = 'round';
+                ctx.lineJoin = 'round';
                 ctx.stroke();
             }
 
-            // 丸囲み卓番号を描画するヘルパー
-            function drawMatchBadge(numStr, x, y) {
-                ctx.beginPath();
-                ctx.arc(x, y, 11, 0, Math.PI * 2);
-                ctx.fillStyle = '#ffffff';
-                ctx.fill();
-                ctx.strokeStyle = '#000000';
-                ctx.lineWidth = 1.5;
-                ctx.stroke();
-                
-                ctx.fillStyle = '#000000';
-                ctx.font = 'bold 11px "Noto Sans JP", sans-serif';
-                ctx.textAlign = 'center';
-                ctx.fillText(numStr, x, y + 1);
-                ctx.textAlign = 'left'; // リセット
-                ctx.font = 'bold 15px "Noto Sans JP", sans-serif';
+            // 大会名とグループ名（ヘッダー）の描画
+            let titleText = tournamentName ? tournamentName + '　決勝トーナメント' : '決勝トーナメント';
+            if (groupName) {
+                titleText += ' 【' + groupName + '】';
             }
 
-            // 各種定数と座標マッピング
-            // 1回戦の選手名は左寄せで、X=170を右端として揃えます。
-            const startX = 180;
-            
-            // 8名の縦座標位置 (Y座標)
-            const yPositions = [60, 120, 180, 240, 300, 360, 420, 480];
-            
-            // 各ラウンドの中央Y座標
-            const qfY = { 1: 90, 2: 210, 3: 330, 4: 450 };
-            const sfY = { 1: 150, 2: 390 };
-            const finalY = 270;
+            ctx.fillStyle = '#1e293b';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            let titleFontSize = 22;
+            ctx.font = 'bold ' + titleFontSize + 'px "Noto Sans JP", sans-serif';
+            while (ctx.measureText(titleText).width > 920 && titleFontSize > 13) {
+                titleFontSize -= 1;
+                ctx.font = 'bold ' + titleFontSize + 'px "Noto Sans JP", sans-serif';
+            }
+            ctx.fillText(titleText, canvas.width / 2, 35);
 
-            // 3位決定戦の座標
-            const thirdP1Y = 540;
-            const thirdP2Y = 590;
-            const thirdMidY = 565;
+            // ヘッダー下部の区切り線
+            drawLine(40, 68, canvas.width - 40, 68, '#cbd5e1', 1.5);
 
-            let hasThirdPlaceMatch = false;
+            // 座標計算
+            const topY = 105;
+            const bottomY = 640;
+            const availableHeight = bottomY - topY;
+            const startX = 220;
+            const endX = 730;
+            const stepX = (endX - startX) / totalRounds;
 
-            // 1. まず左端の選手名（1回戦）を描画する
-            ctx.fillStyle = '#000000';
+            const roundY = {};
+
+            // 1. 各選手のY座標と選手名描画
+            ctx.font = 'bold 16px "Noto Sans JP", sans-serif';
+            ctx.fillStyle = '#1e293b';
             ctx.textAlign = 'right';
-            
-            const qfMatches = matches.filter(m => m.round === 1);
-            for (let i = 0; i < 4; i++) {
-                const m = qfMatches.find(x => x.matchNum === (i + 1));
-                const p1Y = yPositions[i * 2];
-                const p2Y = yPositions[i * 2 + 1];
-                
-                if (m) {
-                    ctx.fillText(m.p1Name || '（TBD）', 170, p1Y);
-                    ctx.fillText(m.p2Name || (m.isBye ? '（不戦勝）' : '（TBD）'), 170, p2Y);
-                } else {
-                    ctx.fillText('（TBD）', 170, p1Y);
-                    ctx.fillText('（TBD）', 170, p2Y);
+            ctx.textBaseline = 'middle';
+
+            roundY[1] = {};
+            for (let i = 0; i < round1Matches.length; i++) {
+                const m = round1Matches[i];
+                const p1Y = topY + (i * 2 + 0.5) * (availableHeight / totalPlayers);
+                const p2Y = topY + (i * 2 + 1.5) * (availableHeight / totalPlayers);
+                const midY = (p1Y + p2Y) / 2;
+
+                roundY[1][m.matchNum] = { p1Y, p2Y, midY };
+
+                ctx.fillText(m.p1Name || (m.isBye && !m.p1Id ? '（不戦勝）' : '（TBD）'), startX - 16, p1Y);
+                ctx.fillText(m.p2Name || (m.isBye && !m.p2Id ? '（不戦勝）' : '（TBD）'), startX - 16, p2Y);
+            }
+
+            // 2. 次ラウンド以降の Y 座標計算
+            for (let r = 2; r <= totalRounds; r++) {
+                roundY[r] = {};
+                const matchesInRound = matches.filter(m => m.round === r);
+                matchesInRound.forEach(m => {
+                    const child1 = roundY[r - 1][(m.matchNum - 1) * 2 + 1];
+                    const child2 = roundY[r - 1][(m.matchNum - 1) * 2 + 2];
+                    if (child1 && child2) {
+                        const p1Y = child1.midY;
+                        const p2Y = child2.midY;
+                        const midY = (p1Y + p2Y) / 2;
+                        roundY[r][m.matchNum] = { p1Y, p2Y, midY };
+                    }
+                });
+            }
+
+            // 3. 基本線（黒線、2px）の描画
+            for (let r = 1; r <= totalRounds; r++) {
+                const rStartX = startX + (r - 1) * stepX;
+                const rMidX = rStartX + stepX * 0.55;
+                const rEndX = rStartX + stepX;
+
+                const matchesInRound = matches.filter(m => m.round === r);
+                matchesInRound.forEach(m => {
+                    const coords = roundY[r][m.matchNum];
+                    if (!coords) return;
+
+                    drawLine(rStartX, coords.p1Y, rMidX, coords.p1Y, '#000000', 2);
+                    drawLine(rStartX, coords.p2Y, rMidX, coords.p2Y, '#000000', 2);
+                    drawLine(rMidX, coords.p1Y, rMidX, coords.p2Y, '#000000', 2);
+                    drawLine(rMidX, coords.midY, rEndX, coords.midY, '#000000', 2);
+                });
+            }
+
+            // 4. 勝者ルート（赤太線、4.5px）の上書き描画
+            let finalWinnerMatch = null;
+            for (let r = 1; r <= totalRounds; r++) {
+                const rStartX = startX + (r - 1) * stepX;
+                const rMidX = rStartX + stepX * 0.55;
+                const rEndX = rStartX + stepX;
+
+                const matchesInRound = matches.filter(m => m.round === r);
+                matchesInRound.forEach(m => {
+                    const coords = roundY[r][m.matchNum];
+                    if (!coords) return;
+
+                    if (r === 1) {
+                        if (m.winnerId !== null) {
+                            if (m.winnerId === m.p1Id) {
+                                drawLine(rStartX, coords.p1Y, rMidX, coords.p1Y, '#ff0000', 4.5);
+                                drawLine(rMidX, coords.p1Y, rMidX, coords.midY, '#ff0000', 4.5);
+                                drawLine(rMidX, coords.midY, rEndX, coords.midY, '#ff0000', 4.5);
+                            } else if (m.winnerId === m.p2Id) {
+                                drawLine(rStartX, coords.p2Y, rMidX, coords.p2Y, '#ff0000', 4.5);
+                                drawLine(rMidX, coords.p2Y, rMidX, coords.midY, '#ff0000', 4.5);
+                                drawLine(rMidX, coords.midY, rEndX, coords.midY, '#ff0000', 4.5);
+                            }
+                        }
+                    } else {
+                        if (m.p1Id !== null) {
+                            drawLine(rStartX, coords.p1Y, rMidX, coords.p1Y, '#ff0000', 4.5);
+                        }
+                        if (m.p2Id !== null) {
+                            drawLine(rStartX, coords.p2Y, rMidX, coords.p2Y, '#ff0000', 4.5);
+                        }
+
+                        if (m.winnerId !== null) {
+                            if (r === totalRounds && m.matchNum === 1) {
+                                finalWinnerMatch = m;
+                            }
+
+                            if (m.winnerId === m.p1Id) {
+                                drawLine(rMidX, coords.p1Y, rMidX, coords.midY, '#ff0000', 4.5);
+                                drawLine(rMidX, coords.midY, rEndX, coords.midY, '#ff0000', 4.5);
+                            } else if (m.winnerId === m.p2Id) {
+                                drawLine(rMidX, coords.p2Y, rMidX, coords.midY, '#ff0000', 4.5);
+                                drawLine(rMidX, coords.midY, rEndX, coords.midY, '#ff0000', 4.5);
+                            }
+                        }
+                    }
+                });
+            }
+
+            // 決勝勝者・トロフィーピカチュウ（グループAのみ）・優勝者名の描画
+            if (finalWinnerMatch && roundY[totalRounds] && roundY[totalRounds][1]) {
+                const finalCoords = roundY[totalRounds][1];
+                const finalEndX = startX + totalRounds * stepX;
+                const goalLineEnd = finalEndX + 35;
+
+                // ゴール赤線
+                drawLine(finalEndX, finalCoords.midY, goalLineEnd, finalCoords.midY, '#ff0000', 4.5);
+
+                let textStartX = goalLineEnd + 15;
+                const pikachuSize = 90;
+                // トロフィーピカチュウはグループAのみ描画
+                if (isGroupA && trophyPikachuImg) {
+                    ctx.drawImage(trophyPikachuImg, goalLineEnd + 10, finalCoords.midY - pikachuSize / 2, pikachuSize, pikachuSize);
+                    textStartX = goalLineEnd + pikachuSize + 20;
                 }
+
+                // 優勝者名
+                const winnerName = finalWinnerMatch.winnerId === finalWinnerMatch.p1Id ? finalWinnerMatch.p1Name : finalWinnerMatch.p2Name;
+
+                ctx.textAlign = 'left';
+                ctx.fillStyle = '#ea580c';
+                ctx.font = 'bold 14px "Noto Sans JP", sans-serif';
+                ctx.fillText('🏆 CHAMPION', textStartX, finalCoords.midY - 14);
+
+                ctx.fillStyle = '#1e293b';
+                ctx.font = 'bold 20px "Noto Sans JP", sans-serif';
+                ctx.fillText(winnerName + ' 選手', textStartX, finalCoords.midY + 14);
             }
 
-            // 3位決定戦の選手名
-            const thirdMatch = matches.find(m => m.round === 3 && m.matchNum === 2);
-            if (thirdMatch) {
-                hasThirdPlaceMatch = true;
-                ctx.fillText(thirdMatch.p1Name || '（TBD）', 170, thirdP1Y);
-                ctx.fillText(thirdMatch.p2Name || '（TBD）', 170, thirdP2Y);
-            }
-            
-            ctx.textAlign = 'left'; // リセット
+            // 案C: フッター情報
+            let footerText = 'ASOPokeTool 大会公式記録';
+            if (venue && venue !== 'null' && venue.trim() !== '') footerText = '会場: ' + venue + '  |  ' + footerText;
+            if (heldDate && heldDate !== 'null' && heldDate.trim() !== '') footerText = '開催日: ' + heldDate + '  |  ' + footerText;
 
-            // 2. 対戦ツリー線の描画
-            // --- 1回戦 (Quarterfinals) ---
-            for (let i = 0; i < 4; i++) {
-                const m = qfMatches.find(x => x.matchNum === (i + 1));
-                const p1Y = yPositions[i * 2];
-                const p2Y = yPositions[i * 2 + 1];
-                const midY = qfY[i + 1];
-                const midX = startX + 70; // 250
-                
-                // 基本線(黒)
-                drawLine(startX, p1Y, midX, p1Y, '#000000', 2);
-                drawLine(startX, p2Y, midX, p2Y, '#000000', 2);
-                drawLine(midX, p1Y, midX, p2Y, '#000000', 2);
-                drawLine(midX, midY, midX + 60, midY, '#000000', 2); // 250 -> 310
-
-                if (m && m.winnerId !== null) {
-                    const winY = (m.winnerId === m.p1Id) ? p1Y : p2Y;
-                    drawLine(startX, winY, midX, winY, '#ff0000', 4);
-                    drawLine(midX, winY, midX, midY, '#ff0000', 4);
-                    drawLine(midX, midY, midX + 60, midY, '#ff0000', 4);
-                }
-            }
-
-            // --- 2回戦 (Semifinals) ---
-            const sfMatches = matches.filter(m => m.round === 2);
-            for (let i = 0; i < 2; i++) {
-                const m = sfMatches.find(x => x.matchNum === (i + 1));
-                const qf1Y = qfY[i * 2 + 1];
-                const qf2Y = qfY[i * 2 + 2];
-                const posMidY = sfY[i + 1]; // SF中央 (150, 390)
-                const leftX = startX + 130; // 310
-                const rightX = leftX + 120; // 430
-                
-                // 基本線(黒)
-                drawLine(leftX, qf1Y, rightX, qf1Y, '#000000', 2);
-                drawLine(leftX, qf2Y, rightX, qf2Y, '#000000', 2);
-                drawLine(rightX, qf1Y, rightX, qf2Y, '#000000', 2);
-                drawLine(rightX, posMidY, rightX + 60, posMidY, '#000000', 2); // 430 -> 490
-
-                if (m && m.winnerId !== null) {
-                    // QFの勝者がSFのP1/P2
-                    const winY = (m.winnerId === m.p1Id) ? qf1Y : qf2Y;
-                    drawLine(leftX, winY, rightX, winY, '#ff0000', 4);
-                    drawLine(rightX, winY, rightX, posMidY, '#ff0000', 4);
-                    drawLine(rightX, posMidY, rightX + 60, posMidY, '#ff0000', 4);
-                }
-            }
-
-            // --- 3回戦 (Finals) ---
-            const finalMatch = matches.find(m => m.round === 3 && m.matchNum === 1);
-            const sf1Y = sfY[1]; // 150
-            const sf2Y = sfY[2]; // 390
-            const leftX = startX + 310; // 490
-            const rightX = leftX + 160; // 650
-            
-            // 基本線(黒)
-            drawLine(leftX, sf1Y, rightX, sf1Y, '#000000', 2);
-            drawLine(leftX, sf2Y, rightX, sf2Y, '#000000', 2);
-            drawLine(rightX, sf1Y, rightX, sf2Y, '#000000', 2);
-            drawLine(rightX, finalY, rightX + 80, finalY, '#000000', 2); // 650 -> 730
-
-            if (finalMatch && finalMatch.winnerId !== null) {
-                const winY = (finalMatch.winnerId === finalMatch.p1Id) ? sf1Y : sf2Y;
-                drawLine(leftX, winY, rightX, winY, '#ff0000', 4);
-                drawLine(rightX, winY, rightX, finalY, '#ff0000', 4);
-                drawLine(rightX, finalY, rightX + 80, finalY, '#ff0000', 4);
-            }
-
-
-
-            // --- 3位決定戦 ---
-            if (hasThirdPlaceMatch) {
-                const midX = startX + 70; // 250
-                
-                drawLine(startX, thirdP1Y, midX, thirdP1Y, '#000000', 2);
-                drawLine(startX, thirdP2Y, midX, thirdP2Y, '#000000', 2);
-                drawLine(midX, thirdP1Y, midX, thirdP2Y, '#000000', 2);
-                drawLine(midX, thirdMidY, midX + 60, thirdMidY, '#000000', 2);
-
-                if (thirdMatch && thirdMatch.winnerId !== null) {
-                    const winY = (thirdMatch.winnerId === thirdMatch.p1Id) ? thirdP1Y : thirdP2Y;
-                    drawLine(startX, winY, midX, winY, '#ff0000', 4);
-                    drawLine(midX, winY, midX, thirdMidY, '#ff0000', 4);
-                    drawLine(midX, thirdMidY, midX + 60, thirdMidY, '#ff0000', 4);
-                }
-
-                ctx.fillStyle = '#000000';
-                ctx.font = 'bold 13px "Noto Sans JP", sans-serif';
-                ctx.fillText('3位決定戦', startX - 130, thirdMidY);
-            }
+            ctx.font = '500 12px "Noto Sans JP", sans-serif';
+            ctx.fillStyle = '#94a3b8';
+            ctx.textAlign = 'right';
+            ctx.fillText(footerText, canvas.width - 40, 685);
 
             // ダウンロード
             const link = document.createElement('a');
@@ -456,11 +580,168 @@
                 if (target && target.id) {
                     const tabId = 'tab-' + pane.id.replace('panel-', '');
                     const tabButton = document.getElementById(tabId);
-                    const groupName = tabButton ? tabButton.innerText.trim() : 'group';
-                    downloadScreenshot(target.id, 'tournament_bracket_' + groupName);
+                    const groupName = tabButton ? tabButton.innerText.trim() : '';
+                    downloadScreenshot(target.id, 'tournament_bracket_' + (groupName || 'group'), groupName);
                 }
             });
         }
+
+        // トーナメント線 (SVGフォークコネクタ) の動的描画（母数4, 8, 16等に完全自動対応）
+        function drawBracketConnectors() {
+            document.querySelectorAll('.bracket-tree-container').forEach(container => {
+                let svg = container.querySelector('.bracket-tree-svg');
+                if (!svg) {
+                    svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+                    svg.setAttribute('class', 'bracket-tree-svg');
+                    container.insertBefore(svg, container.firstChild);
+                }
+                svg.innerHTML = '';
+
+                const containerRect = container.getBoundingClientRect();
+                if (containerRect.width === 0 || containerRect.height === 0) return;
+
+                // 有効なラウンド列を取得
+                const roundCols = Array.from(container.querySelectorAll('.bracket-round'));
+                if (roundCols.length < 1) return;
+
+                // 見出しタイトルの動的最適化 (母数4なら 準決勝 -> 決勝戦 など)
+                const totalRounds = roundCols.length;
+                roundCols.forEach((col, idx) => {
+                    const heading = col.querySelector('.bracket-round-title');
+                    if (!heading) return;
+                    const roundFromEnd = totalRounds - idx;
+                    if (roundFromEnd === 1) {
+                        heading.innerHTML = '<i class="fa-solid fa-crown text-warning me-1"></i> 決勝戦';
+                    } else if (roundFromEnd === 2) {
+                        heading.innerText = '準決勝';
+                    } else if (roundFromEnd === 3) {
+                        heading.innerText = totalRounds === 3 ? '1回戦 (準々決勝)' : '準々決勝';
+                    } else {
+                        heading.innerText = (idx + 1) + '回戦';
+                    }
+                });
+
+                if (roundCols.length < 2) return;
+
+                function getBoxCoords(box) {
+                    const rect = box.getBoundingClientRect();
+                    return {
+                        left: rect.left - containerRect.left,
+                        right: rect.right - containerRect.left,
+                        top: rect.top - containerRect.top,
+                        bottom: rect.bottom - containerRect.top,
+                        centerY: (rect.top + rect.bottom) / 2 - containerRect.top,
+                        winnerId: box.getAttribute('data-winner-id'),
+                        p1Id: box.getAttribute('data-p1-id'),
+                        p2Id: box.getAttribute('data-p2-id'),
+                        matchNum: parseInt(box.getAttribute('data-match-num')),
+                        isBye: box.getAttribute('data-is-bye') === 'true'
+                    };
+                }
+
+                function addPath(d, isWinner) {
+                    const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+                    path.setAttribute('d', d);
+                    path.setAttribute('class', isWinner ? 'bracket-line-winner' : 'bracket-line-base');
+                    svg.appendChild(path);
+                }
+
+                function connectMatches(boxAElement, boxBElement, targetBoxElement) {
+                    if (!boxAElement || !boxBElement || !targetBoxElement) return;
+
+                    const boxA = getBoxCoords(boxAElement);
+                    const boxB = getBoxCoords(boxBElement);
+                    const target = getBoxCoords(targetBoxElement);
+
+                    const xA = boxA.right + 8;
+                    const yA = boxA.centerY;
+                    const xB = boxB.right + 8;
+                    const yB = boxB.centerY;
+                    const xTarget = target.left;
+                    const yTarget = target.centerY;
+
+                    const maxX = Math.max(xA, xB);
+                    const midX = maxX + (xTarget - maxX) * 0.45;
+
+                    // ベース線 (フォーク型)
+                    addPath(`M ${xA} ${yA} H ${midX} V ${yTarget}`, false);
+                    addPath(`M ${xB} ${yB} H ${midX} V ${yTarget}`, false);
+                    addPath(`M ${midX} ${yTarget} H ${xTarget}`, false);
+
+                    // 勝者ハイライト線
+                    if (boxA.winnerId) {
+                        addPath(`M ${xA} ${yA} H ${midX} V ${yTarget}`, true);
+                        if (target.p1Id == boxA.winnerId || target.p2Id == boxA.winnerId) {
+                            addPath(`M ${midX} ${yTarget} H ${xTarget}`, true);
+                        }
+                    }
+                    if (boxB.winnerId) {
+                        addPath(`M ${xB} ${yB} H ${midX} V ${yTarget}`, true);
+                        if (target.p1Id == boxB.winnerId || target.p2Id == boxB.winnerId) {
+                            addPath(`M ${midX} ${yTarget} H ${xTarget}`, true);
+                        }
+                    }
+                }
+
+                // ラウンド間の接続を動的ループ (Round 1 -> 2, 2 -> 3, ...)
+                for (let r = 0; r < roundCols.length - 1; r++) {
+                    const currentRoundBoxes = Array.from(roundCols[r].querySelectorAll('.bracket-match-box'));
+                    const nextRoundBoxes = Array.from(roundCols[r + 1].querySelectorAll('.bracket-match-box'));
+
+                    nextRoundBoxes.forEach(targetBox => {
+                        const targetMatchNum = parseInt(targetBox.getAttribute('data-match-num'));
+                        const childMatchNum1 = (targetMatchNum - 1) * 2 + 1;
+                        const childMatchNum2 = (targetMatchNum - 1) * 2 + 2;
+
+                        const boxA = currentRoundBoxes.find(b => parseInt(b.getAttribute('data-match-num')) === childMatchNum1);
+                        const boxB = currentRoundBoxes.find(b => parseInt(b.getAttribute('data-match-num')) === childMatchNum2);
+
+                        if (boxA && boxB) {
+                            connectMatches(boxA, boxB, targetBox);
+                        }
+                    });
+                }
+
+                // 最終ラウンド（決勝）の勝者ゴール線
+                const lastRoundCol = roundCols[roundCols.length - 1];
+                if (lastRoundCol) {
+                    const finalBox = lastRoundCol.querySelector('.bracket-match-box');
+                    if (finalBox) {
+                        const finalCoords = getBoxCoords(finalBox);
+                        if (finalCoords.winnerId) {
+                            addPath(`M ${finalCoords.right + 8} ${finalCoords.centerY} H ${finalCoords.right + 35}`, true);
+                        }
+                    }
+                }
+            });
+        }
+
+        // タブ状態の保持と復元 (リフレッシュ時も選択中のグループタブを維持)
+        document.addEventListener('DOMContentLoaded', function () {
+            const tournamentId = '[[${tournament.id}]]';
+            const storageKey = 'activeBracketTab_' + tournamentId;
+
+            const savedTabId = sessionStorage.getItem(storageKey);
+            if (savedTabId) {
+                const targetTabBtn = document.getElementById(savedTabId);
+                if (targetTabBtn) {
+                    const tabTrigger = bootstrap.Tab.getOrCreateInstance(targetTabBtn);
+                    tabTrigger.show();
+                }
+            }
+
+            const tabElements = document.querySelectorAll('#bracketTab button[data-bs-toggle="tab"]');
+            tabElements.forEach(tabBtn => {
+                tabBtn.addEventListener('shown.bs.tab', function (e) {
+                    sessionStorage.setItem(storageKey, e.target.id);
+                    setTimeout(drawBracketConnectors, 50);
+                });
+            });
+
+            // 初回描画とリサイズ対応
+            setTimeout(drawBracketConnectors, 100);
+            window.addEventListener('resize', drawBracketConnectors);
+        });
     </script>
 </body>
 </html>

@@ -1,52 +1,518 @@
 <!DOCTYPE html>
 <html xmlns:th="http://www.thymeleaf.org" th:replace="~{layout/base :: layout(~{::div}, ~{::title})}">
 <head>
-    <title>累計ポイントランキング | ASOPokeTool</title>
+    <title>年間ポイントランキング | ASOPokeTool</title>
 </head>
 <body>
     <div>
-        <div class="mb-4 text-white text-center">
-            <h1 class="fw-bold mb-2"><i class="fa-solid fa-ranking-star text-warning"></i> 累計ポイントランキング</h1>
-            <p class="text-muted">これまでに開催されたすべての大会で獲得した累計ポイントのランキングです。</p>
+        <style>
+            /* --- 年間ランキング ユーザー側デザイン (スマホ最優先レスポンシブ) --- */
+            .ar-title {
+                font-size: clamp(1.35rem, 5vw, 2rem);
+                font-weight: 800;
+                color: #4A3E3D !important;
+            }
+            .ar-subtitle {
+                font-size: 0.9rem;
+                color: #8D8280;
+            }
+
+            /* マイランクバナー */
+            .my-rank-banner {
+                background: linear-gradient(135deg, #FF7B54 0%, #FF9666 55%, #FFB26B 100%);
+                border-radius: 20px;
+                padding: 16px 20px;
+                color: #ffffff;
+                box-shadow: 0 10px 25px rgba(255, 123, 84, 0.3);
+                border: 2px solid rgba(255, 255, 255, 0.45);
+            }
+            .my-rank-banner * {
+                color: #ffffff !important;
+            }
+            .my-rank-avatar {
+                width: 54px;
+                height: 54px;
+                border-radius: 50%;
+                object-fit: cover;
+                border: 3px solid #ffffff;
+                box-shadow: 0 4px 10px rgba(0, 0, 0, 0.15);
+                flex-shrink: 0;
+            }
+            .my-rank-label {
+                display: inline-block;
+                background: rgba(255, 255, 255, 0.24);
+                font-size: 0.74rem;
+                font-weight: 700;
+                padding: 2px 10px;
+                border-radius: 999px;
+                margin-bottom: 4px;
+            }
+            .my-rank-value {
+                font-size: 1.65rem;
+                font-weight: 900;
+                line-height: 1.1;
+            }
+            .my-rank-pt {
+                font-size: 1.25rem;
+                font-weight: 800;
+                font-family: 'Poppins', sans-serif;
+            }
+            .my-rank-pill {
+                background: rgba(255, 255, 255, 0.22);
+                border: 1px solid rgba(255, 255, 255, 0.4);
+                border-radius: 999px;
+                padding: 6px 14px;
+                font-size: 0.82rem;
+                font-weight: 700;
+                white-space: nowrap;
+            }
+            .my-rank-jump-btn {
+                background: #ffffff !important;
+                color: #FF6B35 !important;
+                border: none;
+                border-radius: 999px;
+                padding: 6px 14px;
+                font-size: 0.82rem;
+                font-weight: 800;
+                white-space: nowrap;
+                box-shadow: 0 4px 10px rgba(0, 0, 0, 0.12);
+                text-decoration: none;
+                display: inline-flex;
+                align-items: center;
+                gap: 4px;
+                cursor: pointer;
+            }
+            .my-rank-jump-btn:hover {
+                transform: translateY(-1px);
+                background: #FFFDF0 !important;
+            }
+
+            /* TOP3 表彰台 */
+            .podium-grid {
+                display: grid;
+                grid-template-columns: 1fr 1.2fr 1fr;
+                gap: 16px;
+                align-items: end;
+                max-width: 820px;
+                margin: 0 auto 24px auto;
+            }
+            .podium-card {
+                background: #ffffff;
+                border-radius: 20px;
+                padding: 18px 14px;
+                text-align: center;
+                position: relative;
+                box-shadow: 0 8px 20px rgba(74, 62, 61, 0.08);
+                transition: transform 0.2s ease;
+            }
+            .podium-card-1 {
+                order: 2;
+                border: 3px solid #F59E0B;
+                background: linear-gradient(180deg, #FFFDF0 0%, #FFFFFF 45%, #FFF8DB 100%);
+                box-shadow: 0 12px 28px rgba(245, 158, 11, 0.25);
+                padding: 20px 16px;
+            }
+            .podium-card-2 {
+                order: 1;
+                border: 2.5px solid #94A3B8;
+                background: linear-gradient(180deg, #F8FAFC 0%, #FFFFFF 100%);
+            }
+            .podium-card-3 {
+                order: 3;
+                border: 2.5px solid #CD7F32;
+                background: linear-gradient(180deg, #FFF7F0 0%, #FFFFFF 100%);
+            }
+            .podium-rank-badge {
+                display: inline-flex;
+                align-items: center;
+                gap: 4px;
+                padding: 3px 12px;
+                border-radius: 999px;
+                font-size: 0.82rem;
+                font-weight: 800;
+                color: #ffffff !important;
+                margin-bottom: 8px;
+            }
+            .podium-badge-1 { background: linear-gradient(135deg, #F59E0B, #D97706); }
+            .podium-badge-2 { background: linear-gradient(135deg, #94A3B8, #64748B); }
+            .podium-badge-3 { background: linear-gradient(135deg, #CD7F32, #A0522D); }
+
+            .podium-avatar {
+                width: 64px;
+                height: 64px;
+                border-radius: 50%;
+                object-fit: cover;
+                border: 3px solid #FFE4B5;
+                box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+                flex-shrink: 0;
+            }
+            .podium-card-1 .podium-avatar {
+                width: 72px;
+                height: 72px;
+                border-color: #F59E0B;
+            }
+            .podium-pikachu {
+                width: 82px;
+                height: 82px;
+                object-fit: contain;
+                filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.12));
+            }
+            .podium-name {
+                font-weight: 800;
+                font-size: 1.05rem;
+                color: #4A3E3D !important;
+                white-space: nowrap;
+                overflow: hidden;
+                text-overflow: ellipsis;
+            }
+            .podium-card-1 .podium-name {
+                font-size: 1.2rem;
+            }
+            .podium-pt {
+                font-family: 'Poppins', sans-serif;
+                font-weight: 800;
+                font-size: 1.25rem;
+                color: #FF6B35 !important;
+            }
+            .podium-card-1 .podium-pt {
+                font-size: 1.45rem;
+                color: #D97706 !important;
+            }
+
+            /* 4位以降 ランキングリスト */
+            .ar-list-card {
+                background: #ffffff;
+                border-radius: 20px;
+                border: 2px solid rgba(255, 123, 84, 0.18);
+                box-shadow: 0 8px 24px rgba(255, 123, 84, 0.08);
+                overflow: hidden;
+                max-width: 820px;
+                margin: 0 auto;
+            }
+            .ar-row {
+                display: flex;
+                align-items: center;
+                justify-content: space-between;
+                padding: 12px 18px;
+                border-bottom: 1px solid rgba(74, 62, 61, 0.08);
+                gap: 10px;
+                transition: background-color 0.2s ease;
+            }
+            .ar-row:last-child {
+                border-bottom: none;
+            }
+            .ar-row.is-me {
+                background: #FFF3EB;
+                box-shadow: inset 0 0 0 2px #FF7B54;
+                border-radius: 12px;
+                margin: 4px 6px;
+                border-bottom: none;
+            }
+            .ar-row-left {
+                display: flex;
+                align-items: center;
+                gap: 12px;
+                min-width: 0;
+                flex: 1;
+            }
+            .ar-row-rank {
+                min-width: 44px;
+                font-weight: 800;
+                font-size: 0.95rem;
+                color: #6c6260;
+                text-align: center;
+                white-space: nowrap;
+                flex-shrink: 0;
+            }
+            .ar-row-avatar {
+                width: 38px;
+                height: 38px;
+                border-radius: 50%;
+                object-fit: cover;
+                border: 2px solid #FFE4E1;
+                flex-shrink: 0;
+            }
+            .ar-row-name-wrap {
+                display: flex;
+                align-items: center;
+                gap: 6px;
+                min-width: 0;
+                flex: 1;
+            }
+            .ar-row-name {
+                font-weight: 700;
+                font-size: 1rem;
+                color: #4A3E3D !important;
+                white-space: nowrap;
+                overflow: hidden;
+                text-overflow: ellipsis;
+            }
+            .ar-me-badge {
+                background: #FF7B54;
+                color: #ffffff !important;
+                font-size: 0.68rem;
+                font-weight: 800;
+                padding: 2px 8px;
+                border-radius: 999px;
+                white-space: nowrap;
+                flex-shrink: 0;
+            }
+            .ar-row-pt {
+                font-family: 'Poppins', sans-serif;
+                font-weight: 800;
+                font-size: 1.05rem;
+                color: #4A3E3D !important;
+                white-space: nowrap;
+                flex-shrink: 0;
+            }
+
+            /* --- スマホ専用レイアウト (768px以下) --- */
+            @media (max-width: 768px) {
+                .my-rank-banner {
+                    padding: 14px;
+                    border-radius: 16px;
+                }
+                .my-rank-avatar {
+                    width: 46px;
+                    height: 46px;
+                }
+                .my-rank-value {
+                    font-size: 1.45rem;
+                }
+                .my-rank-pt {
+                    font-size: 1.15rem;
+                }
+                .my-rank-bottom-row {
+                    width: 100%;
+                    display: flex;
+                    justify-content: space-between;
+                    align-items: center;
+                    gap: 8px;
+                    margin-top: 10px;
+                    padding-top: 10px;
+                    border-top: 1px solid rgba(255, 255, 255, 0.25);
+                }
+                .my-rank-pill,
+                .my-rank-jump-btn {
+                    font-size: 0.76rem;
+                    padding: 5px 11px;
+                }
+
+                /* スマホTOP3: 1位を全幅横長カード、2位・3位を下に2列 */
+                .podium-grid {
+                    grid-template-columns: 1fr 1fr;
+                    gap: 10px;
+                    margin-bottom: 16px;
+                }
+                .podium-card-1 {
+                    grid-column: 1 / -1;
+                    order: 1;
+                    text-align: left;
+                    padding: 14px 16px;
+                    display: flex;
+                    align-items: center;
+                    justify-content: space-between;
+                    gap: 10px;
+                }
+                .podium-card-1-inner {
+                    display: flex;
+                    align-items: center;
+                    gap: 12px;
+                    min-width: 0;
+                    flex: 1;
+                }
+                .podium-card-1 .podium-avatar {
+                    width: 58px;
+                    height: 58px;
+                }
+                .podium-card-1 .podium-pikachu {
+                    width: 76px;
+                    height: 76px;
+                    flex-shrink: 0;
+                }
+                .podium-card-2 {
+                    order: 2;
+                    padding: 12px 10px;
+                }
+                .podium-card-3 {
+                    order: 3;
+                    padding: 12px 10px;
+                }
+                .podium-card-2 .podium-avatar,
+                .podium-card-3 .podium-avatar {
+                    width: 48px;
+                    height: 48px;
+                }
+                .podium-name {
+                    font-size: 0.95rem;
+                }
+                .podium-pt {
+                    font-size: 1.1rem;
+                }
+
+                .ar-row {
+                    padding: 10px 12px;
+                    gap: 8px;
+                }
+                .ar-row-left {
+                    gap: 8px;
+                }
+                .ar-row-rank {
+                    min-width: 36px;
+                    font-size: 0.86rem;
+                }
+                .ar-row-avatar {
+                    width: 32px;
+                    height: 32px;
+                }
+                .ar-row-name {
+                    font-size: 0.92rem;
+                }
+                .ar-row-pt {
+                    font-size: 0.95rem;
+                }
+            }
+        </style>
+
+        <!-- Page Title -->
+        <div class="text-center mb-3">
+            <h1 class="ar-title mb-1">🏆 年間ポイントランキング</h1>
+            <p class="ar-subtitle mb-0" th:text="${currentYear} + 'シーズン 全ユーザー累計順位'">2026シーズン 全ユーザー累計順位</p>
         </div>
 
-        <div class="row justify-content-center">
-            <div class="col-lg-10">
-                <div class="card card-glass text-white p-4">
-                    <div th:if="${#lists.isEmpty(ranking)}" class="p-5 text-center text-muted">
-                        <i class="fa-solid fa-list-ol fa-3x mb-3"></i>
-                        <p class="mb-0">ポイント保有プレイヤーがまだいません。</p>
+        <!-- Logged-in User's My Rank Banner -->
+        <div th:if="${myRankEntry != null}" class="my-rank-banner mb-4 mx-auto" style="max-width: 820px;">
+            <div class="d-flex flex-column flex-md-row align-items-md-center justify-content-between gap-2">
+                <div class="d-flex align-items-center gap-3">
+                    <img th:src="${myRankEntry.iconPath != null ? myRankEntry.iconPath : '/asopoketool/images/pikachu.png'}"
+                         class="my-rank-avatar" alt="あなたのアイコン">
+                    <div>
+                        <div class="my-rank-label">あなたの現在の順位</div>
+                        <div class="d-flex align-items-baseline gap-2">
+                            <span class="my-rank-value" th:text="${myRankEntry.rank} + '位'">5位</span>
+                            <span class="my-rank-pt" th:text="${myRankEntry.totalPoint} + ' pt'">255 pt</span>
+                        </div>
                     </div>
-
-                    <div th:unless="${#lists.isEmpty(ranking)}" class="table-responsive">
-                        <table class="table table-custom text-white w-100">
-                            <thead>
-                                <tr>
-                                    <th style="width: 15%">順位</th>
-                                    <th style="width: 50%">プレイヤー名</th>
-                                    <th class="text-center" style="width: 35%">累計ポイント</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                <tr th:each="r, iter : ${ranking}">
-                                    <td class="align-middle fw-bold">
-                                        <!-- Gold, Silver, Bronze style -->
-                                        <span th:if="${iter.count == 1}" class="rank-1"><i class="fa-solid fa-medal"></i> 1位</span>
-                                        <span th:if="${iter.count == 2}" class="rank-2"><i class="fa-solid fa-medal"></i> 2位</span>
-                                        <span th:if="${iter.count == 3}" class="rank-3"><i class="fa-solid fa-medal"></i> 3位</span>
-                                        <span th:if="${iter.count > 3}" th:text="${iter.count} + '位'">4位</span>
-                                    </td>
-                                    <td class="align-middle">
-                                        <h5 class="fw-bold mb-0 text-white" th:text="${r.displayName}">たろう</h5>
-                                    </td>
-                                    <td class="text-center align-middle fw-bold text-warning fs-5 font-monospace" th:text="${r.totalPoint} + ' pt'">350 pt</td>
-                                </tr>
-                            </tbody>
-                        </table>
-                    </div>
+                </div>
+                <div class="my-rank-bottom-row d-flex align-items-center gap-2">
+                    <span class="my-rank-pill" th:if="${pointsToNextRank != null && nextRankNumber != null}"
+                          th:text="'+' + ${pointsToNextRank} + ' pt で ' + ${nextRankNumber} + '位！'">+25 pt で 4位！</span>
+                    <span class="my-rank-pill" th:if="${pointsToNextRank == null && myRankEntry.totalPoint > 0}">👑 現在トップキープ中！</span>
+                    <span class="my-rank-pill" th:if="${pointsToNextRank == null && myRankEntry.totalPoint == 0}">大会参加でPt獲得！</span>
+                    <button type="button" class="my-rank-jump-btn" onclick="scrollToMyRank()">
+                        自分の順位へ <i class="fa-solid fa-arrow-down"></i>
+                    </button>
                 </div>
             </div>
         </div>
+
+        <!-- Guest Hint -->
+        <div th:if="${myRankEntry == null && !isLoggedIn}" class="text-center mb-3">
+            <a th:href="@{/account/login}" class="btn btn-outline-light btn-sm px-3" style="font-size: 0.8rem;">
+                <i class="fa-solid fa-right-to-bracket me-1"></i> ログインすると上部にあなたの順位が表示されます
+            </a>
+        </div>
+
+        <!-- Empty State -->
+        <div th:if="${#lists.isEmpty(ranking)}" class="card card-glass p-5 text-center text-muted mx-auto" style="max-width: 820px;">
+            <i class="fa-solid fa-list-ol fa-3x mb-3"></i>
+            <p class="mb-0">登録ユーザーがまだいません。</p>
+        </div>
+
+        <div th:unless="${#lists.isEmpty(ranking)}">
+            <!-- TOP 3 Podium -->
+            <div class="podium-grid">
+                <!-- 1st Place -->
+                <div th:if="${#lists.size(top3) >= 1}" th:with="p1=${top3[0]}, isMe=${myRankEntry != null && myRankEntry.accountId == p1.accountId}"
+                     class="podium-card podium-card-1" th:id="${isMe} ? 'my-rank-row' : null">
+                    <div class="podium-card-1-inner">
+                        <div class="d-none d-md-block mb-1">
+                            <img th:src="@{/images/pikachu_trophy.png}" class="podium-pikachu" alt="トロフィーピカチュウ">
+                        </div>
+                        <img th:src="${p1.iconPath != null ? p1.iconPath : '/asopoketool/images/pikachu.png'}"
+                             class="podium-avatar d-md-none" alt="1位アイコン">
+                        <div style="min-width: 0; flex: 1;">
+                            <div class="podium-rank-badge podium-badge-1">
+                                <i class="fa-solid fa-crown"></i> <span th:text="${p1.rank} + '位'">1位</span>
+                            </div>
+                            <div class="d-none d-md-flex justify-content-center mb-1">
+                                <img th:src="${p1.iconPath != null ? p1.iconPath : '/asopoketool/images/pikachu.png'}"
+                                     class="podium-avatar" style="width: 48px; height: 48px;" alt="1位アイコン">
+                            </div>
+                            <div class="d-flex align-items-center justify-content-md-center gap-1">
+                                <span class="podium-name" th:text="${p1.displayName}">サトシ</span>
+                                <span class="ar-me-badge" th:if="${isMe}">あなた</span>
+                            </div>
+                            <div class="podium-pt" th:text="${p1.totalPoint} + ' pt'">420 pt</div>
+                        </div>
+                    </div>
+                    <img th:src="@{/images/pikachu_trophy.png}" class="podium-pikachu d-md-none" alt="トロフィーピカチュウ">
+                </div>
+
+                <!-- 2nd Place -->
+                <div th:if="${#lists.size(top3) >= 2}" th:with="p2=${top3[1]}, isMe=${myRankEntry != null && myRankEntry.accountId == p2.accountId}"
+                     class="podium-card podium-card-2" th:id="${isMe} ? 'my-rank-row' : null">
+                    <div class="podium-rank-badge podium-badge-2">
+                        <i class="fa-solid fa-medal"></i> <span th:text="${p2.rank} + '位'">2位</span>
+                    </div>
+                    <div class="mb-2">
+                        <img th:src="${p2.iconPath != null ? p2.iconPath : '/asopoketool/images/pikachu.png'}"
+                             class="podium-avatar" alt="2位アイコン">
+                    </div>
+                    <div class="d-flex align-items-center justify-content-center gap-1">
+                        <span class="podium-name" th:text="${p2.displayName}">カスミ</span>
+                        <span class="ar-me-badge" th:if="${isMe}">あなた</span>
+                    </div>
+                    <div class="podium-pt" th:text="${p2.totalPoint} + ' pt'">365 pt</div>
+                </div>
+
+                <!-- 3rd Place -->
+                <div th:if="${#lists.size(top3) >= 3}" th:with="p3=${top3[2]}, isMe=${myRankEntry != null && myRankEntry.accountId == p3.accountId}"
+                     class="podium-card podium-card-3" th:id="${isMe} ? 'my-rank-row' : null">
+                    <div class="podium-rank-badge podium-badge-3">
+                        <i class="fa-solid fa-medal"></i> <span th:text="${p3.rank} + '位'">3位</span>
+                    </div>
+                    <div class="mb-2">
+                        <img th:src="${p3.iconPath != null ? p3.iconPath : '/asopoketool/images/pikachu.png'}"
+                             class="podium-avatar" alt="3位アイコン">
+                    </div>
+                    <div class="d-flex align-items-center justify-content-center gap-1">
+                        <span class="podium-name" th:text="${p3.displayName}">タケシ</span>
+                        <span class="ar-me-badge" th:if="${isMe}">あなた</span>
+                    </div>
+                    <div class="podium-pt" th:text="${p3.totalPoint} + ' pt'">310 pt</div>
+                </div>
+            </div>
+
+            <!-- 4th Place & Below: Full Leaderboard -->
+            <div th:unless="${#lists.isEmpty(restRanking)}" class="ar-list-card mb-4">
+                <div th:each="r : ${restRanking}"
+                     th:with="isMe=${myRankEntry != null && myRankEntry.accountId == r.accountId}"
+                     class="ar-row"
+                     th:classappend="${isMe} ? 'is-me' : ''"
+                     th:id="${isMe} ? 'my-rank-row' : null">
+                    <div class="ar-row-left">
+                        <div class="ar-row-rank" th:text="${r.rank} + '位'">4位</div>
+                        <img th:src="${r.iconPath != null ? r.iconPath : '/asopoketool/images/pikachu.png'}"
+                             class="ar-row-avatar" alt="アイコン">
+                        <div class="ar-row-name-wrap">
+                            <span class="ar-row-name" th:text="${r.displayName}" th:title="${r.displayName}">ハルカ</span>
+                            <span class="ar-me-badge" th:if="${isMe}">あなた</span>
+                        </div>
+                    </div>
+                    <div class="ar-row-pt" th:text="${r.totalPoint} + ' pt'">280 pt</div>
+                </div>
+            </div>
+        </div>
+
+        <script th:inline="none">
+            function scrollToMyRank() {
+                const target = document.getElementById('my-rank-row');
+                if (target) {
+                    target.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                }
+            }
+        </script>
     </div>
 </body>
 </html>

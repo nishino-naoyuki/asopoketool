@@ -1,0 +1,622 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>年間ポイントランキング管理 | ASOPokeTool</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
+    <link th:href="@{/css/common.css}" rel="stylesheet">
+</head>
+<body class="admin-body">
+
+    <nav class="navbar navbar-expand-lg navbar-dark navbar-custom sticky-top">
+        <div class="container">
+            <a class="navbar-brand navbar-brand-custom text-warning" th:href="@{/admin}">
+                <i class="fa-solid fa-screwdriver-wrench"></i> ASOPokeTool 管理画面
+            </a>
+            <div class="collapse navbar-collapse" id="adminNavbar">
+                <ul class="navbar-nav ms-auto align-items-center gap-3">
+                    <li class="nav-item">
+                        <a class="nav-link text-light fw-bold" th:href="@{/admin/ranking}"><i class="fa-solid fa-trophy text-warning"></i> 年間ランキング</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link text-light opacity-75" th:href="@{/admin/users}"><i class="fa-solid fa-users-gear"></i> 管理者管理</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link text-light opacity-75" th:href="@{/admin/players}"><i class="fa-solid fa-users"></i> 全ユーザー一覧</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="btn btn-outline-danger btn-sm px-3" th:href="@{/admin/logout}"><i class="fa-solid fa-right-from-bracket"></i> ログアウト</a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container my-4">
+        <a th:href="@{/admin}" class="btn btn-outline-light btn-sm mb-4">
+            <i class="fa-solid fa-arrow-left"></i> ダッシュボードに戻る
+        </a>
+
+        <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-3">
+            <div>
+                <h2 class="fw-bold mb-1"><i class="fa-solid fa-trophy text-warning"></i> 年間（累計）ポイントランキング管理</h2>
+                <p class="text-muted mb-0">年間王者の表彰用ポスター画像の出力や、年度切り替え時のポイント一括クリアが行えます。</p>
+            </div>
+            <div class="d-flex gap-2 flex-wrap">
+                <button type="button" class="btn btn-success btn-sm px-3 py-2 fw-bold" onclick="exportAnnualRankingImage()" th:disabled="${#lists.isEmpty(ranking)}">
+                    <i class="fa-solid fa-image me-1"></i> ランキング画像をエクスポート
+                </button>
+                <button type="button" class="btn btn-outline-danger btn-sm px-3 py-2 fw-bold" data-bs-toggle="modal" data-bs-target="#resetPointsModal">
+                    <i class="fa-solid fa-trash-arrow-up me-1"></i> 年間ポイントをクリア
+                </button>
+            </div>
+        </div>
+
+        <!-- Alerts -->
+        <div th:if="${param.success != null && param.success[0] == 'reset'}" class="alert alert-success alert-dismissible fade show" role="alert">
+            <i class="fa-solid fa-circle-check me-1"></i> 全プレイヤーの累計ポイントをクリア（0リセット）しました。新シーズンの集計を開始できます！
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+        <div th:if="${param.error != null && param.error[0] == 'confirm'}" class="alert alert-danger alert-dismissible fade show" role="alert">
+            <i class="fa-solid fa-triangle-exclamation me-1"></i> 確認用の文字「リセット」が正しく入力されなかったため、クリアをキャンセルしました。
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+
+        <!-- Export Settings Card -->
+        <div class="card card-glass p-4 mb-4" th:unless="${#lists.isEmpty(ranking)}">
+            <h5 class="fw-bold mb-3"><i class="fa-solid fa-palette text-primary me-1"></i> 画像エクスポート設定</h5>
+            <div class="row g-3">
+                <div class="col-md-4">
+                    <label for="exportTitle" class="form-label small fw-bold text-muted">メインタイトル</label>
+                    <input type="text" id="exportTitle" class="form-control form-control-sm" value="ASOPokeTool 年間ポイントランキング">
+                </div>
+                <div class="col-md-4">
+                    <label for="exportSubtitle" class="form-label small fw-bold text-muted">サブタイトル</label>
+                    <input type="text" id="exportSubtitle" class="form-control form-control-sm" th:value="${currentYear} + ' SEASON FINAL STANDINGS'">
+                </div>
+                <div class="col-md-4">
+                    <label for="exportFooter" class="form-label small fw-bold text-muted">右下フッター表記</label>
+                    <input type="text" id="exportFooter" class="form-control form-control-sm" th:value="'集計期間: ' + ${currentYear} + '年1月〜12月 | ASOPokeTool 公式年間記録'">
+                </div>
+                <div class="col-md-4">
+                    <label for="exportLimit" class="form-label small fw-bold text-muted">掲載人数</label>
+                    <select id="exportLimit" class="form-select form-select-sm">
+                        <option value="10" selected>TOP 10（ポスター標準・16:9）</option>
+                        <option value="20">TOP 20</option>
+                        <option value="0">全員掲載（高さ自動調整）</option>
+                    </select>
+                </div>
+                <div class="col-md-8 d-flex align-items-end justify-content-md-end">
+                    <button type="button" class="btn btn-success fw-bold px-4" onclick="exportAnnualRankingImage()">
+                        <i class="fa-solid fa-download me-1"></i> この設定でPNG画像を保存
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Ranking Table -->
+        <div class="card card-glass p-4">
+            <div th:if="${#lists.isEmpty(ranking)}" class="p-5 text-center text-muted">
+                <i class="fa-solid fa-ranking-star fa-3x mb-3"></i>
+                <p class="mb-0">現在、ポイント保有プレイヤーはいません。</p>
+            </div>
+
+            <div th:unless="${#lists.isEmpty(ranking)}" class="table-responsive">
+                <table class="table table-custom w-100 mb-0" id="annualRankingTable">
+                    <thead>
+                        <tr>
+                            <th style="width: 15%">順位</th>
+                            <th style="width: 55%">プレイヤー名</th>
+                            <th class="text-center" style="width: 30%">累計ポイント</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr th:each="r, iter : ${ranking}"
+                            class="ranking-data-row"
+                            th:data-rank="${iter.count}"
+                            th:data-name="${r.displayName}"
+                            th:data-point="${r.totalPoint}">
+                            <td class="align-middle fw-bold">
+                                <span th:if="${iter.count == 1}" class="rank-1"><i class="fa-solid fa-medal"></i> 1位</span>
+                                <span th:if="${iter.count == 2}" class="rank-2"><i class="fa-solid fa-medal"></i> 2位</span>
+                                <span th:if="${iter.count == 3}" class="rank-3"><i class="fa-solid fa-medal"></i> 3位</span>
+                                <span th:if="${iter.count > 3}" th:text="${iter.count} + '位'">4位</span>
+                            </td>
+                            <td class="align-middle">
+                                <a th:href="@{/admin/players/{id}/records(id=${r.accountId})}" target="_blank" class="fw-bold text-decoration-none" style="color: inherit;">
+                                    <span th:text="${r.displayName}">たろう</span>
+                                    <i class="fa-solid fa-chart-bar ms-1 fa-xs opacity-50"></i>
+                                </a>
+                            </td>
+                            <td class="text-center align-middle fw-bold text-warning fs-5 font-monospace" th:text="${r.totalPoint} + ' pt'">350 pt</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Reset Confirmation Modal -->
+    <div class="modal fade" id="resetPointsModal" tabindex="-1" aria-labelledby="resetPointsModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content" style="border-radius: 16px; border: 2px solid #dc3545;">
+                <div class="modal-header bg-danger text-white" style="border-radius: 14px 14px 0 0;">
+                    <h5 class="modal-title fw-bold" id="resetPointsModalLabel">
+                        <i class="fa-solid fa-triangle-exclamation me-1"></i> 年間ポイントの一括クリア
+                    </h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <form th:action="@{/admin/ranking/reset}" method="POST">
+                    <div class="modal-body p-4">
+                        <div class="alert alert-warning small mb-3">
+                            <strong>ご注意：</strong> 実行すると、全プレイヤーの現在の累計ポイントがすべて <strong>0（クリア）</strong> になります。この操作は元に戻せません。<br>
+                            ※リセット前に「ランキング画像をエクスポート」で記録を保存しておくことをおすすめします。<br>
+                            ※各大会ごとの過去戦績・履歴は消去されません。
+                        </div>
+                        <div class="mb-3">
+                            <label for="confirmTextInput" class="form-label fw-bold small">確認のため、下に「<span class="text-danger">リセット</span>」と入力してください</label>
+                            <input type="text" class="form-control" id="confirmTextInput" name="confirmText" placeholder="リセット" autocomplete="off" required oninput="toggleResetBtn()">
+                        </div>
+                    </div>
+                    <div class="modal-footer border-0 pt-0">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">キャンセル</button>
+                        <button type="submit" id="confirmResetSubmitBtn" class="btn btn-danger fw-bold" disabled>
+                            <i class="fa-solid fa-trash-arrow-up me-1"></i> 累計ポイントをクリアする
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    <script th:inline="none">
+        function toggleResetBtn() {
+            const val = document.getElementById('confirmTextInput').value.trim();
+            document.getElementById('confirmResetSubmitBtn').disabled = (val !== 'リセット');
+        }
+
+        function drawRoundedRect(ctx, x, y, w, h, r) {
+            ctx.beginPath();
+            ctx.moveTo(x + r, y);
+            ctx.arcTo(x + w, y, x + w, y + h, r);
+            ctx.arcTo(x + w, y + h, x, y + h, r);
+            ctx.arcTo(x, y + h, x, y, r);
+            ctx.arcTo(x, y, x + w, y, r);
+            ctx.closePath();
+        }
+
+        function drawPokeballWatermark(ctx, cx, cy, radius, opacity) {
+            ctx.save();
+            ctx.globalAlpha = opacity;
+            ctx.translate(cx, cy);
+            ctx.beginPath();
+            ctx.arc(0, 0, radius, 0, Math.PI * 2);
+            ctx.strokeStyle = '#64748b';
+            ctx.lineWidth = radius * 0.08;
+            ctx.stroke();
+
+            ctx.beginPath();
+            ctx.moveTo(-radius, 0);
+            ctx.lineTo(radius, 0);
+            ctx.stroke();
+
+            ctx.beginPath();
+            ctx.arc(0, 0, radius * 0.28, 0, Math.PI * 2);
+            ctx.fillStyle = '#FFFDF7';
+            ctx.fill();
+            ctx.stroke();
+
+            ctx.beginPath();
+            ctx.arc(0, 0, radius * 0.12, 0, Math.PI * 2);
+            ctx.fillStyle = '#64748b';
+            ctx.fill();
+            ctx.restore();
+        }
+
+        function drawMedalBadge(ctx, cx, cy, colorMain, colorDark, colorLight, isCrown) {
+            ctx.save();
+            if (isCrown) {
+                // Gold Crown for 1st place
+                ctx.translate(cx, cy);
+                ctx.fillStyle = '#FFD166';
+                ctx.strokeStyle = '#B45309';
+                ctx.lineWidth = 3;
+                ctx.beginPath();
+                ctx.moveTo(-34, 18);
+                ctx.lineTo(-42, -16);
+                ctx.lineTo(-16, 0);
+                ctx.lineTo(0, -26);
+                ctx.lineTo(16, 0);
+                ctx.lineTo(42, -16);
+                ctx.lineTo(34, 18);
+                ctx.closePath();
+                ctx.fill();
+                ctx.stroke();
+
+                ctx.fillStyle = '#F59E0B';
+                ctx.fillRect(-34, 18, 68, 8);
+                ctx.strokeRect(-34, 18, 68, 8);
+
+                // Jewels on tips
+                [[-42, -16], [0, -26], [42, -16]].forEach(([jx, jy]) => {
+                    ctx.beginPath();
+                    ctx.arc(jx, jy, 5, 0, Math.PI * 2);
+                    ctx.fillStyle = '#FEF08A';
+                    ctx.fill();
+                    ctx.stroke();
+                });
+            } else {
+                // Ribbon + Medal for 2nd & 3rd place
+                ctx.translate(cx, cy);
+                // Ribbons
+                ctx.fillStyle = colorDark;
+                ctx.beginPath();
+                ctx.moveTo(-14, 10);
+                ctx.lineTo(-22, 34);
+                ctx.lineTo(-8, 28);
+                ctx.lineTo(-2, 12);
+                ctx.closePath();
+                ctx.fill();
+
+                ctx.beginPath();
+                ctx.moveTo(14, 10);
+                ctx.lineTo(22, 34);
+                ctx.lineTo(8, 28);
+                ctx.lineTo(2, 12);
+                ctx.closePath();
+                ctx.fill();
+
+                // Outer Circle
+                ctx.beginPath();
+                ctx.arc(0, 0, 24, 0, Math.PI * 2);
+                ctx.fillStyle = colorMain;
+                ctx.fill();
+                ctx.strokeStyle = colorDark;
+                ctx.lineWidth = 3;
+                ctx.stroke();
+
+                // Inner Highlight
+                ctx.beginPath();
+                ctx.arc(0, 0, 16, 0, Math.PI * 2);
+                ctx.fillStyle = colorLight;
+                ctx.fill();
+                ctx.strokeStyle = colorDark;
+                ctx.lineWidth = 1.5;
+                ctx.stroke();
+            }
+            ctx.restore();
+        }
+
+        function drawSparklesAndConfetti(ctx, width, headerHeight) {
+            ctx.save();
+            // Header sparkles
+            const sparkles = [
+                [85, 35, 10], [160, 105, 6], [240, 28, 7], [1040, 32, 9], [1145, 95, 11], [1205, 38, 6]
+            ];
+            ctx.fillStyle = 'rgba(255, 251, 200, 0.85)';
+            sparkles.forEach(([x, y, s]) => {
+                ctx.beginPath();
+                ctx.moveTo(x, y - s);
+                ctx.quadraticCurveTo(x, y, x + s, y);
+                ctx.quadraticCurveTo(x, y, x, y + s);
+                ctx.quadraticCurveTo(x, y, x - s, y);
+                ctx.quadraticCurveTo(x, y, x, y - s);
+                ctx.fill();
+            });
+
+            // Subtle gold confetti below header
+            const confetti = [
+                [42, 165, 12, 6, 0.4], [95, 195, 10, 5, -0.5], [140, 160, 8, 5, 0.2], [58, 225, 10, 5, 0.8],
+                [1180, 168, 12, 6, -0.3], [1230, 200, 10, 5, 0.6], [1135, 175, 9, 4, -0.7], [1210, 240, 11, 5, 0.3]
+            ];
+            confetti.forEach(([x, y, w, h, rot]) => {
+                ctx.save();
+                ctx.translate(x, y);
+                ctx.rotate(rot);
+                ctx.fillStyle = 'rgba(217, 155, 38, 0.65)';
+                ctx.fillRect(-w / 2, -h / 2, w, h);
+                ctx.restore();
+            });
+            ctx.restore();
+        }
+
+        async function exportAnnualRankingImage() {
+            const rows = Array.from(document.querySelectorAll('.ranking-data-row')).map(tr => ({
+                rank: parseInt(tr.getAttribute('data-rank'), 10),
+                name: tr.getAttribute('data-name') || '',
+                point: parseInt(tr.getAttribute('data-point'), 10) || 0
+            }));
+
+            if (rows.length === 0) {
+                alert('エクスポートするランキングデータがありません。');
+                return;
+            }
+
+            const titleText = document.getElementById('exportTitle').value.trim() || 'ASOPokeTool 年間ポイントランキング';
+            const subtitleText = document.getElementById('exportSubtitle').value.trim() || '';
+            const footerText = document.getElementById('exportFooter').value.trim() || 'ASOPokeTool 公式年間記録';
+            const limitVal = parseInt(document.getElementById('exportLimit').value, 10);
+
+            const targetRows = (limitVal > 0) ? rows.slice(0, limitVal) : rows;
+            const top3 = targetRows.slice(0, 3);
+            const rest = targetRows.slice(3);
+
+            // Load Trophy Pikachu Image
+            const loadImage = (src) => new Promise((resolve) => {
+                const img = new Image();
+                img.onload = () => resolve(img);
+                img.onerror = () => resolve(null);
+                img.src = src;
+            });
+            const pikachuImg = await loadImage('/asopoketool/images/pikachu_trophy.png');
+
+            const canvasWidth = 1280;
+            const headerHeight = 148;
+            const podiumTop = 195;
+            const podiumBottom = 435;
+
+            const restRowsPerCol = Math.ceil(rest.length / 2);
+            const rowHeight = 46;
+            const rowGap = 10;
+            const listPadding = 24;
+            const listBoxHeight = rest.length > 0
+                ? (listPadding * 2 + restRowsPerCol * rowHeight + Math.max(0, restRowsPerCol - 1) * rowGap)
+                : 0;
+            const listTop = podiumBottom + 32;
+            const canvasHeight = Math.max(720, listTop + listBoxHeight + 56);
+
+            const canvas = document.createElement('canvas');
+            canvas.width = canvasWidth;
+            canvas.height = canvasHeight;
+            const ctx = canvas.getContext('2d');
+
+            // 1. Background (Warm cream gradient)
+            const bgGrad = ctx.createLinearGradient(0, headerHeight, 0, canvasHeight);
+            bgGrad.addColorStop(0, '#FFFBF2');
+            bgGrad.addColorStop(1, '#FFFDF9');
+            ctx.fillStyle = bgGrad;
+            ctx.fillRect(0, 0, canvasWidth, canvasHeight);
+
+            // Pokeball Watermarks (Left & Right)
+            drawPokeballWatermark(ctx, 130, 390, 145, 0.055);
+            drawPokeballWatermark(ctx, 1155, 390, 145, 0.055);
+
+            // 2. Top Header Banner
+            const headerGrad = ctx.createLinearGradient(0, 0, canvasWidth, 0);
+            headerGrad.addColorStop(0, '#D9531E');
+            headerGrad.addColorStop(0.5, '#EC7D1C');
+            headerGrad.addColorStop(1, '#D9931E');
+            ctx.fillStyle = headerGrad;
+            ctx.fillRect(0, 0, canvasWidth, headerHeight);
+
+            // Bottom gold accent stripe on header
+            ctx.fillStyle = '#F59E0B';
+            ctx.fillRect(0, headerHeight - 8, canvasWidth, 8);
+
+            drawSparklesAndConfetti(ctx, canvasWidth, headerHeight);
+
+            // Header Title
+            ctx.save();
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.shadowColor = 'rgba(0, 0, 0, 0.25)';
+            ctx.shadowBlur = 8;
+            ctx.shadowOffsetY = 3;
+
+            let titleFontSize = 48;
+            const displayTitle = '🏆 ' + titleText;
+            ctx.font = 'bold ' + titleFontSize + 'px "Noto Sans JP", sans-serif';
+            while (ctx.measureText(displayTitle).width > canvasWidth - 120 && titleFontSize > 24) {
+                titleFontSize -= 2;
+                ctx.font = 'bold ' + titleFontSize + 'px "Noto Sans JP", sans-serif';
+            }
+            ctx.fillStyle = '#FFFFFF';
+            ctx.fillText(displayTitle, canvasWidth / 2, subtitleText ? 58 : 74);
+
+            if (subtitleText) {
+                ctx.shadowBlur = 4;
+                ctx.font = 'bold 22px "Poppins", "Noto Sans JP", sans-serif';
+                ctx.fillStyle = '#FEF3C7';
+                ctx.fillText(subtitleText, canvasWidth / 2, 108);
+            }
+            ctx.restore();
+
+            // 3. TOP 3 Podium Cards
+            function drawPodiumCard(item, x, y, w, h, style) {
+                ctx.save();
+                // Glow / Shadow
+                ctx.shadowColor = style.shadowColor;
+                ctx.shadowBlur = style.shadowBlur;
+                ctx.shadowOffsetY = 6;
+
+                drawRoundedRect(ctx, x, y, w, h, 20);
+                ctx.fillStyle = '#FFFFFF';
+                ctx.fill();
+                ctx.restore();
+
+                // Border
+                ctx.save();
+                drawRoundedRect(ctx, x, y, w, h, 20);
+                ctx.strokeStyle = style.borderColor;
+                ctx.lineWidth = style.borderWidth;
+                ctx.stroke();
+
+                // Medal / Crown at top center
+                drawMedalBadge(ctx, x + w / 2, y - 4, style.medalMain, style.medalDark, style.medalLight, style.isCrown);
+
+                // Rank Pill
+                const pillW = style.isCrown ? 98 : 82;
+                const pillH = style.isCrown ? 38 : 34;
+                drawRoundedRect(ctx, x + (w - pillW) / 2, y + 36, pillW, pillH, 19);
+                ctx.fillStyle = style.pillBg;
+                ctx.fill();
+
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'middle';
+                ctx.fillStyle = '#FFFFFF';
+                ctx.font = 'bold ' + (style.isCrown ? 22 : 19) + 'px "Noto Sans JP", sans-serif';
+                ctx.fillText(item.rank + '位', x + w / 2, y + 36 + pillH / 2);
+
+                // Player Name (Auto fit)
+                let nameSize = style.isCrown ? 44 : 34;
+                ctx.font = 'bold ' + nameSize + 'px "Noto Sans JP", sans-serif';
+                const maxNameWidth = w - 36;
+                while (ctx.measureText(item.name).width > maxNameWidth && nameSize > 16) {
+                    nameSize -= 2;
+                    ctx.font = 'bold ' + nameSize + 'px "Noto Sans JP", sans-serif';
+                }
+                ctx.fillStyle = '#1E293B';
+                ctx.fillText(item.name, x + w / 2, y + (style.isCrown ? 118 : 108));
+
+                // Point Pill
+                const ptPillW = style.isCrown ? 156 : 132;
+                const ptPillH = style.isCrown ? 42 : 36;
+                drawRoundedRect(ctx, x + (w - ptPillW) / 2, y + h - ptPillH - 22, ptPillW, ptPillH, 21);
+                ctx.fillStyle = style.ptBg;
+                ctx.fill();
+
+                ctx.fillStyle = '#FFFFFF';
+                ctx.font = 'bold ' + (style.isCrown ? 26 : 22) + 'px "Poppins", "Noto Sans JP", sans-serif';
+                ctx.fillText(item.point + ' pt', x + w / 2, y + h - ptPillH / 2 - 22);
+                ctx.restore();
+            }
+
+            // 2nd Place (Left)
+            if (top3[1]) {
+                drawPodiumCard(top3[1], 148, podiumTop + 28, 266, 206, {
+                    shadowColor: 'rgba(100, 116, 139, 0.2)',
+                    shadowBlur: 16,
+                    borderColor: '#94A3B8',
+                    borderWidth: 4,
+                    medalMain: '#CBD5E1',
+                    medalDark: '#64748B',
+                    medalLight: '#F1F5F9',
+                    pillBg: '#788594',
+                    ptBg: '#8B97A5',
+                    isCrown: false
+                });
+            }
+
+            // 3rd Place (Right)
+            if (top3[2]) {
+                drawPodiumCard(top3[2], 866, podiumTop + 28, 266, 206, {
+                    shadowColor: 'rgba(180, 83, 9, 0.18)',
+                    shadowBlur: 16,
+                    borderColor: '#C88D5E',
+                    borderWidth: 4,
+                    medalMain: '#D48A5A',
+                    medalDark: '#8C4B24',
+                    medalLight: '#F3C7A6',
+                    pillBg: '#B66B37',
+                    ptBg: '#C47B47',
+                    isCrown: false
+                });
+            }
+
+            // 1st Place (Center, largest & highest)
+            if (top3[0]) {
+                drawPodiumCard(top3[0], 470, podiumTop, 340, 234, {
+                    shadowColor: 'rgba(245, 158, 11, 0.42)',
+                    shadowBlur: 28,
+                    borderColor: '#EAB308',
+                    borderWidth: 6,
+                    medalMain: '#FACC15',
+                    medalDark: '#B45309',
+                    medalLight: '#FEF08A',
+                    pillBg: '#B48414',
+                    ptBg: '#C99820',
+                    isCrown: true
+                });
+
+                // Trophy Pikachu beside 1st place card (right-bottom overlap)
+                if (pikachuImg) {
+                    ctx.save();
+                    ctx.shadowColor = 'rgba(0, 0, 0, 0.15)';
+                    ctx.shadowBlur = 10;
+                    ctx.drawImage(pikachuImg, 738, podiumTop + 76, 160, 160);
+                    ctx.restore();
+                }
+            }
+
+            // 4. Ranks 4+ Leaderboard (2-column card container)
+            if (rest.length > 0) {
+                const boxX = 82;
+                const boxW = canvasWidth - boxX * 2;
+
+                ctx.save();
+                ctx.shadowColor = 'rgba(15, 23, 42, 0.08)';
+                ctx.shadowBlur = 20;
+                ctx.shadowOffsetY = 6;
+                drawRoundedRect(ctx, boxX, listTop, boxW, listBoxHeight, 22);
+                ctx.fillStyle = '#FFFFFF';
+                ctx.fill();
+                ctx.restore();
+
+                const colGap = 24;
+                const colW = (boxW - listPadding * 2 - colGap) / 2;
+
+                rest.forEach((item, idx) => {
+                    const isLeft = idx < restRowsPerCol;
+                    const colIdx = isLeft ? 0 : 1;
+                    const rowIdx = isLeft ? idx : (idx - restRowsPerCol);
+
+                    const rx = boxX + listPadding + colIdx * (colW + colGap);
+                    const ry = listTop + listPadding + rowIdx * (rowHeight + rowGap);
+
+                    // Soft alternating pastel row background
+                    drawRoundedRect(ctx, rx, ry, colW, rowHeight, 12);
+                    ctx.fillStyle = isLeft
+                        ? (rowIdx % 2 === 0 ? '#FEF7DC' : '#FDF2DE')
+                        : (rowIdx % 2 === 0 ? '#FDEFE7' : '#FCE8DF');
+                    ctx.fill();
+
+                    ctx.textBaseline = 'middle';
+                    const midY = ry + rowHeight / 2;
+
+                    // Rank
+                    ctx.textAlign = 'center';
+                    ctx.fillStyle = '#334155';
+                    ctx.font = 'bold 21px "Noto Sans JP", sans-serif';
+                    ctx.fillText(item.rank + '位', rx + 46, midY);
+
+                    // Name (Truncate if very long)
+                    ctx.textAlign = 'left';
+                    ctx.fillStyle = '#1E293B';
+                    ctx.font = 'bold 22px "Noto Sans JP", sans-serif';
+                    let displayName = item.name;
+                    const maxW = colW - 220;
+                    while (ctx.measureText(displayName).width > maxW && displayName.length > 1) {
+                        displayName = displayName.slice(0, -1);
+                    }
+                    if (displayName !== item.name) displayName += '…';
+                    ctx.fillText(displayName, rx + 98, midY);
+
+                    // Point
+                    ctx.textAlign = 'right';
+                    ctx.fillStyle = '#1E293B';
+                    ctx.font = 'bold 22px "Poppins", "Noto Sans JP", sans-serif';
+                    ctx.fillText(item.point + ' pt', rx + colW - 24, midY);
+                });
+            }
+
+            // 5. Footer
+            ctx.save();
+            ctx.textAlign = 'right';
+            ctx.textBaseline = 'middle';
+            ctx.fillStyle = '#64748B';
+            ctx.font = '500 16px "Noto Sans JP", sans-serif';
+            ctx.fillText(footerText, canvasWidth - 44, canvasHeight - 24);
+            ctx.restore();
+
+            // Download PNG
+            const link = document.createElement('a');
+            link.download = 'asopoketool_annual_ranking_' + new Date().toISOString().slice(0, 10) + '.png';
+            link.href = canvas.toDataURL('image/png');
+            link.click();
+        }
+    </script>
+</body>
+</html>
